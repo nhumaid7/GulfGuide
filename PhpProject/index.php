@@ -6,10 +6,10 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Project/PHP/PHPProject.php to edi
 <html>
     <head>
         <meta charset="UTF-8">
-        <title></title>
+        <title>GulfGuide</title>
     </head>
     <body>
-        <?php
-echo "Hello, world!";        ?>
+        <h1>Welcome to GulfGuid</h1>
+        <?php phpinfo(); ?>
     </body>
 </html>
