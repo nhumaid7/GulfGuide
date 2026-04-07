@@ -10,6 +10,5 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Project/PHP/PHPProject.php to edi
     </head>
     <body>
         <h1>Welcome to GulfGuid</h1>
-        <?php phpinfo(); ?>
     </body>
 </html>
