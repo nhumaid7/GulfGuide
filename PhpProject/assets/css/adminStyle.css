@@ -1,0 +1,100 @@
+.sidebar {
+    width: 215px;
+    min-height: 100vh;
+    background: #fff;
+    border-right: 1px solid var(--light-grey-200);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    gap: 12px;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    transition: transform .25s ease;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.sidebar-brand .brand-icon {
+    font-size: var(--font-size-h4);
+}
+
+.brand-name {
+    font-size: var(--font-size-h6);
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: .4px;
+    line-height: 1.1;
+}
+
+.brand-name span {
+    display: block;
+    font-size: var(--font-size-p-xxs);
+    color: var(--text-secondary);
+    letter-spacing: .8px;
+    text-transform: uppercase;
+}
+
+
+.sidebar-section-label {
+    font-size: var(--font-size-p-xxs);
+    font-weight: 700;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.sidebar-nav {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar-nav li a {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    gap: 12px;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: var(--font-size-p-m);
+    font-weight: var(--font-weight-heading);
+    border: 2px solid transparent;
+    transition: background .15s, color .15s, border-color .10s;
+}
+
+.sidebar-nav li a i {
+    width: 19px;
+    height: 19px;
+    color: var(--light-grey-700);
+    flex-shrink: 0;
+    transition: color .15s;
+}
+
+.sidebar-nav li a:hover,
+.sidebar-nav li a.active {
+    background: var(--royal-blue-50);
+    color: var(--brand-primary);
+}
+
+.sidebar-nav li a:hover i,
+.sidebar-nav li a.active i {
+    color: var(--brand-primary);
+}
+
+.sidebar-nav li a:focus {
+    border: 4px solid var(--royal-blue-100);
+}
+
+.main {
+    margin-left: 215px;
+    margin-top: var(--topbar-h);
+    flex: 1;
+    padding: 28px;
+    min-height: calc(100vh - var(--topbar-h));
+}

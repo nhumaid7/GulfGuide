@@ -1,0 +1,219 @@
+@import url('https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap');
+
+:root {
+    /* Color Styles */
+    --brand-primary: rgba(65, 105, 225, 1);
+    --brand-secondary: rgba(205, 204, 204, 1);
+    --brand-tertiary: rgba(91, 91, 91, 1);
+    --semantic-info: rgba(10, 162, 192, 1);
+    --semantic-info-off: rgba(207, 244, 252, 1);
+    --semantic-info-content: rgba(5, 81, 96, 1);
+    --semantic-success: rgba(59, 155, 111, 1);
+    --semantic-success-off: rgba(219, 243, 232, 1);
+    --semantic-success-content: rgba(44, 116, 83, 1);
+    --semantic-warning: rgba(255, 131, 0, 1);
+    --semantic-warning-off: rgba(255, 230, 204, 1);
+    --semantic-warning-content: rgba(137, 71, 1, 1);
+    --semantic-failure: rgba(220, 53, 69, 1);
+    --semantic-failure-off: rgba(248, 215, 218, 1);
+    --semantic-failure-content: rgba(176, 42, 55, 1);
+    --semantic-error: rgba(220, 53, 69, 1);
+    --semantic-error-star: rgba(169, 30, 44, 1);
+    --royal-blue-50: rgba(238, 242, 253, 1);
+    --royal-blue-100: rgba(217, 225, 249, 1);
+    --royal-blue-200: rgba(183, 198, 244, 1);
+    --royal-blue-300: rgba(142, 166, 237, 1);
+    --royal-blue-400: rgba(107, 137, 231, 1);
+    --royal-blue-500: rgba(65, 105, 225, 1);
+    --royal-blue-600: rgba(55, 88, 188, 1);
+    --royal-blue-700: rgba(47, 82, 193, 1);
+    --royal-blue-800: rgba(34, 58, 125, 1);
+    --royal-blue-900: rgba(22, 37, 79, 1);
+    --light-grey-50: rgba(247, 247, 247, 1);
+    --light-grey-100: rgba(239, 239, 239, 1);
+    --light-grey-200: rgba(229, 229, 229, 1);
+    --light-grey-300: rgba(220, 220, 220, 1);
+    --light-grey-400: rgba(212, 212, 212, 1);
+    --light-grey-500: rgba(205, 204, 204, 1);
+    --light-grey-600: rgba(180, 179, 179, 1);
+    --light-grey-700: rgba(156, 154, 154, 1);
+    --light-grey-800: rgba(131, 130, 130, 1);
+    --light-grey-900: rgba(106, 105, 105, 1);
+    --medium-grey-50: rgba(242, 242, 242, 1);
+    --medium-grey-100: rgba(224, 224, 224, 1);
+    --medium-grey-200: rgba(189, 189, 189, 1);
+    --medium-grey-300: rgba(155, 155, 155, 1);
+    --medium-grey-400: rgba(122, 122, 122, 1);
+    --medium-grey-500: rgba(91, 91, 91, 1);
+    --medium-grey-600: rgba(77, 77, 77, 1);
+    --medium-grey-700: rgba(61, 61, 61, 1);
+    --medium-grey-800: rgba(46, 46, 46, 1);
+    --medium-grey-900: rgba(31, 31, 31, 1);
+    --text-primary: rgba(31, 31, 31, 1);
+    --text-secondary: rgba(77, 77, 77, 1);
+    --text-on-brand: rgba(255, 255, 255, 1);
+    --text-link: rgba(47, 82, 193, 1);
+
+    /* Typography Styles */
+    --font-family-heading: "Urbanist";
+    --font-weight-heading: 700;
+    --font-family-paragraph: "Urbanist";
+    --font-weight-paragraph: 400;
+    --font-size-h1: 36px;
+    --font-size-h2: 34px;
+    --font-size-h3: 32px;
+    --font-size-h4: 30px;
+    --font-size-h5: 28px;
+    --font-size-h6: 26px;
+    --font-size-p-xl: 20px;
+    --font-size-p-l: 18px;
+    --font-size-p-m: 16px;
+    --font-size-p-s: 14px;
+    --font-size-p-xs: 12px;
+    --font-size-p-xxs: 10px;
+
+    /* Effect Styles */
+    --shadow-soft: 0px 4px 16px 0px rgba(0, 0, 0, 0.08);
+    --shadow-medium: 0px 8px 24px 0px rgba(0, 0, 0, 0.12);
+    --shadow-strong: 0px 16px 40px 0px rgba(0, 0, 0, 0.18);
+    --focus-brand: 0px 0px 0px 3px rgba(65, 105, 225, 0.4);
+}
+
+body {
+    font-family: var(--font-family-paragraph);
+    font-size: var(--font-size-p-m);
+    font-weight: var(--font-weight-paragraph);
+    color: var(--text-primary);
+    background-color: var(--light-grey-50);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-family-heading);
+    font-weight: var(--font-weight-heading);
+    color: var(--text-primary);
+    line-height: 1.2;
+    margin: 0;
+}
+
+h1 {
+    font-size: var(--font-size-h1);
+}
+
+h2 {
+    font-size: var(--font-size-h2);
+}
+
+h3 {
+    font-size: var(--font-size-h3);
+}
+
+h4 {
+    font-size: var(--font-size-h4);
+}
+
+h5 {
+    font-size: var(--font-size-h5);
+}
+
+h6 {
+    font-size: var(--font-size-h6);
+}
+
+@media (max-width: 1024px) {
+    h1 {
+        font-size: 32px;
+    }
+
+    h2 {
+        font-size: 30px;
+    }
+
+    h3 {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 640px) {
+    h1 {
+        font-size: 28px;
+    }
+
+    h2 {
+        font-size: 26px;
+    }
+
+    h3 {
+        font-size: 24px;
+    }
+}
+
+p {
+    font-family: var(--font-family-paragraph);
+    font-size: var(--font-size-p-m);
+    font-weight: var(--font-weight-paragraph);
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.6;
+}
+
+.btn,
+button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: none;
+
+    font-family: var(--font-family-paragraph);
+    font-size: var(--font-size-p-s);
+    font-weight: 500;
+
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: var(--brand-primary);
+    color: var(--text-on-brand);
+}
+
+.btn-primary:hover {
+    background: var(--royal-blue-600);
+}
+
+.btn-secondary {
+    background: var(--light-grey-200);
+    color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+    background: var(--light-grey-300);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--light-grey-300);
+    color: var(--text-primary);
+}
+
+.btn-outline:hover {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+}
+
+.btn:focus {
+    box-shadow: var(--focus-brand);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
