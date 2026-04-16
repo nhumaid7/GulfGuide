@@ -21,3 +21,12 @@ GulfGuide is a web-based platform designed to provide users with helpful informa
 * JavaScript
 * MySQL (via phpMyAdmin)
 * Apache Web Server (University Server)
+
+
+## Testing Accounts Credintials
+
+| role     | email      | Password      |
+| ------------- | ------------- | ------------- |
+| Admin | admin@GulfGuide.com| 123456 |
+| Creator | creator1@GulfGuide.com | 123456 |
+| Viewer/User | viewer@GulfGuide.com | 123456 |
