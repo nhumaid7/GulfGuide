@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Post</title>
+</head>
+<body>
+    <h2>Create a Post</h2>
+
+    <form id="postForm">
+        <label for="title">Title:</label><br>
+        <input type="text" id="title" name="title" required><br><br>
+
+        <label for="content">Content:</label><br>
+        <textarea id="content" name="content" rows="5" cols="40" required></textarea><br><br>
+
+
+        <input type="number" name="country_id" placeholder="Country ID" required><br><br>
+
+        <input type="number" name="attraction_id" placeholder="Attraction ID (optional)"><br><br>
+
+        <input type="text" name="thumbnail" placeholder="Thumbnail URL" required>
+
+        <input type="submit" value="Create Post">
+
+    </form>
+
+
+
+    <p id="response"></p>
+
+<script src="create-post.js"></script>
+
+
+</body>
+</html>
