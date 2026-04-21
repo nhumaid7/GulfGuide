@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/config/dbConn.php';
 require_once __DIR__ . '/classes/user.php';
 
 $uri = parse_url($_SERVER['REQUEST_URI'])['path'];
@@ -30,8 +31,8 @@ function routeToController($uri, $routes)
             'page'=>$routes[$uri],
             'params'=>[]
         ];
-    } if (preg_match('#^/country/([^/]+)$#', $uri, $matches)) {
-        return ['page' => __DIR__ . '/pages/countries/show.php', 'params' => ['name' => $matches[1]]];
+    } else if (preg_match('#^/country/(\d+)$#', $uri, $matches)) {
+        return ['page' => __DIR__ . '/pages/countries/show.php', 'params' => ['id' => $matches[1]]];
     } else if (preg_match('#^/posts/(\d+)$#', $uri, $matches)) {
         return ['page' => __DIR__ . '/pages/posts/show.php', 'params' => ['id' => $matches[1]]];
     } else if (preg_match('#^/locations/(\d+)$#', $uri, $matches)) {
@@ -49,6 +50,7 @@ function abort($code = 404)
     require __DIR__ . "/pages/errors/{$code}.php";
     die();
 }
+
 $route = routeToController($uri,$routes);
 $page = $route['page'];
 $params = $route['params'];
