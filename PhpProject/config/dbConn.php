@@ -1,15 +1,19 @@
 <?php
-define('DB_SERVER', 'localhost');
+define('DB_SERVER',   '20.74.143.233'); 
 define('DB_USERNAME', 'u202304056');
 define('DB_PASSWORD', "asdASD123!");
 define('DB_NAME', 'db202304056');
 
-function getConnection(){
-$link = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
-
-if($link === false){
-    die("ERROR: Could not connect. " . mysqli_connect_error());
-}
-return $link ;
+try {
+    $pdo = new PDO(
+        "mysql:host=" . DB_SERVER . ";dbname=" . DB_NAME . ";charset=utf8",                           
+        DB_USERNAME,
+        DB_PASSWORD
+    );
+    $pdo->setAttribute(PDO::ATTR_ERRMODE,            PDO::ERRMODE_EXCEPTION);
+    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES,   false);
+} catch (PDOException $e) {
+    die("Database connection failed: " . $e->getMessage());
 }
 ?>

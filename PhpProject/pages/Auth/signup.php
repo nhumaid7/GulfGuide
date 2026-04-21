@@ -1,88 +1,153 @@
 <?php
-require_once "dbConn.php";
+require_once "../../init.php";
 
-$username = $password = $confirm_password = "";
-$username_err = $password_err = $confirm_password_err = "";
+if (isLoggedIn()) {
+    redirectByRole();
+}
 
-if($_SERVER["REQUEST_METHOD"] == "POST"){
-    if(empty(trim($_POST["username"]))){
+$username_err = $email_err = $password_err = $confirm_err = "";
+$username = $email = "";
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+
+    // Username
+    if (empty(trim($_POST["username"]))) {
         $username_err = "Please enter a username.";
-    } else{
-        $sql = "SELECT id FROM users WHERE username = ?";
-        
-        if($stmt = mysqli_prepare($link, $sql)){
-            mysqli_stmt_bind_param($stmt, "s", $param_username);
-            $param_username = trim($_POST["username"]);
-            
-            if(mysqli_stmt_execute($stmt)){
-                mysqli_stmt_store_result($stmt);
-                
-                if(mysqli_stmt_num_rows($stmt) == 1){
-                    $username_err = "This username is already taken.";
-                } else{
-                    $username = trim($_POST["username"]);
-                }
-            } else{
-                echo "Something went wrong.";
-            }
-
-            mysqli_stmt_close($stmt);
+    } else {
+        $username = sanitize(trim($_POST["username"]));
+        $stmt = $pdo->prepare("SELECT user_id FROM dbProj_user WHERE username = :username");
+        $stmt->execute([':username' => $username]);
+        if ($stmt->rowCount() > 0) {
+            $username_err = "This username is already taken.";
         }
     }
-    
-    if(empty(trim($_POST["password"]))){
-        $password_err = "Please enter a password.";     
-    } elseif(strlen(trim($_POST["password"])) < 6){
-        $password_err = "Password must have at least 6 characters.";
-    } else{
+
+    // Email
+    if (empty(trim($_POST["email"]))) {
+        $email_err = "Please enter an email.";
+    } elseif (!filter_var(trim($_POST["email"]), FILTER_VALIDATE_EMAIL)) {
+        $email_err = "Please enter a valid email address.";
+    } else {
+        $email = sanitize(trim($_POST["email"]));
+        $stmt = $pdo->prepare("SELECT user_id FROM dbProj_user WHERE email = :email");
+        $stmt->execute([':email' => $email]);
+        if ($stmt->rowCount() > 0) {
+            $email_err = "This email is already registered.";
+        }
+    }
+
+    // Password
+    if (empty(trim($_POST["password"]))) {
+        $password_err = "Please enter a password.";
+    } elseif (strlen(trim($_POST["password"])) < 6) {
+        $password_err = "Password must be at least 6 characters.";
+    } else {
         $password = trim($_POST["password"]);
     }
-    
-    if(empty(trim($_POST["confirm_password"]))){
-        $confirm_password_err = "Please confirm password.";     
-    } else{
-        $confirm_password = trim($_POST["confirm_password"]);
-        if(empty($password_err) && ($password != $confirm_password)){
-            $confirm_password_err = "Passwords did not match.";
-        }
+
+    // Confirm password
+    if (empty(trim($_POST["confirm_password"]))) {
+        $confirm_err = "Please confirm your password.";
+    } elseif (trim($_POST["confirm_password"]) !== ($password ?? '')) {
+        $confirm_err = "Passwords do not match.";
     }
 
-    if(empty($username_err) && empty($password_err) && empty($confirm_password_err)){
-        $sql = "INSERT INTO users (username, password) VALUES (?, ?)";
-         
-        if($stmt = mysqli_prepare($link, $sql)){
-            mysqli_stmt_bind_param($stmt, "ss", $param_username, $param_password);
-            $param_username = $username;
-            $param_password = password_hash($password, PASSWORD_DEFAULT);
-            
-            if(mysqli_stmt_execute($stmt)){
-                header("location: login.php");
-            } else{
-                echo "Something went wrong.";
-            }
+    // Insert if no errors
+    if (empty($username_err) && empty($email_err) && empty($password_err) && empty($confirm_err)) {
+        $hashed = password_hash($password, PASSWORD_DEFAULT);
 
-            mysqli_stmt_close($stmt);
-        }
+        $sql  = "INSERT INTO dbProj_user (username, email, hashed_password, `role`, created_at)
+                 VALUES (:username, :email, :hashed_password, :role, NOW())";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':username'        => $username,
+            ':email'           => $email,
+            ':hashed_password' => $hashed,
+            ':role'            => ROLE_VISITOR,
+        ]);
+
+        // Auto-login after registration
+        $user_id = $pdo->lastInsertId();
+        $_SESSION['user_id']  = $user_id;
+        $_SESSION['username'] = $username;
+        $_SESSION['email']    = $email;
+        $_SESSION['role']     = ROLE_VISITOR;
+
+        redirectByRole();
     }
-
-    mysqli_close($link);
 }
 ?>
 
-<!- HTML Form ->
-<form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
-    <label>Username</label>
-    <input type="text" name="username" value="<?php echo $username; ?>">
-    <span><?php echo $username_err; ?></span>
+<main class="container my-5">
+    <h2 class="text-center mb-4">Create Account</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <form action="register.php" method="post" novalidate>
 
-    <label>Password</label>
-    <input type="password" name="password">
-    <span><?php echo $password_err; ?></span>
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username *</label>
+                    <input
+                        type="text"
+                        class="form-control <?= !empty($username_err) ? 'is-invalid' : '' ?>"
+                        id="username"
+                        name="username"
+                        value="<?= htmlspecialchars($username) ?>"
+                        required
+                    >
+                    <?php if (!empty($username_err)): ?>
+                        <div class="invalid-feedback"><?= $username_err ?></div>
+                    <?php endif; ?>
+                </div>
 
-    <label>Confirm Password</label>
-    <input type="password" name="confirm_password">
-    <span><?php echo $confirm_password_err; ?></span>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email address *</label>
+                    <input
+                        type="email"
+                        class="form-control <?= !empty($email_err) ? 'is-invalid' : '' ?>"
+                        id="email"
+                        name="email"
+                        value="<?= htmlspecialchars($email) ?>"
+                        required
+                    >
+                    <?php if (!empty($email_err)): ?>
+                        <div class="invalid-feedback"><?= $email_err ?></div>
+                    <?php endif; ?>
+                </div>
 
-    <input type="submit" value="Register">
-    <a href="login.php">Already have an account? Login here.</a>
-</form>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password *</label>
+                    <input
+                        type="password"
+                        class="form-control <?= !empty($password_err) ? 'is-invalid' : '' ?>"
+                        id="password"
+                        name="password"
+                        required
+                    >
+                    <?php if (!empty($password_err)): ?>
+                        <div class="invalid-feedback"><?= $password_err ?></div>
+                    <?php endif; ?>
+                </div>
+
+                <div class="mb-3">
+                    <label for="confirm_password" class="form-label">Confirm Password *</label>
+                    <input
+                        type="password"
+                        class="form-control <?= !empty($confirm_err) ? 'is-invalid' : '' ?>"
+                        id="confirm_password"
+                        name="confirm_password"
+                        required
+                    >
+                    <?php if (!empty($confirm_err)): ?>
+                        <div class="invalid-feedback"><?= $confirm_err ?></div>
+                    <?php endif; ?>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Register</button>
+            </form>
+
+            <p class="mt-3 text-center">
+                Already have an account? <a href="login.php">Login here</a>.
+            </p>
+        </div>
+    </div>
+</main>

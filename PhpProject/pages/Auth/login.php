@@ -1,70 +1,102 @@
 <?php
-session_start();
-require_once "dbConn.php";
+require_once "../../init.php";
 
-$username = $password = "";
-$username_err = $password_err = "";
+// If already logged in, redirect to their dashboard
+if (isLoggedIn()) {
+    redirectByRole();
+}
 
-if($_SERVER["REQUEST_METHOD"] == "POST"){
-    if(empty(trim($_POST["username"]))){
-        $username_err = "Please enter username.";
-    } else{
-        $username = trim($_POST["username"]);
+$email_err = $password_err = $login_err = "";
+$email = "";
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+
+    // Validate email
+    if (empty(trim($_POST["email"]))) {
+        $email_err = "Please enter your email.";
+    } else {
+        $email = sanitize(trim($_POST["email"]));
     }
-    
-    if(empty(trim($_POST["password"]))){
+
+    // Validate password
+    if (empty(trim($_POST["password"]))) {
         $password_err = "Please enter your password.";
-    } else{
+    } else {
         $password = trim($_POST["password"]);
     }
-    
-    if(empty($username_err) && empty($password_err)){
-        $sql = "SELECT id, username, password FROM users WHERE username = ?";
-        
-        if($stmt = mysqli_prepare($link, $sql)){
-            mysqli_stmt_bind_param($stmt, "s", $param_username);
-            $param_username = $username;
-            
-            if(mysqli_stmt_execute($stmt)){
-                mysqli_stmt_store_result($stmt);
-                
-                if(mysqli_stmt_num_rows($stmt) == 1){                    
-                    mysqli_stmt_bind_result($stmt, $id, $username, $hashed_password);
-                    if(mysqli_stmt_fetch($stmt)){
-                        if(password_verify($password, $hashed_password)){
-                            session_start();
-                            $_SESSION["loggedin"] = true;
-                            $_SESSION["id"] = $id;
-                            $_SESSION["username"] = $username;                            
-                            header("location: welcome.php");
-                        } else{
-                            $password_err = "Invalid password.";
-                        }
-                    }
-                } else{
-                    $username_err = "No account found.";
-                }
-            } else{
-                echo "Something went wrong.";
-            }
 
-            mysqli_stmt_close($stmt);
+    // Attempt login if no validation errors
+    if (empty($email_err) && empty($password_err)) {
+        $sql  = "SELECT user_id, username, email, hashed_password, `role`
+                 FROM dbProj_user
+                 WHERE email = :email
+                 LIMIT 1";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':email' => $email]);
+        $user = $stmt->fetch();
+
+        if ($user && password_verify($password, $user['hashed_password'])) {
+            // Credentials valid — store in session
+            $_SESSION['user_id']  = $user['user_id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['email']    = $user['email'];
+            $_SESSION['role']     = $user['role'];
+
+            redirectByRole();
+        } else {
+            $login_err = "Invalid email or password.";
         }
     }
-
-    mysqli_close($link);
 }
 ?>
 
-<!- HTML Form ->
-<form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
-    <label>Username</label>
-    <input type="text" name="username">
-    <span><?php echo $username_err; ?></span>
+<!-- Main Content -->
+<main class="container my-5">
+    <h2 class="text-center mb-4">Login</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
 
-    <label>Password</label>
-    <input type="password" name="password">
-    <span><?php echo $password_err; ?></span>
+            <?php if (!empty($login_err)): ?>
+                <div class="alert alert-danger"><?= $login_err ?></div>
+            <?php endif; ?>
 
-    <input type="submit" value="Login">
-</form>
+            <form action="login.php" method="post" novalidate>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email address *</label>
+                    <input
+                        type="email"
+                        class="form-control <?= !empty($email_err) ? 'is-invalid' : '' ?>"
+                        id="email"
+                        name="email"
+                        value="<?= htmlspecialchars($email) ?>"
+                        required
+                    >
+                    <?php if (!empty($email_err)): ?>
+                        <div class="invalid-feedback"><?= $email_err ?></div>
+                    <?php endif; ?>
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password *</label>
+                    <input
+                        type="password"
+                        class="form-control <?= !empty($password_err) ? 'is-invalid' : '' ?>"
+                        id="password"
+                        name="password"
+                        required
+                    >
+                    <?php if (!empty($password_err)): ?>
+                        <div class="invalid-feedback"><?= $password_err ?></div>
+                    <?php endif; ?>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Login</button>
+            </form>
+
+            <p class="mt-3 text-center">
+                Don't have an account? <a href="register.php">Register here</a>.
+            </p>
+        </div>
+    </div>
+</main>
