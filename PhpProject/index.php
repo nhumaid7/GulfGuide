@@ -1,5 +1,4 @@
 <?php
-require_once __DIR__ . '/config/dbConn.php';
 require_once __DIR__ . '/classes/user.php';
 
 $uri = parse_url($_SERVER['REQUEST_URI'])['path'];
