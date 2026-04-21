@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once "config.php";
+require_once "dbConn.php";
 
 $username = $password = "";
 $username_err = $password_err = "";
