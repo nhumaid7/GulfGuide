@@ -1,0 +1,29 @@
+<?php
+$path_parts = explode('/', trim($uri, '/'));
+$depth = count(array_filter($path_parts));
+$base_prefix = str_repeat('../', $depth);
+?>
+<header class="topbar">
+    <div class="topbar-left">
+        <button class="menu-toggle" aria-label="Toggle Menu">
+            <i class="ph ph-list"></i>
+        </button>
+
+        <div class="flex-grow-1">
+            <form class="d-flex" role="search" style="max-width: 300px;">
+                <input type="text" class="form-control" id="search-input" placeholder="Search...">
+            </form>
+        </div>
+    </div>
+
+    <div class="topbar-right">
+        <div class="user-dropdown">
+            <a href="javascript:void(0)" class="user-profile">
+                <img src="<?php echo $base_prefix; ?>assets/images/avater.png" alt="User" class="user-avatar">
+                <span class="d-none d-sm-inline small">Welcome,
+                    <strong><?php echo $currentUser ? $currentUser->getUsername() : 'User'; ?></strong>
+                </span>
+            </a>
+        </div>
+    </div>
+</header>

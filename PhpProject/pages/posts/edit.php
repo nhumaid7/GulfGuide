@@ -1,0 +1,1 @@
+post edit <?php echo $params['id']; ?>

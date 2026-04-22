@@ -1,3 +1,164 @@
+:root {
+    --sidebar-width: 215px;
+    --topbar-h: 60px;
+}
+
+@media (max-width:992px){
+    :root{
+        --sidebar-width: 0px;
+        --topbar-h: 90px;
+    }
+
+    .menu-toggle{
+        display:flex;
+    }
+}
+
+
+.topbar {
+    height: var(--topbar-h);
+    background: #fff;
+    border-bottom: 1px solid var(--light-grey-200);
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    padding: 0px 20px;
+    padding-left: calc(var(--sidebar-width) + 20px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    justify-content: flex-end;
+}
+
+.menu-toggle {
+    display: none;
+    background: none;
+    border: 1px solid var(--light-grey-200);
+    border-radius: 6px;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.menu-toggle:hover {
+    background: var(--light-color);
+    border-color: var(--light-grey-700);
+}
+
+@media (max-width: 992px) {
+    .menu-toggle {
+        display: flex;
+    }
+}
+
+.user-dropdown {
+    position: relative;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+}
+
+.user-profile:hover {
+    opacity: 0.8;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid var(--light-grey-200);
+}
+
+.user-avatar img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s ease;
+}
+
+.user-profile:hover .user-avatar img{
+    transform: scale(1.08); /* subtle zoom */
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid var(--light-grey-200);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    min-width: 200px;
+    z-index: 1001;
+    display: none;
+    margin-top: 8px;
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+.dropdown-menu a,
+.dropdown-menu button {
+    display: block;
+    width: 100%;
+    padding: 10px 15px;
+    border: none;
+    background: none;
+    text-align: left;
+    color: var(--text-primary);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+    font-size: 14px;
+}
+
+.dropdown-menu a:hover,
+.dropdown-menu button:hover {
+    background: var(--light-color);
+}
+
+.dropdown-menu a:first-child,
+.dropdown-menu button:first-child {
+    border-radius: 8px 8px 0 0;
+}
+
+.dropdown-menu a:last-child,
+.dropdown-menu button:last-child {
+    border-radius: 0 0 8px 8px;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: var(--light-grey-200);
+    margin: 5px 0;
+}
+
+
 .sidebar {
     width: 215px;
     min-height: 100vh;
@@ -9,9 +170,31 @@
     gap: 12px;
     top: 0;
     left: 0;
-    z-index: 100;
-    transition: transform .25s ease;
+    z-index: 1000;
+    transition: transform 0.25s ease, width 0.25s ease;
+    overflow-y: auto;
+    padding: 20px;
 }
+
+
+.sidebar.collapsed {
+    width: 80px;
+}
+
+.sidebar.hidden {
+    transform: translateX(-100%);
+}
+
+@media (max-width: 992px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.show {
+        transform: translateX(0);
+    }
+}
+
 
 .sidebar-brand {
     display: flex;
@@ -53,7 +236,9 @@
     list-style: none;
     padding: 0;
 }
-
+.sidebar-nav li {
+    margin-bottom: 4px;
+}
 .sidebar-nav li a {
     display: flex;
     align-items: center;
@@ -62,7 +247,7 @@
     border-radius: 8px;
     color: var(--text-secondary);
     text-decoration: none;
-    font-size: var(--font-size-p-m);
+    font-size: var(--font-size-p-s);
     font-weight: var(--font-weight-heading);
     border: 2px solid transparent;
     transition: background .15s, color .15s, border-color .10s;
@@ -92,8 +277,7 @@
 }
 
 .main {
-    margin-left: 215px;
-    margin-top: var(--topbar-h);
+    margin-left: var(--sidebar-width);
     flex: 1;
     padding: 28px;
     min-height: calc(100vh - var(--topbar-h));
