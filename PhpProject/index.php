@@ -1,8 +1,16 @@
 <?php
+
 require_once __DIR__ . '/config/dbConn.php';
 require_once __DIR__ . '/classes/user.php';
 
-$uri = parse_url($_SERVER['REQUEST_URI'])['path'];
+$base = '/GulfGuide/PhpProject/index.php';
+$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$uri = str_replace($base, '', $uri);
+
+if ($uri === '') {
+    $uri = '/';
+}
+
 $routes = [
     '/' => __DIR__ . '/pages/view-index.php',
     '/country/all' => __DIR__ . '/pages/countries/index.php',

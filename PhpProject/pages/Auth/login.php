@@ -1,5 +1,5 @@
 <?php
-require_once "../../init.php";
+require_once __DIR__ . '/../../init.php';
 
 // If already logged in, redirect to their dashboard
 if (isLoggedIn()) {
@@ -95,7 +95,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </form>
 
             <p class="mt-3 text-center">
-                Don't have an account? <a href="register.php">Register here</a>.
+                Don't have an account? <a href="/PhpProject/pages/Auth/signup.php">Register here</a>
             </p>
         </div>
     </div>
