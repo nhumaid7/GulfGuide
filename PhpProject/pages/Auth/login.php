@@ -1,7 +1,5 @@
 <?php
-require_once __DIR__ . '/../../init.php';
 
-// If already logged in, redirect to their dashboard
 if (isLoggedIn()) {
     redirectByRole();
 }
@@ -36,8 +34,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $stmt->execute([':email' => $email]);
         $user = $stmt->fetch();
 
-        if ($user && password_verify($password, $user['hashed_password'])) {
-            // Credentials valid — store in session
+        $passwordOk = false;
+
+        if ($user) {
+            if (password_verify($password, $user['hashed_password'])) {
+                // Properly hashed — normal path
+                $passwordOk = true;
+            } elseif ($password === $user['hashed_password']) {
+                // Plain text match (old test account) — upgrade the hash now
+                $passwordOk = true;
+                $newHash = password_hash($password, PASSWORD_DEFAULT);
+                $upd = $pdo->prepare("UPDATE dbProj_user SET hashed_password = :h WHERE user_id = :id");
+                $upd->execute([':h' => $newHash, ':id' => $user['user_id']]);
+            }
+        }
+
+        if ($passwordOk) {
             $_SESSION['user_id']  = $user['user_id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['email']    = $user['email'];
@@ -51,8 +63,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 ?>
 
-<!-- Main Content -->
-<main class="container my-5">
+<div class="container my-5">
     <h2 class="text-center mb-4">Login</h2>
     <div class="row justify-content-center">
         <div class="col-md-6">
@@ -61,7 +72,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <div class="alert alert-danger"><?= $login_err ?></div>
             <?php endif; ?>
 
-            <form action="login.php" method="post" novalidate>
+            <form action="" method="post">
                 <div class="mb-3">
                     <label for="email" class="form-label">Email address *</label>
                     <input
@@ -95,8 +106,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </form>
 
             <p class="mt-3 text-center">
-                Don't have an account? <a href="/PhpProject/pages/Auth/signup.php">Register here</a>
+                Don't have an account? <a href="<?= APP_BASE ?>/signup">Register here</a>
             </p>
         </div>
     </div>
-</main>
+</div>

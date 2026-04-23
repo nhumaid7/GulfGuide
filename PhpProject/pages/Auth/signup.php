@@ -1,5 +1,5 @@
 <?php
-require_once "../../init.php";
+// init.php is already loaded by index.php router — do NOT require it again
 
 if (isLoggedIn()) {
     redirectByRole();
@@ -78,11 +78,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 ?>
 
-<main class="container my-5">
+<div class="container my-5">
     <h2 class="text-center mb-4">Create Account</h2>
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <form action="register.php" method="post" novalidate>
+            <form action="" method="post" novalidate>
 
                 <div class="mb-3">
                     <label for="username" class="form-label">Username *</label>
@@ -146,8 +146,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </form>
 
             <p class="mt-3 text-center">
-                Already have an account? <a href="login.php">Login here</a>.
+                Already have an account? <a href="<?= APP_BASE ?>/login">Login here</a>.
             </p>
         </div>
     </div>
-</main>
+</div>

@@ -1,8 +1,8 @@
 <?php
 define('DB_SERVER', 'localhost');
-define('DB_USERNAME', 'root');
-define('DB_PASSWORD', '');
-define('DB_NAME', 'test');
+define('DB_USERNAME', 'u202304056');
+define('DB_PASSWORD', 'asdASD123!');
+define('DB_NAME', 'db202304056') ;   
 
 try {
     $pdo = new PDO(
@@ -16,4 +16,7 @@ try {
 } catch (PDOException $e) {
     die("Database connection failed: " . $e->getMessage());
 }
+
+
+
 ?>

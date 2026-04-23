@@ -1,6 +1,6 @@
 <?php
 // User roles
-define('ROLE_VISITOR',  'visitor');
+define('ROLE_VISITOR',  'user');
 define('ROLE_CREATOR',  'creator');
 define('ROLE_ADMIN',    'admin');
 
