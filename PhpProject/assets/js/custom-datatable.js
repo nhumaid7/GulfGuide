@@ -21,7 +21,7 @@ $(document).ready(function () {
             language: {
                 search: 'Search:',
                 lengthMenu: 'Show _MENU_ records',
-                info: 'Showing _START_ to _END_ of _TOTAL_ record | Hold SHIFT to sort multiple columns',
+                info: 'Showing _START_ to _END_ of _TOTAL_ records | Hold SHIFT to sort multiple columns',
                 emptyTable: 'No record found',
                 zeroRecords: 'No matching record found'
             }

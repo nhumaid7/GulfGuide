@@ -209,7 +209,7 @@
 }
 
 .brand-name {
-    font-size: var(--font-size-h6);
+    font-size: var(--font-size-h5);
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: .4px;
@@ -218,7 +218,7 @@
 
 .brand-name span {
     display: block;
-    font-size: var(--font-size-p-xxs);
+    font-size: 10px;
     color: var(--text-secondary);
     letter-spacing: .8px;
     text-transform: uppercase;
@@ -318,7 +318,7 @@
      padding: 1rem 2rem;
 }
 
-table.dataTable {
+table.dataTable, table {
     width: 100%;
     color: var(--text-primary);
     border-radius: 8px;

@@ -9,7 +9,7 @@ $depth = count(array_filter(explode('/', trim($uri, '/'))));
 $base_prefix = str_repeat('../', $depth); 
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-US">
 
 <head>
     <meta charset="UTF-8">

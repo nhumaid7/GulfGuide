@@ -1,4 +1,9 @@
 <?php
+$script = $_SERVER['SCRIPT_NAME'];   // /~u202304056/PhpProject/index.php
+$base = dirname($script);          // /~u202304056/PhpProject
+
+define('APP_BASE', $script);
+
 // User roles
 define('ROLE_VISITOR',  'user');
 define('ROLE_CREATOR',  'creator');
@@ -20,8 +25,10 @@ define('MEDIA_VIDEO', 'video');
 
 
 // for redirection purposes only 
-define('REDIRECT_ADMIN',   'pages/admin/dashboard.php');
-define('REDIRECT_CREATOR', 'pages/creator/dashboard.php');
-define('REDIRECT_VISITOR', 'pages/home.php');
-define('REDIRECT_LOGIN',   'login.php')
+define('REDIRECT_ADMIN',   APP_BASE .'/admin/dashboard');
+define('REDIRECT_CREATOR', APP_BASE .'/creator/home');
+define('REDIRECT_VISITOR', APP_BASE .'/');
+define('REDIRECT_LOGIN',   APP_BASE .'/login')
+        
+
 ?>

@@ -24,8 +24,6 @@ require_once __DIR__ . "/classes/country.php";
 $script = $_SERVER['SCRIPT_NAME'];   // /~u202304056/PhpProject/index.php
 $base = dirname($script);          // /~u202304056/PhpProject
 
-define('APP_BASE', $script);
-
 // Strip the base dir and "/index.php" from the request path → clean $uri
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $uri = str_replace($base, '', $uri);
@@ -40,13 +38,14 @@ if (isset($_SESSION['role']) && $_SESSION['role'] === 'user') {
 // ─── Route table ─────────────────────────────────────────────────────────────
 $routes = [
     '/' => __DIR__ . '/pages/view-index.php',
+    '/home' => __DIR__ . '/pages/home.php',
     '/login' => __DIR__ . '/pages/Auth/login.php',
     '/signup' => __DIR__ . '/pages/Auth/signup.php',
     '/logout' => __DIR__ . '/pages/Auth/logout.php',
     '/country/all' => __DIR__ . '/pages/countries/index.php',
     '/posts/all' => __DIR__ . '/pages/posts/index.php',
     '/locations/all' => __DIR__ . '/pages/locations/index.php',
-    '/creator/' => __DIR__ . '/pages/creator/creator-home.php',
+    '/creator/home' => __DIR__ . '/pages/creator/creator-home.php',
     '/creator/create-post' => __DIR__ . '/pages/posts/add.php',
     '/admin/dashboard' => __DIR__ . '/pages/admin/dashboard.php',
     '/admin/location-list' => __DIR__ . '/pages/locations/index.php',
@@ -180,7 +179,7 @@ $content = ob_get_clean();
         <?php endif; ?>
 
         <main class="main">
-            <?php require $page; ?>
+            <?= $content ?>
         </main>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> 
         <!-- Bootstrap JS bundle -->
