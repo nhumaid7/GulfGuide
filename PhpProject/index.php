@@ -179,7 +179,7 @@ $content = ob_get_clean();
         <?php endif; ?>
 
         <main class="main">
-            <?= $content ?>
+            <?php require $page; ?>
         </main>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> 
         <!-- Bootstrap JS bundle -->

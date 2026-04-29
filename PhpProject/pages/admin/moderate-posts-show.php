@@ -4,9 +4,18 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 }
 
 $id = $params['id'] ?? null;
-
 if (!$id) {
     abort(404);
+}
+if ($id != null) {
+    $stmt = $pdo->prepare('SELECT * FROM dbProj_post p '
+            . 'JOIN dbProj_user u ON p.user_id = u.user_id '
+            . 'JOIN dbProj_country c ON p.country_id = c.country_id '
+            . 'WHERE p.post_id = :postId');
+    $stmt->execute([':postId' => $id]);
+    $postRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $posts = array_map([Post::class, 'fromArray'], $postRows);
+    $post = $posts[0] ?? null;
 }
 ?>
 
@@ -77,6 +86,14 @@ if (!$id) {
             <div class="card-section">
                 <div class="card-section--header">
                     <h6>Author Details</h6>
+                </div>
+                <div class="card-section--body">
+                    <table>
+                        <tr>
+                            <th>Name:</th>
+                            <td><?= htmlspecialchars($postRows[0]['name']) ?></td>
+                        </tr>
+                    </table>
                 </div>
             </div>
         </div>
