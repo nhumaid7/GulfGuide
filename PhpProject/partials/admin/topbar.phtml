@@ -2,6 +2,7 @@
 $path_parts = explode('/', trim($uri, '/'));
 $depth = count(array_filter($path_parts));
 $base_prefix = str_repeat('../', $depth);
+$username   = $_SESSION['username'] ?? null;
 ?>
 <header class="topbar">
     <div class="topbar-left">
@@ -20,9 +21,10 @@ $base_prefix = str_repeat('../', $depth);
         <div class="user-dropdown">
             <a href="javascript:void(0)" class="user-profile">
                 <img src="<?php echo $base_prefix; ?>assets/images/avater.png" alt="User" class="user-avatar">
-                <span class="d-none d-sm-inline small">Welcome,
-                    <strong><?php echo $currentUser ? $currentUser->getUsername() : 'User'; ?></strong>
-                </span>
+                <p class="small">
+                    <span class=""d-none d-sm-inline">Welcome,</span>
+                    <strong><?php echo $username; ?></strong>
+                </p>
             </a>
         </div>
     </div>

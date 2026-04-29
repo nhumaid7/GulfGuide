@@ -23,6 +23,7 @@
     top: 0;
     z-index: 999;
     display: flex;
+    gap: 10px;
     align-items: center;
     padding: 0px 20px;
     padding-left: calc(var(--sidebar-width) + 20px);
@@ -161,7 +162,7 @@
 
 .sidebar {
     width: 215px;
-    min-height: 100vh;
+    height: 100dvh;
     background: #fff;
     border-right: 1px solid var(--light-grey-200);
     display: flex;
@@ -281,4 +282,124 @@
     flex: 1;
     padding: 28px;
     min-height: calc(100vh - var(--topbar-h));
+}
+
+.breadcrumb .breadcrumb-item a, .breadcrumb .breadcrumb-item {
+    color: var(--text-secondary);
+}
+
+.breadcrumb .breadcrumb-item.active a, .breadcrumb .breadcrumb-item.active {
+    color: var(--text-primary);
+    width: var(--font-weight-semibold);
+}
+
+.card-section {
+    border-radius: 1rem;
+    border: 1px solid var(--light-grey-200);
+    background-color: #fff;
+}
+
+.card-section .card-section--header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem; 
+    padding: 1rem 2rem;
+}
+
+.card-section .card-section--divider {
+    height: 1px;
+    background: var(--light-grey-50);
+    margin: 0;
+}
+
+.card-section .card-section--body {
+     padding: 1rem 2rem;
+}
+
+table.dataTable {
+    width: 100%;
+    color: var(--text-primary);
+    border-radius: 8px;
+}
+.dt-container {
+    border-radius: 0.75rem;
+    border: 1px solid var(--light-grey-200);
+}
+
+.dt-container > div:first-child , .dt-container > div:last-child{
+    padding: 0.5rem 0.75rem;
+}
+table.dataTable thead>tr>th.dt-orderable-asc, table.dataTable thead>tr>th.action-th, table.dataTable thead>tr>th.dt-orderable-desc, table.dataTable thead>tr>th.dt-ordering-asc, table.dataTable thead>tr>th.dt-ordering-desc, table.dataTable thead>tr>td.dt-orderable-asc, table.dataTable thead>tr>td.dt-orderable-desc, table.dataTable thead>tr>td.dt-ordering-asc, table.dataTable thead>tr>td.dt-ordering-desc,  table.dataTable thead>tr>th.dt-orderable-none{
+    background: var(--light-grey-50);
+    border-top-width: var(--bs-border-width);
+    border-top-color:rgb(222, 226, 230);
+}
+
+table.dataTable thead>tr>th.dt-orderable-asc span.dt-column-order, table.dataTable thead>tr>th.dt-orderable-desc span.dt-column-order, table.dataTable thead>tr>th.dt-ordering-asc span.dt-column-order, table.dataTable thead>tr>th.dt-ordering-desc span.dt-column-order, table.dataTable thead>tr>td.dt-orderable-asc span.dt-column-order, table.dataTable thead>tr>td.dt-orderable-desc span.dt-column-order, table.dataTable thead>tr>td.dt-ordering-asc span.dt-column-order, table.dataTable thead>tr>td.dt-ordering-desc span.dt-column-order {
+    right: auto;
+    top: auto;
+    bottom: auto;
+    width: auto;
+}
+
+table.dataTable thead>tr>th.dt-orderable-asc span.dt-column-order:before, table.dataTable thead>tr>th.dt-ordering-asc span.dt-column-order:before, table.dataTable thead>tr>td.dt-orderable-asc span.dt-column-order:before, table.dataTable thead>tr>td.dt-ordering-asc span.dt-column-order:before {
+    content: "\e446";
+    font-family: "Phosphor";
+    position: static;
+    display: inline-block;
+}
+
+table.dataTable thead>tr>th.dt-orderable-desc span.dt-column-order:after, table.dataTable thead>tr>th.dt-ordering-desc span.dt-column-order:after, table.dataTable thead>tr>td.dt-orderable-desc span.dt-column-order:after, table.dataTable thead>tr>td.dt-ordering-desc span.dt-column-order:after {
+    content: "\e444";
+    font-family: "Phosphor";
+    position: static;
+    display: inline-block;
+}
+
+div.dt-container div.dt-info{
+    padding-top: 0;
+    color: var(--medium-grey-500);
+}
+
+@media (max-width: 992px) {
+    .card-section .card-section--header,
+    .card-section .card-section--body {
+        padding: 1.25rem 1.5rem; 
+    }
+    
+    .dt-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* --- PHONE ADAPTATIONS (Under 576px) --- */
+@media (max-width: 576px) {
+    .card-section .card-section--header {
+        padding: 1rem;
+        flex-direction: column; /* Stack header items (like titles and buttons) */
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .card-section .card-section--body {
+        padding: 1rem; /* Compact padding for small screens */
+    }
+
+    /* Adjusting DataTables controls for mobile */
+    .dt-container > div:first-child, 
+    .dt-container > div:last-child {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: center;
+        text-align: center;
+    }
+
+    /* Making the table text smaller to fit more data */
+    table.dataTable {
+        font-size: 0.875rem;
+    }
 }

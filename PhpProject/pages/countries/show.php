@@ -1,1 +1,1 @@
-Country <?php echo $params['name']; ?>
+Country <?php echo $params['id']; ?>

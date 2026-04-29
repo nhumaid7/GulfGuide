@@ -57,26 +57,31 @@
     /* Typography Styles */
     --font-family-heading: "Urbanist";
     --font-weight-heading: 700;
+    --font-weight-semibold: 600;
     --font-family-paragraph: "Urbanist";
     --font-weight-paragraph: 400;
-    --font-size-h1: 36px;
-    --font-size-h2: 34px;
-    --font-size-h3: 32px;
-    --font-size-h4: 30px;
-    --font-size-h5: 28px;
-    --font-size-h6: 26px;
+    --font-size-h6: 1rem;        
+    --font-size-h5: 1.25rem;     
+    --font-size-h4: 1.563rem;    
+    --font-size-h3: 1.953rem;    
+    --font-size-h2: 2.441rem;   
+    --font-size-h1: 3.052rem;    
+
     --font-size-p-xl: 20px;
     --font-size-p-l: 18px;
     --font-size-p-m: 16px;
     --font-size-p-s: 14px;
     --font-size-p-xs: 12px;
-    --font-size-p-xxs: 10px;
 
     /* Effect Styles */
     --shadow-soft: 0px 4px 16px 0px rgba(0, 0, 0, 0.08);
     --shadow-medium: 0px 8px 24px 0px rgba(0, 0, 0, 0.12);
     --shadow-strong: 0px 16px 40px 0px rgba(0, 0, 0, 0.18);
     --focus-brand: 0px 0px 0px 3px rgba(65, 105, 225, 0.4);
+}
+
+html, body {
+    min-height: 100dvh;
 }
 
 body {
@@ -87,12 +92,12 @@ body {
     background-color: var(--light-grey-50);
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+h1, .h1-style,
+h2, .h2-style,
+h3, .h3-style,
+h4, .h4-style,
+h5, .h5-style,
+h6, .h6-style {
     font-family: var(--font-family-heading);
     font-weight: var(--font-weight-heading);
     color: var(--text-primary);
@@ -100,54 +105,54 @@ h6 {
     margin: 0;
 }
 
-h1 {
+h1, .h1-style {
     font-size: var(--font-size-h1);
 }
 
-h2 {
+h2, .h2-style {
     font-size: var(--font-size-h2);
 }
 
-h3 {
+h3, .h3-style {
     font-size: var(--font-size-h3);
 }
 
-h4 {
+h4, .h4-style {
     font-size: var(--font-size-h4);
 }
 
-h5 {
+h5, .h5-style {
     font-size: var(--font-size-h5);
 }
 
-h6 {
+h6, .h6-style {
     font-size: var(--font-size-h6);
 }
 
 @media (max-width: 1024px) {
-    h1 {
+    h1, .h1-style {
         font-size: 32px;
     }
 
-    h2 {
+    h2, .h2-style {
         font-size: 30px;
     }
 
-    h3 {
+    h3, .h3-style {
         font-size: 28px;
     }
 }
 
 @media (max-width: 640px) {
-    h1 {
+    h1, .h1-style {
         font-size: 28px;
     }
 
-    h2 {
+    h2, .h2-style {
         font-size: 26px;
     }
 
-    h3 {
+    h3, .h3-style {
         font-size: 24px;
     }
 }
@@ -216,4 +221,107 @@ button {
 .btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+.gulfguide-badge {
+    font-size: var(--font-size-p-s);
+    font-weight: var(--font-weight-semibold);
+    color: #fff;
+    background: var(--brand-primary);
+    border-radius: var(--bh-border-radius-xs);
+    padding: 5px 15px;
+    border-radius: 4px;
+}
+
+.gulfguide-badge--rounded {
+    border-radius: 20px;
+}
+
+.gulfguide-badge--secondary {
+    background: var(--light-grey-200);
+    color: var(--text-secondary);
+}
+
+.gulfguide-badge--dark {
+    background: var(--medium-grey-800);
+    color: white;
+}
+
+.gulfguide-badge--info {
+    background: var(--semantic-info-off);
+    color: var(--semantic-info-content);
+}
+
+.gulfguide-badge--warning {
+    background: var(--semantic-warning-off);
+    color: var(--semantic-warning-content);
+}
+
+.gulfguide-badge--success {
+    background: var(--semantic-success-off);
+    color: var(--semantic-success-content);
+}
+
+.gulfguide-badge--danger {
+    background: var(--semantic-failure-off);
+    color: var(--semantic-failure-content);
+}
+
+.gulfguide-badge--light {
+    color: var(--brand-primary);
+    background: var(--royal-blue-100);
+}
+
+
+.error-page {
+    position: relative;
+    height: 100vh;
+}
+
+.error-page .error-container {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    -ms-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    max-width: 520px;
+    width: 100%;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.error-page .error-container .error {
+    position: relative;
+    height: 240px;
+}
+
+.error-page .error-container .error .error-note {
+    position: relative;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin: 0px;
+    letter-spacing: 3px;
+    padding-left: 6px;
+}
+
+.error-page .error-container .error .error-code {
+    position: absolute;
+    left: 46%;
+    top: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    -ms-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    font-size: 252px;
+    font-weight: 900;
+    margin: 0px;
+    color: var(--brand-primary);
+    text-transform: uppercase;
+    letter-spacing: -40px;
+    margin-left: -20px;
+}
+
+.error-page .error-container .error .error-code span {
+    text-shadow: -8px 0px 0px var(--light-grey-50);
 }

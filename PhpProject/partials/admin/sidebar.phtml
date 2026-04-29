@@ -1,7 +1,7 @@
 <aside class="sidebar" id="sidebar">
 
     <div class="sidebar-header">
-        <a href="index.php" class="sidebar-brand">
+        <a href="<?php echo APP_BASE ?>/" class="sidebar-brand">
             <span class="brand-icon">
                 <i class="ph ph-compass"></i>
             </span>
@@ -18,42 +18,38 @@
         <ul class="sidebar-nav list-unstyled">
 
             <li class="sidebar-nav-item">
-                <a href="index.php">
+                <a href="<?php echo APP_BASE ?>/admin/dashboard">
                     <i class="ph ph-house"></i>
                     <span>Dashboard</span>
                 </a>
             </li>
 
             <li class="sidebar-nav-item">
-                <a href="creatorRequests.php">
+                <a href="<?php echo APP_BASE ?>/admin/creator-request">
                     <i class="ph ph-user-check"></i>
                     <span>Creator Requests</span>
                 </a>
             </li>
 
             <li class="sidebar-nav-item">
-                <a href="moderatePosts.php">
+                <a href="<?php echo APP_BASE ?>/admin/moderate-posts">
                     <i class="ph ph-article"></i>
                     <span>Moderate Posts</span>
                 </a>
             </li>
 
             <li class="sidebar-nav-item">
-                <a href="manageAccounts.php">
+                <a href="<?php echo APP_BASE ?>/admin/manage-accounts">
                     <i class="ph ph-users"></i>
                     <span>Manage Accounts</span>
                 </a>
             </li>
 
             <li class="sidebar-nav-item">
-                <a href="analytics.php">
+                <a href="<?php echo APP_BASE ?>/admin/analytics">
                     <i class="ph ph-chart-line-up"></i>
                     <span>Analytics</span>
                 </a>
-                <ul class="sidebar-submenu list-unstyled">
-                    <li><a href="user-analytics.php">User Analytics</a></li>
-                    <li><a href="post-analytics.php">Post Analytics</a></li>
-                </ul>
             </li>
         </ul>
     </nav>

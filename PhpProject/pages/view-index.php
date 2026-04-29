@@ -234,7 +234,7 @@ body {
       <li><a href="<?= APP_BASE ?>/creator/create-post"><i class="ph ph-plus-circle"></i> New Post</a></li>
     <?php endif; ?>
     <?php if ($role === 'admin'): ?>
-      <li><a href="<?= APP_BASE ?>/admin/"><i class="ph ph-layout"></i> Dashboard</a></li>
+      <li><a href="<?= APP_BASE ?>/admin/dashboard"><i class="ph ph-layout"></i> Dashboard</a></li>
     <?php endif; ?>
   </ul>
 
@@ -295,7 +295,7 @@ body {
           <div class="card-stat"><span>Role</span><span><?= ucfirst($role) ?></span></div>
 
           <?php if ($role === 'admin'): ?>
-            <a href="<?= APP_BASE ?>/admin/" class="card-action card-action-primary">
+            <a href="<?= APP_BASE ?>/admin/dashboard" class="card-action card-action-primary">
               <i class="ph ph-layout"></i> Go to Dashboard
             </a>
           <?php elseif ($role === 'creator'): ?>
