@@ -1,1 +1,1 @@
-Admin Dashboard
+Admin Dashboarddddd: /pages/admin/dashboard.php

@@ -1,1 +1,1 @@
-Post
+this is /pages/posts/index.php

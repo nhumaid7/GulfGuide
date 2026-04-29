@@ -1,1 +1,1 @@
-Post add
+this file is in: /pages/posts/add.php
