@@ -1,3 +1,3 @@
-<?php
-echo "HELLO";
+<?php       
+echo "hi lo  bkl"
 ?>
