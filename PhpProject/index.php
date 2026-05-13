@@ -45,6 +45,7 @@ $routes = [
     '/country/all'             => __DIR__ . '/pages/countries/index.php',
     '/posts/all'               => __DIR__ . '/pages/posts/index.php',
     '/locations/all'           => __DIR__ . '/pages/locations/index.php',
+    '/locations'               => __DIR__ . '/pages/locations/index.php',
     '/creator-request'   => __DIR__ . '/pages/creator-request.php',
     '/upgrade-to-creator'   => __DIR__ . '/pages/upgrade-to-creator.php',
 
@@ -113,7 +114,7 @@ if (!file_exists($page)) {
 $depth       = count(array_filter(explode('/', trim($uri, '/'))));
 $base_prefix = str_repeat('../', $depth);   // e.g. '../../' for /admin/foo
 
-$isAdminPage = str_starts_with($uri, '/admin/');
+$isAdminPage = str_starts_with($uri, '/admin/') || ($uri === '/locations' && isset($_GET['role']) && $_GET['role'] === 'admin');
 ?>
 <!DOCTYPE html>
 <html lang="en">
