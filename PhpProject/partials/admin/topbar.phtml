@@ -1,9 +1,7 @@
 <?php
-$path_parts = explode('/', trim($uri, '/'));
-$depth = count(array_filter($path_parts));
-$base_prefix = str_repeat('../', $depth);
-$username   = $_SESSION['username'] ?? null;
+$username = $_SESSION['username'] ?? 'admin';
 ?>
+
 <header class="topbar">
     <div class="topbar-left">
         <button class="menu-toggle" aria-label="Toggle Menu">
@@ -20,10 +18,11 @@ $username   = $_SESSION['username'] ?? null;
     <div class="topbar-right">
         <div class="user-dropdown">
             <a href="javascript:void(0)" class="user-profile">
-                <img src="<?php echo $base_prefix; ?>assets/images/avater.png" alt="User" class="user-avatar">
+                <img src="<?= APP_BASE ?>/assets/images/avater.png" alt="User" class="user-avatar">
+
                 <p class="small">
-                    <span class=""d-none d-sm-inline">Welcome,</span>
-                    <strong><?php echo $username; ?></strong>
+                    <span class="d-none d-sm-inline">Welcome,</span>
+                    <strong><?= htmlspecialchars($username) ?></strong>
                 </p>
             </a>
         </div>
