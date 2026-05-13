@@ -1,6 +1,4 @@
 <?php
-requireRole(ROLE_ADMIN);
-
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 
 if (!$id) {
@@ -52,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$errors) {
         $stmt = $pdo->prepare("
             UPDATE dbProj_country
-            SET 
+            SET
                 flag_image = ?,
                 official_tourism_website = ?,
                 display_image = ?,
@@ -105,54 +103,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Location Name</label>
-                        <input 
-                            type="text" 
-                            name="name" 
-                            class="form-control" 
-                            value="<?= htmlspecialchars($_POST['name'] ?? $location['name']) ?>" 
+                        <input
+                            type="text"
+                            name="name"
+                            class="form-control"
+                            value="<?= htmlspecialchars($_POST['name'] ?? $location['name']) ?>"
                             required
                         >
                     </div>
 
                     <div class="col-md-6">
                         <label class="form-label">Official Tourism Website</label>
-                        <input 
-                            type="text" 
-                            name="official_tourism_website" 
-                            class="form-control" 
-                            value="<?= htmlspecialchars($_POST['official_tourism_website'] ?? $location['official_tourism_website']) ?>" 
+                        <input
+                            type="text"
+                            name="official_tourism_website"
+                            class="form-control"
+                            value="<?= htmlspecialchars($_POST['official_tourism_website'] ?? $location['official_tourism_website']) ?>"
                             required
                         >
                     </div>
 
                     <div class="col-md-6">
                         <label class="form-label">Flag Image Path</label>
-                        <input 
-                            type="text" 
-                            name="flag_image" 
-                            class="form-control" 
-                            value="<?= htmlspecialchars($_POST['flag_image'] ?? $location['flag_image']) ?>" 
+                        <input
+                            type="text"
+                            name="flag_image"
+                            class="form-control"
+                            value="<?= htmlspecialchars($_POST['flag_image'] ?? $location['flag_image']) ?>"
                             required
                         >
                     </div>
 
                     <div class="col-md-6">
                         <label class="form-label">Display Image Path</label>
-                        <input 
-                            type="text" 
-                            name="display_image" 
-                            class="form-control" 
-                            value="<?= htmlspecialchars($_POST['display_image'] ?? $location['display_image']) ?>" 
+                        <input
+                            type="text"
+                            name="display_image"
+                            class="form-control"
+                            value="<?= htmlspecialchars($_POST['display_image'] ?? $location['display_image']) ?>"
                             required
                         >
                     </div>
 
                     <div class="col-12">
                         <label class="form-label">Description</label>
-                        <textarea 
-                            name="description" 
-                            class="form-control" 
-                            rows="5" 
+                        <textarea
+                            name="description"
+                            class="form-control"
+                            rows="5"
                             required
                         ><?= htmlspecialchars($_POST['description'] ?? $location['description']) ?></textarea>
                     </div>

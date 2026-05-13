@@ -1,10 +1,6 @@
 <?php
 $isAdminView = isset($_GET['role']) && $_GET['role'] === 'admin';
 
-if ($isAdminView) {
-    requireRole(ROLE_ADMIN);
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_location'])) {
     if (!$isAdminView) {
         abort(403);
@@ -77,7 +73,7 @@ $search = trim($_GET['search'] ?? '');
 
 if ($search !== '') {
     $stmt = $pdo->prepare("
-        SELECT 
+        SELECT
             c.country_id,
             c.name,
             c.description,
@@ -90,7 +86,7 @@ if ($search !== '') {
         LEFT JOIN dbProj_attraction a ON c.country_id = a.country_id
         LEFT JOIN dbProj_post p ON c.country_id = p.country_id
         WHERE c.name LIKE ?
-        GROUP BY 
+        GROUP BY
             c.country_id,
             c.name,
             c.description,
@@ -102,7 +98,7 @@ if ($search !== '') {
     $stmt->execute(['%' . $search . '%']);
 } else {
     $stmt = $pdo->query("
-        SELECT 
+        SELECT
             c.country_id,
             c.name,
             c.description,
@@ -114,7 +110,7 @@ if ($search !== '') {
         FROM dbProj_country c
         LEFT JOIN dbProj_attraction a ON c.country_id = a.country_id
         LEFT JOIN dbProj_post p ON c.country_id = p.country_id
-        GROUP BY 
+        GROUP BY
             c.country_id,
             c.name,
             c.description,
@@ -161,10 +157,10 @@ $locations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <input type="hidden" name="role" value="admin">
                     <?php endif; ?>
 
-                    <input 
-                        type="text" 
-                        name="search" 
-                        class="form-control" 
+                    <input
+                        type="text"
+                        name="search"
+                        class="form-control"
                         placeholder="Search locations..."
                         value="<?= htmlspecialchars($search) ?>"
                     >
@@ -208,8 +204,8 @@ $locations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                             <td>
                                 <?php if (!empty($location['display_image'])): ?>
-                                    <img 
-                                        src="<?= htmlspecialchars($location['display_image']) ?>" 
+                                    <img
+                                        src="<?= htmlspecialchars($location['display_image']) ?>"
                                         alt="<?= htmlspecialchars($location['name']) ?>"
                                         style="width: 70px; height: 50px; object-fit: cover; border-radius: 10px;"
                                     >
@@ -242,27 +238,27 @@ $locations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <?php if ($isAdminView): ?>
                                 <td>
                                     <div class="d-flex gap-2">
-                                        <a 
-                                            href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($location['country_id']) ?>" 
+                                        <a
+                                            href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($location['country_id']) ?>"
                                             class="btn btn-sm btn-light"
                                         >
                                             Edit
                                         </a>
 
-                                        <form 
-                                            method="POST" 
+                                        <form
+                                            method="POST"
                                             action="<?= APP_BASE ?>/locations?role=admin"
                                             onsubmit="return confirm('Are you sure you want to delete this location? This will also delete related attractions and posts.');"
                                         >
-                                            <input 
-                                                type="hidden" 
-                                                name="country_id" 
+                                            <input
+                                                type="hidden"
+                                                name="country_id"
                                                 value="<?= htmlspecialchars($location['country_id']) ?>"
                                             >
 
-                                            <button 
-                                                type="submit" 
-                                                name="delete_location" 
+                                            <button
+                                                type="submit"
+                                                name="delete_location"
                                                 class="btn btn-sm btn-danger"
                                             >
                                                 Delete

@@ -1,6 +1,4 @@
 <?php
-requireRole(ROLE_ADMIN);
-
 $totalLocations = $pdo->query("SELECT COUNT(*) FROM dbProj_country")->fetchColumn();
 $totalPosts = $pdo->query("SELECT COUNT(*) FROM dbProj_post")->fetchColumn();
 $totalUsers = $pdo->query("SELECT COUNT(*) FROM dbProj_user")->fetchColumn();
@@ -109,21 +107,26 @@ $locations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <tbody>
                     <?php if (!$locations): ?>
                         <tr>
-                            <td colspan="5" class="text-center text-muted">No locations found.</td>
+                            <td colspan="5" class="text-center text-muted">
+                                No locations found.
+                            </td>
                         </tr>
                     <?php endif; ?>
 
                     <?php foreach ($locations as $location): ?>
                         <tr>
                             <td><?= htmlspecialchars($location['country_id']) ?></td>
+
                             <td>
                                 <strong><?= htmlspecialchars($location['name']) ?></strong>
                                 <div class="text-muted small">
                                     <?= htmlspecialchars(mb_strimwidth($location['description'] ?? '', 0, 70, '...')) ?>
                                 </div>
                             </td>
+
                             <td><?= htmlspecialchars($location['attractions_count']) ?></td>
                             <td><?= htmlspecialchars($location['posts_count']) ?></td>
+
                             <td>
                                 <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($location['country_id']) ?>" class="btn btn-sm btn-light">
                                     Edit

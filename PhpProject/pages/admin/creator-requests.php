@@ -19,9 +19,9 @@ if ($user['role'] === ROLE_CREATOR) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user['role'] !== ROLE_CREATOR) {
-    $reason = trim($_POST['reason'] ?? '');
+    $message = trim($_POST['message'] ?? '');
 
-    if ($reason === '') {
+    if ($message === '') {
         $errors[] = 'Please write why you want to become a creator.';
     }
 
@@ -41,71 +41,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user['role'] !== ROLE_CREATOR) {
         } else {
             $stmt = $pdo->prepare("
                 INSERT INTO dbProj_creator_request
-                    (status, reason, requested_at, user_id)
+                    (user_id, reason, status, requested_at)
                 VALUES
-                    (?, ?, NOW(), ?)
+                    (?, ?, ?, NOW())
             ");
 
             $stmt->execute([
-                REQUEST_PENDING,
-                $reason,
-                $userId
+                $userId,
+                $message,
+                REQUEST_PENDING
             ]);
 
-            $success = 'Your creator request has been sent successfully.';
+            $success = 'Your request has been submitted successfully.';
         }
     }
 }
 ?>
 
 <div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-7">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body p-4">
-                    <h2 class="mb-2">Upgrade to Creator</h2>
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            <h1>Request Creator Status</h1>
+            <p>Submit your request to become a creator on GulfGuide</p>
 
-                    <p class="text-muted">
-                        Send a request to become a creator. After admin approval, you will be able to create and manage travel content.
-                    </p>
-
-                    <?php if ($errors): ?>
-                        <div class="alert alert-danger">
-                            <?php foreach ($errors as $error): ?>
-                                <div><?= htmlspecialchars($error) ?></div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if ($success): ?>
-                        <div class="alert alert-success">
-                            <?= htmlspecialchars($success) ?>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if ($user['role'] !== ROLE_CREATOR): ?>
-                        <form method="POST" action="<?= APP_BASE ?>/upgrade-to-creator">
-                            <div class="mb-3">
-                                <label class="form-label">Why do you want to become a creator?</label>
-                                <textarea 
-                                    name="reason" 
-                                    class="form-control" 
-                                    rows="5" 
-                                    required
-                                ><?= htmlspecialchars($_POST['reason'] ?? '') ?></textarea>
-                            </div>
-
-                            <button type="submit" class="btn btn-primary">
-                                Send Request
-                            </button>
-
-                            <a href="<?= REDIRECT_VISITOR ?>" class="btn btn-light">
-                                Cancel
-                            </a>
-                        </form>
-                    <?php endif; ?>
+            <?php if ($errors): ?>
+                <div class="alert alert-danger">
+                    <?php foreach ($errors as $error): ?>
+                        <div><?= htmlspecialchars($error) ?></div>
+                    <?php endforeach; ?>
                 </div>
-            </div>
+            <?php endif; ?>
+
+            <?php if ($success): ?>
+                <div class="alert alert-success">
+                    <?= htmlspecialchars($success) ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($user['role'] !== ROLE_CREATOR): ?>
+                <form method="POST" action="<?= APP_BASE ?>/upgrade-to-creator" class="mt-4">
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Message</label>
+
+                        <textarea
+                            class="form-control"
+                            id="message"
+                            name="message"
+                            rows="5"
+                            required
+                            placeholder="Tell us why you want to be a creator..."
+                        ><?= htmlspecialchars($_POST['message'] ?? '') ?></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        Submit Request
+                    </button>
+                </form>
+            <?php endif; ?>
         </div>
     </div>
 </div>

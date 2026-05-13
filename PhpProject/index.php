@@ -114,7 +114,8 @@ if (!file_exists($page)) {
 $depth       = count(array_filter(explode('/', trim($uri, '/'))));
 $base_prefix = str_repeat('../', $depth);   // e.g. '../../' for /admin/foo
 
-$isAdminPage = str_starts_with($uri, '/admin/') || ($uri === '/locations' && isset($_GET['role']) && $_GET['role'] === 'admin');
+$isAdminLocationsPage = $uri === '/locations' && isset($_GET['role']) && $_GET['role'] === 'admin';
+$isAdminPage = str_starts_with($uri, '/admin/') || $isAdminLocationsPage;
 
 if ($isAdminPage) {
     requireRole(ROLE_ADMIN);
