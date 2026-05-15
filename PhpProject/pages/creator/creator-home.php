@@ -39,13 +39,16 @@ $stmt = $pdo->prepare("
            (SELECT COUNT(*) FROM dbProj_reaction r
             WHERE r.post_id = p.post_id AND r.type = 'dislike') AS dislikes_count,
            (SELECT COUNT(*) FROM dbProj_comment cm
-            WHERE cm.post_id = p.post_id AND cm.is_visible = 1) AS comments_count
+            WHERE cm.post_id = p.post_id AND cm.is_visible = 1) AS comments_count,
+           (SELECT type FROM dbProj_reaction r
+            WHERE r.post_id = p.post_id AND r.user_id = :uid2
+            LIMIT 1)                                             AS user_reaction
     FROM   dbProj_post p
     LEFT JOIN dbProj_country c ON p.country_id = c.country_id
     WHERE  p.user_id = :uid
     ORDER  BY p.created_at DESC
 ");
-$stmt->execute([':uid' => $userId]);
+$stmt->execute([':uid' => $userId, ':uid2' => $userId]);
 $postRows = $stmt->fetchAll();
 $posts    = array_map([Post::class, 'fromArray'], $postRows);
 
@@ -66,8 +69,10 @@ function excerptContent(string $content, int $len = 220): string {
 }
 ?>
 
-<!-- CSS -->
+<!-- Fix: relative paths from index.php break on /creator/ (trailing slash shifts base) -->
+<link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/style.css">
 <link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/creator-home.css">
+<script src="<?= $baseUrl ?>/assets/js/main.js"></script>
 
 <!-- SweetAlert2 fallback -->
 <script>
@@ -173,15 +178,26 @@ if (typeof Swal === 'undefined') {
         <p class="blog-card__excerpt"><?= $excerpt ?></p>
 
         <!-- Likes / dislikes / comments row -->
+        <?php
+            $userReaction = $postRows[$i]['user_reaction'] ?? null;
+            $likesCount    = (int)($postRows[$i]['likes_count']    ?? 0);
+            $dislikesCount = (int)($postRows[$i]['dislikes_count'] ?? 0);
+        ?>
         <div class="blog-card__stats">
-            <span title="Likes">
-                <i class="ph-fill ph-thumbs-up" style="color:var(--semantic-success);"></i>
-                <?= (int)($postRows[$i]['likes_count'] ?? 0) ?>
-            </span>
-            <span title="Dislikes">
-                <i class="ph-fill ph-thumbs-down" style="color:var(--semantic-failure);"></i>
-                <?= (int)($postRows[$i]['dislikes_count'] ?? 0) ?>
-            </span>
+            <button class="reaction-btn like-btn <?= $userReaction === 'like' ? 'active-like' : '' ?>"
+                    data-post-id="<?= $post->getPostId() ?>"
+                    data-type="like"
+                    title="Like">
+                <i class="ph ph-thumbs-up"></i>
+                <span class="like-count"><?= $likesCount ?></span>
+            </button>
+            <button class="reaction-btn dislike-btn <?= $userReaction === 'dislike' ? 'active-dislike' : '' ?>"
+                    data-post-id="<?= $post->getPostId() ?>"
+                    data-type="dislike"
+                    title="Dislike">
+                <i class="ph ph-thumbs-down"></i>
+                <span class="dislike-count"><?= $dislikesCount ?></span>
+            </button>
             <button class="btn btn-sm btn-link p-0 view-comments-btn"
                     data-post-id="<?= $post->getPostId() ?>"
                     title="View comments">
@@ -242,6 +258,7 @@ if (typeof Swal === 'undefined') {
 const CREATOR_CONFIG = {
     ajaxUrl:     '<?= $ajaxBase ?>/ajax/toggle-post-status.php',
     commentsUrl: '<?= $ajaxBase ?>/ajax/get-comments.php',
+    reactUrl:    '<?= $ajaxBase ?>/ajax/react.php',
     flash: <?= $flashMsg
         ? json_encode(['msg' => $flashMsg, 'code' => $flashCode])
         : 'null' ?>

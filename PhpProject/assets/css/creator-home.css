@@ -105,6 +105,37 @@
     align-items: center;
     gap: .3rem;
 }
+.reaction-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    background: none;
+    border: 1px solid var(--light-grey-300);
+    border-radius: 20px;
+    padding: .2rem .6rem;
+    font-size: var(--font-size-p-xs);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all .15s;
+}
+.reaction-btn:hover { border-color: var(--light-grey-600); color: var(--text-primary); }
+.reaction-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+.reaction-btn.active-like {
+    background: #dbf3e6;
+    border-color: #3b9b6f;
+    color: #3b9b6f;
+    font-weight: 600;
+}
+.reaction-btn.active-like i { color: #3b9b6f; }
+
+.reaction-btn.active-dislike {
+    background: #fde8ea;
+    border-color: #dc3545;
+    color: #dc3545;
+    font-weight: 600;
+}
+.reaction-btn.active-dislike i { color: #dc3545; }
 .blog-card__actions {
     display: flex;
     gap: .5rem;

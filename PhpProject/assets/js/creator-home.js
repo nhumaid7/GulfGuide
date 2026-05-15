@@ -82,7 +82,42 @@
         });
     });
 
-    // ── 5. View comments (AJAX) ───────────────────────────────────────────────
+    // ── 5. Reaction buttons (AJAX) ───────────────────────────────────────────
+    $(document).on('click', '.reaction-btn', function () {
+        const $btn   = $(this);
+        const postId = $btn.data('post-id');
+        const type   = $btn.data('type');
+        const $card  = $btn.closest('.blog-card');
+
+        console.log('[Reaction] clicked:', type, 'postId:', postId);
+        console.log('[Reaction] URL:', CREATOR_CONFIG.reactUrl);
+
+        $btn.prop('disabled', true);
+
+        $.post(CREATOR_CONFIG.reactUrl, { post_id: postId, type: type }, function (res) {
+            console.log('[Reaction] response:', res);
+            if (res.success) {
+                $card.find('.like-count').text(res.likes);
+                $card.find('.dislike-count').text(res.dislikes);
+
+                $card.find('.like-btn').removeClass('active-like');
+                $card.find('.dislike-btn').removeClass('active-dislike');
+
+                if (res.user_reaction === 'like')    $card.find('.like-btn').addClass('active-like');
+                if (res.user_reaction === 'dislike') $card.find('.dislike-btn').addClass('active-dislike');
+            } else {
+                console.error('[Reaction] server error:', res.message);
+                Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'Could not save reaction.' });
+            }
+        }, 'json').fail(function (xhr) {
+            console.error('[Reaction] AJAX failed. Status:', xhr.status, 'Response:', xhr.responseText);
+            Swal.fire({ icon: 'error', title: 'Network Error', text: 'Please try again.' });
+        }).always(function () {
+            $btn.prop('disabled', false);
+        });
+    });
+
+    // ── 7. View comments (AJAX) ───────────────────────────────────────────────
     $(document).on('click', '.view-comments-btn', function () {
         const $btn   = $(this);
         const postId = $btn.data('post-id');
