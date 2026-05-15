@@ -32,13 +32,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
 
 // ── Fetch creator's posts ─────────────────────────────────────────────────────
 $stmt = $pdo->prepare("
-    SELECT p.*, c.name AS country_name
+    SELECT p.*,
+           c.name AS country_name,
+           (SELECT COUNT(*) FROM dbProj_reaction r
+            WHERE r.post_id = p.post_id AND r.type = 'like')    AS likes_count,
+           (SELECT COUNT(*) FROM dbProj_reaction r
+            WHERE r.post_id = p.post_id AND r.type = 'dislike') AS dislikes_count,
+           (SELECT COUNT(*) FROM dbProj_comment cm
+            WHERE cm.post_id = p.post_id AND cm.is_visible = 1) AS comments_count,
+           (SELECT type FROM dbProj_reaction r
+            WHERE r.post_id = p.post_id AND r.user_id = :uid2
+            LIMIT 1)                                             AS user_reaction
     FROM   dbProj_post p
     LEFT JOIN dbProj_country c ON p.country_id = c.country_id
     WHERE  p.user_id = :uid
     ORDER  BY p.created_at DESC
 ");
-$stmt->execute([':uid' => $userId]);
+$stmt->execute([':uid' => $userId, ':uid2' => $userId]);
 $postRows = $stmt->fetchAll();
 $posts    = array_map([Post::class, 'fromArray'], $postRows);
 
@@ -59,17 +69,17 @@ function excerptContent(string $content, int $len = 220): string {
 }
 ?>
 
+<!-- Fix: relative paths from index.php break on /creator/ (trailing slash shifts base) -->
+<link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/style.css">
+<link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/creator-home.css">
+<script src="<?= $baseUrl ?>/assets/js/main.js"></script>
+
 <!-- SweetAlert2 fallback -->
 <script>
 if (typeof Swal === 'undefined') {
     document.write('<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"><\/script>');
 }
 </script>
-
-<style>
-/* Page-level layout */
-.creator-page { max-width: 1200px; margin: 0 auto; padding: 0 0.5rem 2rem; }
-</style>
 
 <!-- ── Hero (full width, outside the container) ────────────────────────────── -->
 <div class="creator-hero">
@@ -167,6 +177,35 @@ if (typeof Swal === 'undefined') {
         <h5 class="blog-card__title"><?= htmlspecialchars($post->getTitle()) ?></h5>
         <p class="blog-card__excerpt"><?= $excerpt ?></p>
 
+        <!-- Likes / dislikes / comments row -->
+        <?php
+            $userReaction = $postRows[$i]['user_reaction'] ?? null;
+            $likesCount    = (int)($postRows[$i]['likes_count']    ?? 0);
+            $dislikesCount = (int)($postRows[$i]['dislikes_count'] ?? 0);
+        ?>
+        <div class="blog-card__stats">
+            <button class="reaction-btn like-btn <?= $userReaction === 'like' ? 'active-like' : '' ?>"
+                    data-post-id="<?= $post->getPostId() ?>"
+                    data-type="like"
+                    title="Like">
+                <i class="ph ph-thumbs-up"></i>
+                <span class="like-count"><?= $likesCount ?></span>
+            </button>
+            <button class="reaction-btn dislike-btn <?= $userReaction === 'dislike' ? 'active-dislike' : '' ?>"
+                    data-post-id="<?= $post->getPostId() ?>"
+                    data-type="dislike"
+                    title="Dislike">
+                <i class="ph ph-thumbs-down"></i>
+                <span class="dislike-count"><?= $dislikesCount ?></span>
+            </button>
+            <button class="btn btn-sm btn-link p-0 view-comments-btn"
+                    data-post-id="<?= $post->getPostId() ?>"
+                    title="View comments">
+                <i class="ph ph-chat-circle-text"></i>
+                <?= (int)($postRows[$i]['comments_count'] ?? 0) ?> Comments
+            </button>
+        </div>
+
         <div class="blog-card__actions">
             <!-- AJAX toggle -->
             <button class="btn btn-sm btn-outline-primary toggle-status-btn"
@@ -192,6 +231,16 @@ if (typeof Swal === 'undefined') {
         </div>
 
         <div class="text-muted mt-1" style="font-size:var(--font-size-p-xs);"><?= $postDate ?></div>
+
+        <!-- Comments panel (loaded via AJAX) -->
+        <div class="comments-panel d-none" id="comments-panel-<?= $post->getPostId() ?>">
+            <hr class="my-2">
+            <div class="comments-body" id="comments-body-<?= $post->getPostId() ?>">
+                <div class="text-center py-2">
+                    <span class="spinner-border spinner-border-sm text-secondary"></span>
+                </div>
+            </div>
+        </div>
     </div>
 
 </div>
@@ -201,219 +250,23 @@ if (typeof Swal === 'undefined') {
 
 </div><!-- /.creator-page -->
 
-<!-- ── Scoped styles ────────────────────────────────────────────────────────── -->
-<style>
-.creator-hero {
-    position: relative;
-    min-height: 220px;
-    overflow: hidden;
-    background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
-    display: flex;
-    align-items: center;
-}
-.creator-hero__overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,.35);
-}
-.creator-hero__content {
-    position: relative;
-    z-index: 1;
-    padding: 2.5rem 2rem;
-    color: #fff;
-}
-.creator-hero__title {
-    font-size: clamp(1.4rem, 4vw, 2.2rem);
-    font-weight: 800;
-    margin-bottom: .4rem;
-}
-.creator-hero__sub {
-    opacity: .8;
-    margin-bottom: 1.2rem;
-    font-size: var(--font-size-p-m);
-}
-.blog-card {
-    display: flex;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid var(--light-grey-200);
-    background: #fff;
-    transition: box-shadow .2s;
-}
-.blog-card:hover { box-shadow: var(--shadow-medium); }
-.blog-card__thumb {
-    flex-shrink: 0;
-    width: 200px;
-    min-height: 170px;
-    overflow: hidden;
-}
-.blog-card__thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-.blog-card__thumb--placeholder {
-    width: 100%;
-    height: 100%;
-    min-height: 170px;
-    background: var(--light-grey-100);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    color: var(--light-grey-600);
-}
-.blog-card__body {
-    flex: 1;
-    padding: 1rem 1.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: .35rem;
-}
-.blog-card__meta {
-    font-size: var(--font-size-p-xs);
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-}
-.blog-card__title {
-    font-size: var(--font-size-h6);
-    font-weight: 700;
-    margin: 0;
-    color: var(--text-primary);
-}
-.blog-card__excerpt {
-    font-size: var(--font-size-p-s);
-    color: var(--text-secondary);
-    margin: 0;
-    line-height: 1.6;
-    flex: 1;
-}
-.blog-card__actions {
-    display: flex;
-    gap: .5rem;
-    flex-wrap: wrap;
-    padding-top: .5rem;
-}
-@media (max-width: 576px) {
-    .blog-card { flex-direction: column; }
-    .blog-card__thumb { width: 100%; min-height: 180px; }
-}
-</style>
+<!-- ── External CSS ────────────────────────────────────────────────────────── -->
+<link rel="stylesheet" href="<?= $base_prefix ?>assets/css/creator-home.css">
 
-<!-- ── JavaScript ──────────────────────────────────────────────────────────── -->
+<!-- JS config (dynamic PHP values) -->
 <script>
-(function ($) {
-    'use strict';
-
-    const AJAX_URL = '<?= $ajaxBase ?>/ajax/toggle-post-status.php';
-
-    // 1. Filter tabs
-    $('#statusFilter .btn').on('click', function () {
-        $('#statusFilter .btn').removeClass('active');
-        $(this).addClass('active');
-        applyFilters();
-    });
-
-    // 2. Live search
-    $('#postSearch').on('input', applyFilters);
-
-    function applyFilters() {
-        const filter = $('#statusFilter .btn.active').data('filter');
-        const search = $('#postSearch').val().toLowerCase().trim();
-        let visible  = 0;
-
-        $('#postsBody .blog-card').each(function () {
-            const ok = ((filter === 'all') || ($(this).data('status') === filter))
-                    && ((search === '')     || ($(this).data('title') || '').includes(search));
-            $(this).toggle(ok);
-            if (ok) visible++;
-        });
-
-        $('#noResults').toggleClass('d-none', visible > 0);
-    }
-
-    // Recount all cards by data-status and update filter button badges
-    function updateFilterCounts() {
-        const total     = $('#postsBody .blog-card').length;
-        const published = $('#postsBody .blog-card[data-status="published"]').length;
-        const drafts    = $('#postsBody .blog-card[data-status="draft"]').length;
-
-        $('[data-filter="all"]      .badge').text(total);
-        $('[data-filter="published"] .badge').text(published);
-        $('[data-filter="draft"]     .badge').text(drafts);
-    }
-
-    // 3. AJAX toggle status
-    $(document).on('click', '.toggle-status-btn', function () {
-        const $btn      = $(this);
-        const postId    = $btn.data('post-id');
-        const current   = $btn.data('status');
-        const newStatus = current === 'published' ? 'draft' : 'published';
-
-        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
-
-        $.post(AJAX_URL, { post_id: postId, new_status: newStatus }, function (res) {
-            if (res.success) {
-                const $badge = $('#badge-' + postId);
-                $badge.removeClass('gulfguide-badge--success gulfguide-badge--warning')
-                      .addClass(newStatus === 'published' ? 'gulfguide-badge--success' : 'gulfguide-badge--warning');
-                $('#badge-icon-' + postId).attr('class', 'ph-fill ' + (newStatus === 'published' ? 'ph-check-circle' : 'ph-clock'));
-                $('#badge-text-' + postId).text(newStatus.charAt(0).toUpperCase() + newStatus.slice(1));
-
-                $btn.closest('.blog-card').data('status', newStatus).attr('data-status', newStatus);
-
-                const newIcon  = newStatus === 'published' ? 'ph-arrow-counter-clockwise' : 'ph-paper-plane-tilt';
-                const newLabel = newStatus === 'published' ? 'Unpublish' : 'Publish';
-                $btn.data('status', newStatus).prop('disabled', false)
-                    .html('<i class="ph ' + newIcon + '"></i> ' + newLabel);
-
-                applyFilters();
-                updateFilterCounts();
-                Swal.fire({ icon:'success', title:'Updated', text:'Post is now ' + newStatus + '.', timer:1600, showConfirmButton:false });
-            } else {
-                Swal.fire({ icon:'error', title:'Error', text: res.message || 'Could not update.' });
-                const origIcon  = current === 'published' ? 'ph-arrow-counter-clockwise' : 'ph-paper-plane-tilt';
-                const origLabel = current === 'published' ? 'Unpublish' : 'Publish';
-                $btn.prop('disabled', false).html('<i class="ph ' + origIcon + '"></i> ' + origLabel);
-            }
-        }, 'json').fail(function () {
-            Swal.fire({ icon:'error', title:'Network Error', text:'Please try again.' });
-            const origIcon  = current === 'published' ? 'ph-arrow-counter-clockwise' : 'ph-paper-plane-tilt';
-            const origLabel = current === 'published' ? 'Unpublish' : 'Publish';
-            $btn.prop('disabled', false).html('<i class="ph ' + origIcon + '"></i> ' + origLabel);
-        });
-    });
-
-    // 4. Delete confirmation
-    $(document).on('submit', '.delete-post-form', function (e) {
-        e.preventDefault();
-        const $form = $(this);
-        const title = $form.find('input[name="post_title"]').val();
-        Swal.fire({
-            title: 'Delete Post',
-            text: 'Are you sure you want to delete "' + title + '"?',
-            icon: 'warning',
-            showCancelButton:   true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor:  '#6c757d',
-            confirmButtonText:  'Yes, delete it',
-            cancelButtonText:   'Cancel'
-        }).then(function (r) { if (r.isConfirmed) $form[0].submit(); });
-    });
-
-    // 5. Flash message
-    <?php if ($flashMsg): ?>
-    $(function () {
-        Swal.fire({
-            icon:  '<?= $flashCode === 'success' ? 'success' : 'error' ?>',
-            title: '<?= $flashCode === 'success' ? 'Success' : 'Error' ?>',
-            text:  '<?= addslashes((string)$flashMsg) ?>',
-            timer: 2500, showConfirmButton: false
-        });
-    });
-    <?php endif; ?>
-
-})(jQuery);
+const CREATOR_CONFIG = {
+    ajaxUrl:     '<?= $ajaxBase ?>/ajax/toggle-post-status.php',
+    commentsUrl: '<?= $ajaxBase ?>/ajax/get-comments.php',
+    reactUrl:    '<?= $ajaxBase ?>/ajax/react.php',
+    flash: <?= $flashMsg
+        ? json_encode(['msg' => $flashMsg, 'code' => $flashCode])
+        : 'null' ?>
+};
 </script>
+
+<!-- JS -->
+<script src="<?= $baseUrl ?>/assets/js/creator-home.js"></script>
+
+<!-- ── External JS ─────────────────────────────────────────────────────────── -->
+<!-- <script src="<?= $base_prefix ?>assets/js/creator-home.js"></script> -->
