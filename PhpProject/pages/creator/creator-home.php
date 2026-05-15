@@ -66,17 +66,15 @@ function excerptContent(string $content, int $len = 220): string {
 }
 ?>
 
+<!-- CSS -->
+<link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/creator-home.css">
+
 <!-- SweetAlert2 fallback -->
 <script>
 if (typeof Swal === 'undefined') {
     document.write('<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"><\/script>');
 }
 </script>
-
-<style>
-/* Page-level layout */
-.creator-page { max-width: 1200px; margin: 0 auto; padding: 0 0.5rem 2rem; }
-</style>
 
 <!-- ── Hero (full width, outside the container) ────────────────────────────── -->
 <div class="creator-hero">
@@ -239,7 +237,7 @@ if (typeof Swal === 'undefined') {
 <!-- ── External CSS ────────────────────────────────────────────────────────── -->
 <link rel="stylesheet" href="<?= $base_prefix ?>assets/css/creator-home.css">
 
-<!-- ── JS config (PHP values passed to external JS file) ──────────────────── -->
+<!-- JS config (dynamic PHP values) -->
 <script>
 const CREATOR_CONFIG = {
     ajaxUrl:     '<?= $ajaxBase ?>/ajax/toggle-post-status.php',
@@ -250,5 +248,8 @@ const CREATOR_CONFIG = {
 };
 </script>
 
+<!-- JS -->
+<script src="<?= $baseUrl ?>/assets/js/creator-home.js"></script>
+
 <!-- ── External JS ─────────────────────────────────────────────────────────── -->
-<script src="<?= $base_prefix ?>assets/js/creator-home.js"></script>
+<!-- <script src="<?= $base_prefix ?>assets/js/creator-home.js"></script> -->
