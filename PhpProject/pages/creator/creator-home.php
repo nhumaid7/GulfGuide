@@ -334,6 +334,17 @@ if (typeof Swal === 'undefined') {
         $('#noResults').toggleClass('d-none', visible > 0);
     }
 
+    // Recount all cards by data-status and update filter button badges
+    function updateFilterCounts() {
+        const total     = $('#postsBody .blog-card').length;
+        const published = $('#postsBody .blog-card[data-status="published"]').length;
+        const drafts    = $('#postsBody .blog-card[data-status="draft"]').length;
+
+        $('[data-filter="all"]      .badge').text(total);
+        $('[data-filter="published"] .badge').text(published);
+        $('[data-filter="draft"]     .badge').text(drafts);
+    }
+
     // 3. AJAX toggle status
     $(document).on('click', '.toggle-status-btn', function () {
         const $btn      = $(this);
@@ -359,6 +370,7 @@ if (typeof Swal === 'undefined') {
                     .html('<i class="ph ' + newIcon + '"></i> ' + newLabel);
 
                 applyFilters();
+                updateFilterCounts();
                 Swal.fire({ icon:'success', title:'Updated', text:'Post is now ' + newStatus + '.', timer:1600, showConfirmButton:false });
             } else {
                 Swal.fire({ icon:'error', title:'Error', text: res.message || 'Could not update.' });
