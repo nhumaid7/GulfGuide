@@ -116,7 +116,11 @@ if (typeof Swal === 'undefined') {
 }
 </script>
 
-<div style="max-width: 1200px; margin: 0 auto; padding: 0 0.5rem 2rem;">
+<?php $baseUrl = rtrim(str_replace('/index.php', '', APP_BASE), '/'); ?>
+<link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/style.css">
+<link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/create-post.css">
+
+<div class="create-post-page">
 
 <!-- ── DB error banner ─────────────────────────────────────────────────────── -->
 <?php if (!empty($errors['db'])): ?>
@@ -126,8 +130,8 @@ if (typeof Swal === 'undefined') {
 </div>
 <?php endif; ?>
 
-<!-- ── Page heading ────────────────────────────────────────────────────────── -->
-<div class="mb-4">
+<!-- ── Page heading ─────────────────────────────────────────────────────── -->
+<div class="mb-4 pt-3">
     <nav aria-label="breadcrumb" class="mb-2">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="<?= APP_BASE ?>/">GulfGuide</a></li>
@@ -135,15 +139,13 @@ if (typeof Swal === 'undefined') {
             <li class="breadcrumb-item active" aria-current="page">Write Review</li>
         </ol>
     </nav>
-    <h2 class="fw-bold mb-1" style="font-size:clamp(1.4rem,4vw,2rem);">
-        Let's Share Your Experience!
-    </h2>
+    <h2>Let's Share Your Experience!</h2>
     <p class="text-muted mb-0">Write Reviews</p>
 </div>
 
 <!-- ── Form card ───────────────────────────────────────────────────────────── -->
 <div class="card-section">
-    <div class="card-section--body" style="padding: 2rem;">
+    <div class="card-section--body create-post-body">
         <form id="createPostForm"
               method="POST"
               action="<?= APP_BASE ?>/creator/create-post"
@@ -157,33 +159,21 @@ if (typeof Swal === 'undefined') {
                     <label class="form-label fw-semibold">Cover Image</label>
 
                     <!-- drop zone -->
-                    <div id="dropZone"
-                         class="d-flex flex-column align-items-center justify-content-center gap-2 rounded-3 position-relative"
-                         style="min-height:320px; border:2px dashed var(--light-grey-400);
-                                background:var(--light-grey-50); cursor:pointer;
-                                transition:border-color .2s, background .2s;">
+                    <div id="dropZone">
 
                         <!-- preview image (hidden until a file is chosen) -->
-                        <img id="imgPreview" src="" alt="Preview"
-                             class="d-none rounded-3 w-100 h-100"
-                             style="object-fit:cover; position:absolute; inset:0;">
+                        <img id="imgPreview" src="" alt="Preview" class="d-none">
 
                         <!-- placeholder icon + text -->
                         <div id="dropPlaceholder" class="text-center p-3">
-                            <i class="ph ph-camera-plus" style="font-size:3rem; color:var(--light-grey-700);"></i>
-                            <p class="mb-1 fw-semibold" style="color:var(--text-secondary);">
-                                Click or drag & drop to upload
-                            </p>
-                            <p class="mb-0 text-muted" style="font-size:var(--font-size-p-xs);">
-                                JPEG, PNG, WebP · max 5 MB
-                            </p>
+                            <i class="ph ph-camera-plus drop-icon"></i>
+                            <p class="drop-title">Click or drag &amp; drop to upload</p>
+                            <p class="drop-hint">JPEG, PNG, WebP · max 5 MB</p>
                         </div>
 
                         <!-- hidden file input -->
                         <input type="file" id="thumbnail" name="thumbnail"
-                               accept="image/jpeg,image/png,image/webp,image/gif"
-                               class="position-absolute w-100 h-100 opacity-0"
-                               style="cursor:pointer; top:0; left:0;">
+                               accept="image/jpeg,image/png,image/webp,image/gif">
                     </div>
 
                     <!-- remove button (shown after image selected) -->
@@ -228,7 +218,7 @@ if (typeof Swal === 'undefined') {
                         <div class="invalid-feedback">
                             <?= htmlspecialchars($errors['content'] ?? 'Review must be at least 20 characters.') ?>
                         </div>
-                        <div class="text-muted text-end mt-1" style="font-size:var(--font-size-p-xs);">
+                        <div class="char-counter">
                             <span id="charCount">0</span> characters
                         </div>
                     </div>
