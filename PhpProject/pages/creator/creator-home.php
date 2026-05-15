@@ -40,180 +40,285 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([':uid' => $userId]);
 $postRows = $stmt->fetchAll();
-$posts    = array_map([Post::class, 'fromArray'], $postRows);//Each database row gets converted into a Post object
+$posts    = array_map([Post::class, 'fromArray'], $postRows);
 
 $total     = count($posts);
 $published = count(array_filter($posts, fn($p) => $p->isPublished()));
 $drafts    = $total - $published;
-//here
-// Base URL for the AJAX handler (strips /index.php from APP_BASE)
-$ajaxBase = rtrim(str_replace('/index.php', '', APP_BASE), '/');
 
-// Session flash
+$baseUrl  = rtrim(str_replace('/index.php', '', APP_BASE), '/');
+$ajaxBase = $baseUrl;
+
 $flashMsg  = $_SESSION['status']      ?? null;
 $flashCode = $_SESSION['status_code'] ?? null;
 unset($_SESSION['status'], $_SESSION['status_code']);
+
+function excerptContent(string $content, int $len = 220): string {
+    $content = preg_replace('/^\[Traveled in: \d{4}\]\n\n/', '', $content);
+    return mb_strlen($content) > $len ? mb_substr($content, 0, $len) . '…' : $content;
+}
 ?>
 
-<!-- SweetAlert2 fallback (loaded here in case index.php doesn't include it yet) -->
+<!-- SweetAlert2 fallback -->
 <script>
 if (typeof Swal === 'undefined') {
     document.write('<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"><\/script>');
 }
 </script>
 
-<!-- ── Page header ─────────────────────────────────────────────────────────── -->
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pb-3">
-    <h2>My Dashboard</h2>
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb mb-0">
-            <li class="breadcrumb-item"><a href="<?= APP_BASE ?>/">GulfGuide</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Creator Dashboard</li>
-        </ol>
-    </nav>
+<style>
+/* Page-level layout */
+.creator-page { max-width: 1200px; margin: 0 auto; padding: 0 0.5rem 2rem; }
+</style>
+
+<!-- ── Hero (full width, outside the container) ────────────────────────────── -->
+<div class="creator-hero">
+    <div class="creator-hero__overlay"></div>
+    <div class="creator-hero__content">
+        <h1 class="creator-hero__title">Share your Travel Experience</h1>
+        <p class="creator-hero__sub">Let your stories inspire other travellers</p>
+        <a href="<?= APP_BASE ?>/creator/create-post" class="btn btn-light fw-semibold px-4">
+            <i class="ph ph-pencil-simple me-2"></i>Write New Review
+        </a>
+    </div>
 </div>
 
-<!-- ── Stats cards ─────────────────────────────────────────────────────────── -->
+<div class="creator-page">
+
+<!-- ── Stats ───────────────────────────────────────────────────────────────── -->
 <div class="row g-3 mb-4">
-    <div class="col-sm-4">
-        <div class="card-section p-4 text-center">
-            <div class="fw-bold" style="font-size:2rem; color:var(--brand-primary);"><?= $total ?></div>
-            <div class="text-muted" style="font-size:var(--font-size-p-s);">Total Posts</div>
+    <div class="col-4">
+        <div class="card-section p-3 text-center">
+            <div class="fw-bold" style="font-size:1.8rem;color:var(--brand-primary);"><?= $total ?></div>
+            <div class="text-muted" style="font-size:var(--font-size-p-xs);">Total Posts</div>
         </div>
     </div>
-    <div class="col-sm-4">
-        <div class="card-section p-4 text-center">
-            <div class="fw-bold" style="font-size:2rem; color:var(--semantic-success);"><?= $published ?></div>
-            <div class="text-muted" style="font-size:var(--font-size-p-s);">Published</div>
+    <div class="col-4">
+        <div class="card-section p-3 text-center">
+            <div class="fw-bold" style="font-size:1.8rem;color:var(--semantic-success);"><?= $published ?></div>
+            <div class="text-muted" style="font-size:var(--font-size-p-xs);">Published</div>
         </div>
     </div>
-    <div class="col-sm-4">
-        <div class="card-section p-4 text-center">
-            <div class="fw-bold" style="font-size:2rem; color:var(--semantic-warning);"><?= $drafts ?></div>
-            <div class="text-muted" style="font-size:var(--font-size-p-s);">Drafts</div>
+    <div class="col-4">
+        <div class="card-section p-3 text-center">
+            <div class="fw-bold" style="font-size:1.8rem;color:var(--semantic-warning);"><?= $drafts ?></div>
+            <div class="text-muted" style="font-size:var(--font-size-p-xs);">Drafts</div>
         </div>
     </div>
 </div>
 
-<!-- ── Posts table ─────────────────────────────────────────────────────────── -->
-<div class="card-section">
-    <div class="card-section--header">
-        <p class="h5-style mb-0">My Posts</p>
-        <div class="d-flex gap-2 align-items-center flex-wrap">
-            <!-- Status filter tabs (jQuery client-side) -->
-            <div class="btn-group btn-group-sm" id="statusFilter" role="group">
-                <button class="btn btn-outline-secondary active" data-filter="all">
-                    All <span class="badge bg-secondary ms-1"><?= $total ?></span>
-                </button>
-                <button class="btn btn-outline-success" data-filter="published">
-                    Published <span class="badge bg-success ms-1"><?= $published ?></span>
-                </button>
-                <button class="btn btn-outline-warning text-dark" data-filter="draft">
-                    Draft <span class="badge bg-warning text-dark ms-1"><?= $drafts ?></span>
-                </button>
-            </div>
-            <!-- Live search (jQuery) -->
-            <input type="text" id="postSearch" class="form-control form-control-sm"
-                   placeholder="Search by title…" style="width:200px">
-            <!-- New post button -->
-            <a href="<?= APP_BASE ?>/creator/create-post" class="btn btn-sm btn-primary">
-                <i class="ph ph-plus me-1"></i>New Post
-            </a>
-        </div>
+<!-- ── Section header ──────────────────────────────────────────────────────── -->
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+    <div>
+        <h4 class="mb-0 fw-bold">Your Latest Blogs</h4>
+        <p class="text-muted mb-0" style="font-size:var(--font-size-p-s);">
+            Travellers want to see more reviews of these places
+        </p>
     </div>
-    <hr class="card-section--divider m-0">
-    <div class="card-section--body">
-
-        <?php if (empty($posts)): ?>
-        <div class="text-center py-5 text-muted">
-            <i class="ph ph-article" style="font-size:3rem; opacity:.4;"></i>
-            <p class="mt-2 mb-0">No posts yet.
-                <a href="<?= APP_BASE ?>/creator/create-post">Create your first post!</a>
-            </p>
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+        <div class="btn-group btn-group-sm" id="statusFilter" role="group">
+            <button class="btn btn-outline-secondary active" data-filter="all">All</button>
+            <button class="btn btn-outline-success"           data-filter="published">Published</button>
+            <button class="btn btn-outline-warning text-dark" data-filter="draft">Draft</button>
         </div>
+        <input type="text" id="postSearch" class="form-control form-control-sm"
+               placeholder="Search…" style="width:150px">
+        <a href="<?= APP_BASE ?>/creator/create-post" class="btn btn-sm btn-outline-primary fw-semibold">
+            <i class="ph ph-pencil-simple me-1"></i>Write New Review
+        </a>
+    </div>
+</div>
 
+<!-- No filter results -->
+<div id="noResults" class="text-center py-5 text-muted d-none">
+    <i class="ph ph-magnifying-glass" style="font-size:2.5rem;opacity:.35;"></i>
+    <p class="mt-2 mb-0">No posts match your search.</p>
+</div>
+
+<!-- ── Empty state ─────────────────────────────────────────────────────────── -->
+<?php if (empty($posts)): ?>
+<div class="text-center py-5 text-muted">
+    <i class="ph ph-newspaper" style="font-size:3rem;opacity:.35;"></i>
+    <p class="mt-2 mb-1 fw-semibold">No posts yet</p>
+    <a href="<?= APP_BASE ?>/creator/create-post" class="btn btn-primary btn-sm mt-1">
+        Create your first post
+    </a>
+</div>
+
+<?php else: ?>
+
+<!-- ── Blog cards ──────────────────────────────────────────────────────────── -->
+<div id="postsBody">
+<?php foreach ($posts as $i => $post):
+    $thumbSrc    = !empty($post->getThumbnail()) ? $baseUrl . '/' . $post->getThumbnail() : null;
+    $countryName = htmlspecialchars($postRows[$i]['country_name'] ?? '');
+    $postDate    = (new DateTime($post->getCreatedAt()))->format('M j, Y');
+    $excerpt     = htmlspecialchars(excerptContent($post->getContent()));
+?>
+<div class="blog-card mb-3"
+     data-status="<?= $post->getStatus() ?>"
+     data-title="<?= strtolower(htmlspecialchars($post->getTitle())) ?>">
+
+    <!-- Thumbnail -->
+    <div class="blog-card__thumb">
+        <?php if ($thumbSrc): ?>
+            <img src="<?= $thumbSrc ?>" alt="<?= htmlspecialchars($post->getTitle()) ?>">
         <?php else: ?>
-        <div class="table-responsive">
-            <table class="table align-middle" id="postsTable">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Title</th>
-                        <th>Country</th>
-                        <th>Status</th>
-                        <th>Date</th>
-                        <th class="text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="postsBody">
-                    <?php foreach ($posts as $i => $post): ?>
-                    <tr data-status="<?= $post->getStatus() ?>"
-                        data-title="<?= strtolower(htmlspecialchars($post->getTitle())) ?>">
-                        <td><?= $post->getPostId() ?></td>
-                        <td class="fw-semibold"><?= htmlspecialchars($post->getTitle()) ?></td>
-                        <td><?= htmlspecialchars($postRows[$i]['country_name'] ?? '—') ?></td>
-                        <td>
-                            <span class="gulfguide-badge <?= $post->isPublished() ? 'gulfguide-badge--success' : 'gulfguide-badge--warning' ?> gulfguide-badge--rounded"
-                                  id="badge-<?= $post->getPostId() ?>">
-                                <i class="ph-fill <?= $post->isPublished() ? 'ph-check-circle' : 'ph-clock' ?>"
-                                   id="badge-icon-<?= $post->getPostId() ?>"></i>
-                                <span id="badge-text-<?= $post->getPostId() ?>"><?= ucfirst($post->getStatus()) ?></span>
-                            </span>
-                        </td>
-                        <td><?= (new DateTime($post->getCreatedAt()))->format('M j, Y') ?></td>
-                        <td class="text-center">
-                            <div class="d-flex gap-1 justify-content-center flex-wrap">
-
-                                <!-- AJAX: toggle publish / draft -->
-                                <button class="btn btn-sm btn-outline-primary toggle-status-btn"
-                                        data-post-id="<?= $post->getPostId() ?>"
-                                        data-status="<?= $post->getStatus() ?>"
-                                        title="<?= $post->isPublished() ? 'Set to Draft' : 'Publish' ?>">
-                                    <i class="ph <?= $post->isPublished() ? 'ph-arrow-counter-clockwise' : 'ph-paper-plane-tilt' ?>"></i>
-                                    <span class="d-none d-lg-inline">
-                                        <?= $post->isPublished() ? 'Unpublish' : 'Publish' ?>
-                                    </span>
-                                </button>
-
-                                <!-- View -->
-                                <a href="<?= APP_BASE ?>/posts/<?= $post->getPostId() ?>"
-                                   class="btn btn-sm btn-outline-secondary" title="View">
-                                    <i class="ph ph-eye"></i>
-                                </a>
-
-                                <!-- Edit -->
-                                <a href="<?= APP_BASE ?>/posts/<?= $post->getPostId() ?>/edit"
-                                   class="btn btn-sm btn-outline-dark" title="Edit">
-                                    <i class="ph ph-pencil-simple"></i>
-                                </a>
-
-                                <!-- Delete (SweetAlert2 confirmation) -->
-                                <form method="POST" action="<?= APP_BASE ?>/creator/" class="delete-post-form d-inline">
-                                    <input type="hidden" name="action"     value="delete_post">
-                                    <input type="hidden" name="post_id"    value="<?= $post->getPostId() ?>">
-                                    <input type="hidden" name="post_title" value="<?= htmlspecialchars($post->getTitle()) ?>">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
-                                        <i class="ph ph-trash"></i>
-                                    </button>
-                                </form>
-
-                            </div>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+            <div class="blog-card__thumb--placeholder">
+                <i class="ph ph-image"></i>
+            </div>
         <?php endif; ?>
+    </div>
 
-        <!-- Shown by jQuery when no rows match filter/search -->
-        <div id="noResults" class="text-center py-4 text-muted d-none">
-            <i class="ph ph-magnifying-glass" style="font-size:2rem; opacity:.4;"></i>
-            <p class="mt-1 mb-0">No posts match your search.</p>
+    <!-- Body -->
+    <div class="blog-card__body">
+        <div class="blog-card__meta">
+            <span><?= $countryName ?></span>
+            <span class="gulfguide-badge <?= $post->isPublished() ? 'gulfguide-badge--success' : 'gulfguide-badge--warning' ?> gulfguide-badge--rounded ms-2"
+                  id="badge-<?= $post->getPostId() ?>">
+                <i class="ph-fill <?= $post->isPublished() ? 'ph-check-circle' : 'ph-clock' ?>"
+                   id="badge-icon-<?= $post->getPostId() ?>"></i>
+                <span id="badge-text-<?= $post->getPostId() ?>"><?= ucfirst($post->getStatus()) ?></span>
+            </span>
         </div>
 
+        <h5 class="blog-card__title"><?= htmlspecialchars($post->getTitle()) ?></h5>
+        <p class="blog-card__excerpt"><?= $excerpt ?></p>
+
+        <div class="blog-card__actions">
+            <!-- AJAX toggle -->
+            <button class="btn btn-sm btn-outline-primary toggle-status-btn"
+                    data-post-id="<?= $post->getPostId() ?>"
+                    data-status="<?= $post->getStatus() ?>">
+                <i class="ph <?= $post->isPublished() ? 'ph-arrow-counter-clockwise' : 'ph-paper-plane-tilt' ?>"></i>
+                <?= $post->isPublished() ? 'Unpublish' : 'Publish' ?>
+            </button>
+
+            <a href="<?= APP_BASE ?>/posts/<?= $post->getPostId() ?>/edit"
+               class="btn btn-sm btn-outline-dark">
+                <i class="ph ph-pencil-simple me-1"></i>Edit
+            </a>
+
+            <form method="POST" action="<?= APP_BASE ?>/creator/" class="delete-post-form d-inline">
+                <input type="hidden" name="action"     value="delete_post">
+                <input type="hidden" name="post_id"    value="<?= $post->getPostId() ?>">
+                <input type="hidden" name="post_title" value="<?= htmlspecialchars($post->getTitle()) ?>">
+                <button type="submit" class="btn btn-sm btn-danger">
+                    <i class="ph ph-trash me-1"></i>Delete
+                </button>
+            </form>
+        </div>
+
+        <div class="text-muted mt-1" style="font-size:var(--font-size-p-xs);"><?= $postDate ?></div>
     </div>
+
 </div>
+<?php endforeach; ?>
+</div>
+<?php endif; ?>
+
+</div><!-- /.creator-page -->
+
+<!-- ── Scoped styles ────────────────────────────────────────────────────────── -->
+<style>
+.creator-hero {
+    position: relative;
+    min-height: 220px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+    display: flex;
+    align-items: center;
+}
+.creator-hero__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,.35);
+}
+.creator-hero__content {
+    position: relative;
+    z-index: 1;
+    padding: 2.5rem 2rem;
+    color: #fff;
+}
+.creator-hero__title {
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    font-weight: 800;
+    margin-bottom: .4rem;
+}
+.creator-hero__sub {
+    opacity: .8;
+    margin-bottom: 1.2rem;
+    font-size: var(--font-size-p-m);
+}
+.blog-card {
+    display: flex;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--light-grey-200);
+    background: #fff;
+    transition: box-shadow .2s;
+}
+.blog-card:hover { box-shadow: var(--shadow-medium); }
+.blog-card__thumb {
+    flex-shrink: 0;
+    width: 200px;
+    min-height: 170px;
+    overflow: hidden;
+}
+.blog-card__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.blog-card__thumb--placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 170px;
+    background: var(--light-grey-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--light-grey-600);
+}
+.blog-card__body {
+    flex: 1;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+}
+.blog-card__meta {
+    font-size: var(--font-size-p-xs);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+}
+.blog-card__title {
+    font-size: var(--font-size-h6);
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+}
+.blog-card__excerpt {
+    font-size: var(--font-size-p-s);
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.6;
+    flex: 1;
+}
+.blog-card__actions {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    padding-top: .5rem;
+}
+@media (max-width: 576px) {
+    .blog-card { flex-direction: column; }
+    .blog-card__thumb { width: 100%; min-height: 180px; }
+}
+</style>
 
 <!-- ── JavaScript ──────────────────────────────────────────────────────────── -->
 <script>
@@ -222,14 +327,14 @@ if (typeof Swal === 'undefined') {
 
     const AJAX_URL = '<?= $ajaxBase ?>/ajax/toggle-post-status.php';
 
-    // ── 1. Status filter tabs (jQuery) ────────────────────────────────────────
+    // 1. Filter tabs
     $('#statusFilter .btn').on('click', function () {
         $('#statusFilter .btn').removeClass('active');
         $(this).addClass('active');
         applyFilters();
     });
 
-    // ── 2. Live title search (jQuery) ─────────────────────────────────────────
+    // 2. Live search
     $('#postSearch').on('input', applyFilters);
 
     function applyFilters() {
@@ -237,105 +342,74 @@ if (typeof Swal === 'undefined') {
         const search = $('#postSearch').val().toLowerCase().trim();
         let visible  = 0;
 
-        $('#postsBody tr').each(function () {
-            const rowStatus = $(this).data('status');
-            const rowTitle  = $(this).data('title') || '';
-            const okFilter  = (filter === 'all') || (rowStatus === filter);
-            const okSearch  = (search === '')     || rowTitle.includes(search);
-
-            if (okFilter && okSearch) {
-                $(this).show();
-                visible++;
-            } else {
-                $(this).hide();
-            }
+        $('#postsBody .blog-card').each(function () {
+            const ok = ((filter === 'all') || ($(this).data('status') === filter))
+                    && ((search === '')     || ($(this).data('title') || '').includes(search));
+            $(this).toggle(ok);
+            if (ok) visible++;
         });
 
         $('#noResults').toggleClass('d-none', visible > 0);
     }
 
-    // ── 3. AJAX status toggle ─────────────────────────────────────────────────
+    // 3. AJAX toggle status
     $(document).on('click', '.toggle-status-btn', function () {
         const $btn      = $(this);
         const postId    = $btn.data('post-id');
         const current   = $btn.data('status');
-        const newStatus = (current === 'published') ? 'draft' : 'published';
+        const newStatus = current === 'published' ? 'draft' : 'published';
 
-        $btn.prop('disabled', true)
-            .html('<span class="spinner-border spinner-border-sm"></span>');
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
 
         $.post(AJAX_URL, { post_id: postId, new_status: newStatus }, function (res) {
             if (res.success) {
                 const $badge = $('#badge-' + postId);
-                const $icon  = $('#badge-icon-' + postId);
-                const $text  = $('#badge-text-' + postId);
+                $badge.removeClass('gulfguide-badge--success gulfguide-badge--warning')
+                      .addClass(newStatus === 'published' ? 'gulfguide-badge--success' : 'gulfguide-badge--warning');
+                $('#badge-icon-' + postId).attr('class', 'ph-fill ' + (newStatus === 'published' ? 'ph-check-circle' : 'ph-clock'));
+                $('#badge-text-' + postId).text(newStatus.charAt(0).toUpperCase() + newStatus.slice(1));
 
-                $badge.removeClass('gulfguide-badge--success gulfguide-badge--warning');
-                if (newStatus === 'published') {
-                    $badge.addClass('gulfguide-badge--success');
-                    $icon.attr('class', 'ph-fill ph-check-circle');
-                } else {
-                    $badge.addClass('gulfguide-badge--warning');
-                    $icon.attr('class', 'ph-fill ph-clock');
-                }
-                $text.text(newStatus.charAt(0).toUpperCase() + newStatus.slice(1));
-
-                $btn.closest('tr').data('status', newStatus).attr('data-status', newStatus);
+                $btn.closest('.blog-card').data('status', newStatus).attr('data-status', newStatus);
 
                 const newIcon  = newStatus === 'published' ? 'ph-arrow-counter-clockwise' : 'ph-paper-plane-tilt';
                 const newLabel = newStatus === 'published' ? 'Unpublish' : 'Publish';
-                $btn.data('status', newStatus)
-                    .attr('title', newLabel)
-                    .prop('disabled', false)
-                    .html('<i class="ph ' + newIcon + '"></i>'
-                        + '<span class="d-none d-lg-inline"> ' + newLabel + '</span>');
+                $btn.data('status', newStatus).prop('disabled', false)
+                    .html('<i class="ph ' + newIcon + '"></i> ' + newLabel);
 
                 applyFilters();
-
-                Swal.fire({
-                    icon: 'success', title: 'Status Updated',
-                    text: 'Post is now ' + newStatus + '.',
-                    timer: 1800, showConfirmButton: false
-                });
+                Swal.fire({ icon:'success', title:'Updated', text:'Post is now ' + newStatus + '.', timer:1600, showConfirmButton:false });
             } else {
-                Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'Could not update status.' });
+                Swal.fire({ icon:'error', title:'Error', text: res.message || 'Could not update.' });
                 const origIcon  = current === 'published' ? 'ph-arrow-counter-clockwise' : 'ph-paper-plane-tilt';
                 const origLabel = current === 'published' ? 'Unpublish' : 'Publish';
-                $btn.prop('disabled', false)
-                    .html('<i class="ph ' + origIcon + '"></i>'
-                        + '<span class="d-none d-lg-inline"> ' + origLabel + '</span>');
+                $btn.prop('disabled', false).html('<i class="ph ' + origIcon + '"></i> ' + origLabel);
             }
         }, 'json').fail(function () {
-            Swal.fire({ icon: 'error', title: 'Network Error', text: 'Request failed. Please try again.' });
+            Swal.fire({ icon:'error', title:'Network Error', text:'Please try again.' });
             const origIcon  = current === 'published' ? 'ph-arrow-counter-clockwise' : 'ph-paper-plane-tilt';
             const origLabel = current === 'published' ? 'Unpublish' : 'Publish';
-            $btn.prop('disabled', false)
-                .html('<i class="ph ' + origIcon + '"></i>'
-                    + '<span class="d-none d-lg-inline"> ' + origLabel + '</span>');
+            $btn.prop('disabled', false).html('<i class="ph ' + origIcon + '"></i> ' + origLabel);
         });
     });
 
-    // ── 4. Delete confirmation (SweetAlert2 + jQuery) ─────────────────────────
+    // 4. Delete confirmation
     $(document).on('submit', '.delete-post-form', function (e) {
         e.preventDefault();
         const $form = $(this);
         const title = $form.find('input[name="post_title"]').val();
-
         Swal.fire({
             title: 'Delete Post',
-            text: 'Are you sure you want to delete "' + title + '"? This cannot be undone.',
+            text: 'Are you sure you want to delete "' + title + '"?',
             icon: 'warning',
-            showCancelButton:    true,
-            confirmButtonColor:  '#dc3545',
-            cancelButtonColor:   '#6c757d',
-            confirmButtonText:   'Yes, delete it',
-            cancelButtonText:    'Cancel'
-        }).then(function (result) {
-            if (result.isConfirmed) { $form[0].submit(); }
-        });
+            showCancelButton:   true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor:  '#6c757d',
+            confirmButtonText:  'Yes, delete it',
+            cancelButtonText:   'Cancel'
+        }).then(function (r) { if (r.isConfirmed) $form[0].submit(); });
     });
 
-    // ── 5. Flash message on page load ─────────────────────────────────────────
+    // 5. Flash message
     <?php if ($flashMsg): ?>
     $(function () {
         Swal.fire({

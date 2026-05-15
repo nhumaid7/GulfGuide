@@ -114,19 +114,9 @@ if (typeof Swal === 'undefined') {
 }
 </script>
 
-<!-- ── Page header ─────────────────────────────────────────────────────────── -->
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pb-3">
-    <h2>Create Post</h2>
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb mb-0">
-            <li class="breadcrumb-item"><a href="<?= APP_BASE ?>/">GulfGuide</a></li>
-            <li class="breadcrumb-item"><a href="<?= APP_BASE ?>/creator/">Dashboard</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Create Post</li>
-        </ol>
-    </nav>
-</div>
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 0.5rem 2rem;">
 
-<!-- ── DB error banner ────────────────────────────────────────────────────────  -->
+<!-- ── DB error banner ─────────────────────────────────────────────────────── -->
 <?php if (!empty($errors['db'])): ?>
 <div class="alert alert-danger alert-dismissible fade show mb-3">
     <?= htmlspecialchars($errors['db']) ?>
@@ -134,19 +124,24 @@ if (typeof Swal === 'undefined') {
 </div>
 <?php endif; ?>
 
-<!-- ── Main card ──────────────────────────────────────────────────────────────  -->
-<div class="card-section">
-    <div class="card-section--header">
-        <div>
-            <p class="h5-style mb-0">Let's Share Your Experience!</p>
-            <p class="text-muted mb-0" style="font-size:var(--font-size-p-s);">
-                Share your travel story with the GulfGuide community
-            </p>
-        </div>
-    </div>
-    <hr class="card-section--divider m-0">
+<!-- ── Page heading ────────────────────────────────────────────────────────── -->
+<div class="mb-4">
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="<?= APP_BASE ?>/">GulfGuide</a></li>
+            <li class="breadcrumb-item"><a href="<?= APP_BASE ?>/creator/">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Write Review</li>
+        </ol>
+    </nav>
+    <h2 class="fw-bold mb-1" style="font-size:clamp(1.4rem,4vw,2rem);">
+        Let's Share Your Experience!
+    </h2>
+    <p class="text-muted mb-0">Write Reviews</p>
+</div>
 
-    <div class="card-section--body">
+<!-- ── Form card ───────────────────────────────────────────────────────────── -->
+<div class="card-section">
+    <div class="card-section--body" style="padding: 2rem;">
         <form id="createPostForm"
               method="POST"
               action="<?= APP_BASE ?>/creator/create-post"
@@ -475,3 +470,5 @@ if (typeof Swal === 'undefined') {
 
 })(jQuery);
 </script>
+
+</div><!-- /page wrapper -->
