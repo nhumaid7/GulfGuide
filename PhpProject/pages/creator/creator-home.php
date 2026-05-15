@@ -77,36 +77,12 @@ if (typeof Swal === 'undefined') {
     <div class="creator-hero__content">
         <h1 class="creator-hero__title">Share your Travel Experience</h1>
         <p class="creator-hero__sub">Let your stories inspire other travellers</p>
-        <a href="<?= APP_BASE ?>/creator/create-post" class="btn btn-light fw-semibold px-4">
-            <i class="ph ph-pencil-simple me-2"></i>Write New Review
-        </a>
     </div>
 </div>
 
 <div class="creator-page">
 
 <!-- ── Stats ───────────────────────────────────────────────────────────────── -->
-<div class="row g-3 mb-4">
-    <div class="col-4">
-        <div class="card-section p-3 text-center">
-            <div class="fw-bold" style="font-size:1.8rem;color:var(--brand-primary);"><?= $total ?></div>
-            <div class="text-muted" style="font-size:var(--font-size-p-xs);">Total Posts</div>
-        </div>
-    </div>
-    <div class="col-4">
-        <div class="card-section p-3 text-center">
-            <div class="fw-bold" style="font-size:1.8rem;color:var(--semantic-success);"><?= $published ?></div>
-            <div class="text-muted" style="font-size:var(--font-size-p-xs);">Published</div>
-        </div>
-    </div>
-    <div class="col-4">
-        <div class="card-section p-3 text-center">
-            <div class="fw-bold" style="font-size:1.8rem;color:var(--semantic-warning);"><?= $drafts ?></div>
-            <div class="text-muted" style="font-size:var(--font-size-p-xs);">Drafts</div>
-        </div>
-    </div>
-</div>
-
 <!-- ── Section header ──────────────────────────────────────────────────────── -->
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
     <div>
@@ -117,9 +93,15 @@ if (typeof Swal === 'undefined') {
     </div>
     <div class="d-flex gap-2 align-items-center flex-wrap">
         <div class="btn-group btn-group-sm" id="statusFilter" role="group">
-            <button class="btn btn-outline-secondary active" data-filter="all">All</button>
-            <button class="btn btn-outline-success"           data-filter="published">Published</button>
-            <button class="btn btn-outline-warning text-dark" data-filter="draft">Draft</button>
+            <button class="btn btn-outline-secondary active" data-filter="all">
+                All <span class="badge bg-secondary ms-1"><?= $total ?></span>
+            </button>
+            <button class="btn btn-outline-success" data-filter="published">
+                Published <span class="badge bg-success ms-1"><?= $published ?></span>
+            </button>
+            <button class="btn btn-outline-warning text-dark" data-filter="draft">
+                Draft <span class="badge bg-warning text-dark ms-1"><?= $drafts ?></span>
+            </button>
         </div>
         <input type="text" id="postSearch" class="form-control form-control-sm"
                placeholder="Search…" style="width:150px">

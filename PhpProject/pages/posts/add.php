@@ -285,16 +285,16 @@ if (typeof Swal === 'undefined') {
                         </div>
                     </div>
 
+                    <!-- Hidden input carries the action to PHP reliably -->
+                    <input type="hidden" name="action" id="actionField" value="draft">
+
                     <!-- Action buttons -->
                     <div class="d-flex gap-2 flex-wrap">
-                        <button type="submit" name="action" value="draft"
-                                class="btn btn-outline-secondary"
+                        <button type="button" class="btn btn-outline-secondary"
                                 onclick="setAction('draft')">
                             <i class="ph ph-floppy-disk me-1"></i>Save as Draft
                         </button>
-                        <button type="submit" name="action" value="published"
-                                id="publishBtn"
-                                class="btn btn-primary"
+                        <button type="button" id="publishBtn" class="btn btn-primary"
                                 onclick="setAction('published')">
                             <i class="ph ph-paper-plane-tilt me-1"></i>Publish Post
                         </button>
@@ -316,7 +316,32 @@ if (typeof Swal === 'undefined') {
 
     let pendingAction = 'draft';
 
-    window.setAction = function (val) { pendingAction = val; };
+    // setAction: update hidden field then trigger form submission
+    window.setAction = function (val) {
+        pendingAction = val;
+        $('#actionField').val(val);
+
+        if (val === 'published') {
+            if (!validateForm(val)) return;
+            Swal.fire({
+                icon: 'question',
+                title: 'Publish this post?',
+                text: 'Your post will be visible to all visitors.',
+                showCancelButton:   true,
+                confirmButtonColor: '#4169e1',
+                cancelButtonColor:  '#6c757d',
+                confirmButtonText:  'Yes, publish it',
+                cancelButtonText:   'Not yet'
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    document.getElementById('createPostForm').submit();
+                }
+            });
+        } else {
+            if (!validateForm(val)) return;
+            document.getElementById('createPostForm').submit();
+        }
+    };
 
     // ── Image upload preview (jQuery) ──────────────────────────────────────────
     const $drop        = $('#dropZone');
@@ -386,30 +411,6 @@ if (typeof Swal === 'undefined') {
     // ── Character counter (jQuery) ────────────────────────────────────────────
     $('#content').on('input', function () {
         $('#charCount').text($(this).val().length);
-    });
-
-    // ── Form validation (JS) ──────────────────────────────────────────────────
-    $('#createPostForm').on('submit', function (e) {
-        e.preventDefault();
-        if (!validateForm(pendingAction)) return;
-
-        // Extra SweetAlert confirm before publishing
-        if (pendingAction === 'published') {
-            Swal.fire({
-                icon: 'question',
-                title: 'Publish this post?',
-                text: 'Your post will be visible to all visitors.',
-                showCancelButton: true,
-                confirmButtonColor: '#4169e1',
-                cancelButtonColor:  '#6c757d',
-                confirmButtonText:  'Yes, publish it',
-                cancelButtonText:   'Not yet'
-            }).then(function (result) {
-                if (result.isConfirmed) { document.getElementById('createPostForm').submit(); }
-            });
-        } else {
-            this.submit();
-        }
     });
 
     function validateForm(action) {
