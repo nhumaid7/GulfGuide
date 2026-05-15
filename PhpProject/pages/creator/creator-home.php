@@ -32,7 +32,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
 
 // ── Fetch creator's posts ─────────────────────────────────────────────────────
 $stmt = $pdo->prepare("
-    SELECT p.*, c.name AS country_name
+    SELECT p.*,
+           c.name AS country_name,
+           (SELECT COUNT(*) FROM dbProj_reaction r
+            WHERE r.post_id = p.post_id AND r.type = 'like')    AS likes_count,
+           (SELECT COUNT(*) FROM dbProj_reaction r
+            WHERE r.post_id = p.post_id AND r.type = 'dislike') AS dislikes_count,
+           (SELECT COUNT(*) FROM dbProj_comment cm
+            WHERE cm.post_id = p.post_id AND cm.is_visible = 1) AS comments_count
     FROM   dbProj_post p
     LEFT JOIN dbProj_country c ON p.country_id = c.country_id
     WHERE  p.user_id = :uid
@@ -167,6 +174,24 @@ if (typeof Swal === 'undefined') {
         <h5 class="blog-card__title"><?= htmlspecialchars($post->getTitle()) ?></h5>
         <p class="blog-card__excerpt"><?= $excerpt ?></p>
 
+        <!-- Likes / dislikes / comments row -->
+        <div class="blog-card__stats">
+            <span title="Likes">
+                <i class="ph-fill ph-thumbs-up" style="color:var(--semantic-success);"></i>
+                <?= (int)($postRows[$i]['likes_count'] ?? 0) ?>
+            </span>
+            <span title="Dislikes">
+                <i class="ph-fill ph-thumbs-down" style="color:var(--semantic-failure);"></i>
+                <?= (int)($postRows[$i]['dislikes_count'] ?? 0) ?>
+            </span>
+            <button class="btn btn-sm btn-link p-0 view-comments-btn"
+                    data-post-id="<?= $post->getPostId() ?>"
+                    title="View comments">
+                <i class="ph ph-chat-circle-text"></i>
+                <?= (int)($postRows[$i]['comments_count'] ?? 0) ?> Comments
+            </button>
+        </div>
+
         <div class="blog-card__actions">
             <!-- AJAX toggle -->
             <button class="btn btn-sm btn-outline-primary toggle-status-btn"
@@ -192,6 +217,16 @@ if (typeof Swal === 'undefined') {
         </div>
 
         <div class="text-muted mt-1" style="font-size:var(--font-size-p-xs);"><?= $postDate ?></div>
+
+        <!-- Comments panel (loaded via AJAX) -->
+        <div class="comments-panel d-none" id="comments-panel-<?= $post->getPostId() ?>">
+            <hr class="my-2">
+            <div class="comments-body" id="comments-body-<?= $post->getPostId() ?>">
+                <div class="text-center py-2">
+                    <span class="spinner-border spinner-border-sm text-secondary"></span>
+                </div>
+            </div>
+        </div>
     </div>
 
 </div>
@@ -296,6 +331,38 @@ if (typeof Swal === 'undefined') {
     flex-wrap: wrap;
     padding-top: .5rem;
 }
+.blog-card__stats {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: var(--font-size-p-xs);
+    color: var(--text-secondary);
+    padding-top: .4rem;
+}
+.blog-card__stats span {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+}
+.comments-panel {
+    font-size: var(--font-size-p-s);
+}
+.comment-item {
+    padding: .5rem 0;
+    border-bottom: 1px solid var(--light-grey-100);
+}
+.comment-item:last-child { border-bottom: none; }
+.comment-item__author {
+    font-weight: 700;
+    font-size: var(--font-size-p-xs);
+    color: var(--text-primary);
+}
+.comment-item__date {
+    font-size: var(--font-size-p-xs);
+    color: var(--text-secondary);
+    margin-left: .5rem;
+}
+.comment-item__text { margin-top: .2rem; }
 @media (max-width: 576px) {
     .blog-card { flex-direction: column; }
     .blog-card__thumb { width: 100%; min-height: 180px; }
@@ -386,7 +453,31 @@ if (typeof Swal === 'undefined') {
         });
     });
 
-    // 4. Delete confirmation
+    // 4. View comments (AJAX)
+    $(document).on('click', '.view-comments-btn', function () {
+        const $btn    = $(this);
+        const postId  = $btn.data('post-id');
+        const $panel  = $('#comments-panel-' + postId);
+        const $body   = $('#comments-body-'  + postId);
+
+        if ($panel.hasClass('d-none')) {
+            // Open panel — load comments if not already loaded
+            $panel.removeClass('d-none');
+            if (!$panel.data('loaded')) {
+                $.get('<?= $ajaxBase ?>/ajax/get-comments.php', { post_id: postId }, function (html) {
+                    $body.html(html);
+                    $panel.data('loaded', true);
+                }).fail(function () {
+                    $body.html('<p class="text-danger text-center">Could not load comments.</p>');
+                });
+            }
+        } else {
+            // Close panel
+            $panel.addClass('d-none');
+        }
+    });
+
+    // 5. Delete confirmation
     $(document).on('submit', '.delete-post-form', function (e) {
         e.preventDefault();
         const $form = $(this);
