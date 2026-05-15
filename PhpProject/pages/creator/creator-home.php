@@ -84,7 +84,7 @@ if (typeof Swal === 'undefined') {
 
 <!-- ── Stats ───────────────────────────────────────────────────────────────── -->
 <!-- ── Section header ──────────────────────────────────────────────────────── -->
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3 mt-4">
     <div>
         <h4 class="mb-0 fw-bold">Your Latest Blogs</h4>
         <p class="text-muted mb-0" style="font-size:var(--font-size-p-s);">
