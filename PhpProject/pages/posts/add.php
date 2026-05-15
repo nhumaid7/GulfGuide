@@ -110,7 +110,9 @@ $years = range($currentYear, $currentYear - 10);
 <!-- SweetAlert2 fallback -->
 <script>
 if (typeof Swal === 'undefined') {
-    document.write('<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"><\/script>');
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js';
+    document.head.appendChild(s);
 }
 </script>
 
