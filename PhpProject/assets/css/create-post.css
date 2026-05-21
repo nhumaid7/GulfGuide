@@ -1,0 +1,144 @@
+/* ── Page wrapper ────────────────────────────────────────────────────────── */
+.create-post-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 0.5rem 3rem;
+}
+
+
+/* ── Form card ───────────────────────────────────────────────────────────── */
+.create-post-body {
+    padding: 2rem;
+}
+.create-post-page .card-section {
+    border-radius: 12px;
+    box-shadow: var(--shadow-soft);
+}
+
+/* ── Form labels ─────────────────────────────────────────────────────────── */
+.create-post-body .form-label {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: var(--font-size-p-s);
+    margin-bottom: .4rem;
+}
+
+/* ── Form inputs ─────────────────────────────────────────────────────────── */
+.create-post-body .form-control,
+.create-post-body .form-select {
+    border-color: var(--light-grey-300);
+    border-radius: 8px;
+    font-size: var(--font-size-p-s);
+    padding: .6rem .9rem;
+    transition: border-color .2s, box-shadow .2s;
+}
+.create-post-body .form-control:focus,
+.create-post-body .form-select:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(65,105,225,.15);
+}
+
+/* ── Drop zone ───────────────────────────────────────────────────────────── */
+#dropZone {
+    min-height: 320px;
+    border: 2px dashed var(--light-grey-400);
+    background: var(--light-grey-50);
+    cursor: pointer;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    position: relative;
+    transition: border-color .2s, background .2s;
+}
+#dropZone:hover {
+    border-color: var(--brand-primary);
+    background: var(--royal-blue-50);
+}
+#dropZone:hover .drop-icon {
+    color: var(--brand-primary);
+}
+#dropZone .drop-icon {
+    font-size: 3.5rem;
+    color: var(--light-grey-600);
+    transition: color .2s;
+}
+#dropZone .drop-title {
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0;
+    font-size: var(--font-size-p-m);
+}
+#dropZone .drop-hint {
+    font-size: var(--font-size-p-xs);
+    color: var(--text-secondary);
+    margin-bottom: 0;
+}
+
+/* ── Image preview ───────────────────────────────────────────────────────── */
+#imgPreview {
+    object-fit: cover;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+}
+
+/* ── Hidden file input ───────────────────────────────────────────────────── */
+#thumbnail {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* ── Char counter ────────────────────────────────────────────────────────── */
+.char-counter {
+    font-size: var(--font-size-p-xs);
+    color: var(--text-secondary);
+    text-align: right;
+    margin-top: .25rem;
+}
+
+/* ── Certification checkbox ──────────────────────────────────────────────── */
+.create-post-body .form-check-label {
+    font-size: var(--font-size-p-xs);
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+.create-post-body .form-check-input:checked {
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
+}
+
+/* ── Action buttons ──────────────────────────────────────────────────────── */
+.create-post-body .btn-primary {
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
+    padding: .5rem 1.5rem;
+    font-weight: 600;
+    border-radius: 8px;
+}
+.create-post-body .btn-primary:hover {
+    background-color: var(--royal-blue-600);
+    border-color: var(--royal-blue-600);
+}
+.create-post-body .btn-outline-secondary {
+    border-radius: 8px;
+    font-weight: 600;
+    padding: .5rem 1.5rem;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .create-post-hero { padding: 1.5rem; }
+    .create-post-body { padding: 1.25rem; }
+    #dropZone { min-height: 220px; }
+}
+@media (max-width: 576px) {
+    .create-post-body { padding: 1rem; }
+}

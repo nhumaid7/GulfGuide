@@ -25,11 +25,14 @@
     font-size: clamp(1.4rem, 4vw, 2.2rem);
     font-weight: 800;
     margin-bottom: .4rem;
+    color:#fde8ea;
 }
 .creator-hero__sub {
     opacity: .8;
     margin-bottom: 1.2rem;
     font-size: var(--font-size-p-m);
+    color:#fde8ea;
+
 }
 
 /* ── Blog card ───────────────────────────────────────────────────────────── */

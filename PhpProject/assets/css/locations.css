@@ -1,0 +1,305 @@
+/* ── Page wrapper ────────────────────────────────────────────────────────── */
+.locations-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 0.5rem 3rem;
+}
+
+/* ── Hero (matches creator-home style) ───────────────────────────────────── */
+.locations-hero {
+    position: relative;
+    min-height: 200px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+    display: flex;
+    align-items: center;
+}
+.locations-hero__content {
+    position: relative;
+    z-index: 1;
+    padding: 2.5rem 2rem;
+    color: #fff;
+}
+.locations-hero__title {
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    font-weight: 800;
+    margin-bottom: .4rem;
+}
+.locations-hero__sub {
+    opacity: .75;
+    font-size: var(--font-size-p-m);
+    margin-bottom: 0;
+}
+
+/* ── Count badge ─────────────────────────────────────────────────────────── */
+.location-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--royal-blue-100);
+    color: var(--brand-primary);
+    font-size: var(--font-size-p-xs);
+    font-weight: 700;
+    border-radius: 20px;
+    padding: .1rem .6rem;
+    margin-left: .5rem;
+    vertical-align: middle;
+}
+
+/* ── Attraction card ─────────────────────────────────────────────────────── */
+.attraction-card {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--light-grey-200);
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: box-shadow .2s, transform .2s;
+}
+.attraction-card:hover {
+    box-shadow: var(--shadow-medium);
+    transform: translateY(-3px);
+}
+
+/* Image area */
+.attraction-card__img {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+    background: var(--light-grey-100);
+}
+.attraction-card__img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform .3s;
+}
+.attraction-card:hover .attraction-card__img img {
+    transform: scale(1.05);
+}
+.attraction-card__img--placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: var(--light-grey-500);
+}
+
+/* Type badge on image */
+.attraction-card__type {
+    position: absolute;
+    top: .75rem;
+    left: .75rem;
+    background: rgba(0,0,0,.55);
+    color: #fff;
+    font-size: var(--font-size-p-xs);
+    font-weight: 600;
+    padding: .2rem .65rem;
+    border-radius: 20px;
+    backdrop-filter: blur(4px);
+}
+
+/* Card body */
+.attraction-card__body {
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: .4rem;
+}
+.attraction-card__country {
+    font-size: var(--font-size-p-xs);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+}
+.attraction-card__name {
+    font-size: var(--font-size-h6);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+.attraction-card__desc {
+    font-size: var(--font-size-p-s);
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.6;
+    flex: 1;
+}
+.attraction-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: .5rem;
+    padding-top: .75rem;
+    border-top: 1px solid var(--light-grey-100);
+}
+.attraction-card__views {
+    font-size: var(--font-size-p-xs);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+}
+.attraction-card__btn {
+    border-radius: 20px;
+    font-size: var(--font-size-p-xs);
+    font-weight: 600;
+    padding: .3rem .9rem;
+}
+
+/* ── Pagination ──────────────────────────────────────────────────────────── */
+.pagination .page-link {
+    color: var(--brand-primary);
+    border-color: var(--light-grey-200);
+}
+.pagination .page-item.active .page-link {
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
+}
+
+/* ── Show page: hero ─────────────────────────────────────────────────────── */
+.show-hero {
+    position: relative;
+    min-height: 320px;
+    background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: flex-end;
+}
+.show-hero__overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,.2) 100%);
+}
+.show-hero__content {
+    position: relative;
+    z-index: 1;
+    padding: 2rem 2.5rem;
+    color: #fff;
+    width: 100%;
+}
+.show-breadcrumb .breadcrumb-item a,
+.show-breadcrumb .breadcrumb-item,
+.show-breadcrumb .breadcrumb-item.active {
+    color: rgba(255,255,255,.7);
+}
+.show-breadcrumb .breadcrumb-item + .breadcrumb-item::before { color: rgba(255,255,255,.4); }
+.show-type-badge {
+    display: inline-block;
+    background: rgba(255,255,255,.2);
+    backdrop-filter: blur(4px);
+    color: #fff;
+    font-size: var(--font-size-p-xs);
+    font-weight: 600;
+    padding: .2rem .7rem;
+    border-radius: 20px;
+    margin-bottom: .5rem;
+}
+.show-title {
+    font-size: clamp(1.6rem, 4vw, 2.5rem);
+    font-weight: 800;
+    margin-bottom: .5rem;
+}
+.show-meta {
+    display: flex;
+    gap: 1.5rem;
+    font-size: var(--font-size-p-s);
+    opacity: .85;
+}
+.show-meta span { display: flex; align-items: center; gap: .35rem; }
+
+/* ── Show page: detail card ──────────────────────────────────────────────── */
+.show-card {
+    background: #fff;
+    border: 1px solid var(--light-grey-200);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-soft);
+}
+.show-card__title {
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    padding-bottom: .75rem;
+    border-bottom: 1px solid var(--light-grey-100);
+    display: flex;
+    align-items: center;
+}
+.show-card__text {
+    color: var(--text-secondary);
+    line-height: 1.8;
+    font-size: var(--font-size-p-s);
+    margin: 0;
+}
+
+/* ── Show page: info list ────────────────────────────────────────────────── */
+.show-info-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.show-info-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .6rem 0;
+    border-bottom: 1px solid var(--light-grey-100);
+    font-size: var(--font-size-p-s);
+}
+.show-info-list li:last-child { border-bottom: none; }
+.show-info-label { color: var(--text-secondary); }
+.show-info-value { font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: .4rem; }
+.show-info-link  { color: var(--brand-primary); text-decoration: none; }
+.show-info-link:hover { text-decoration: underline; }
+
+/* ── Show page: gallery ──────────────────────────────────────────────────── */
+.show-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: .75rem;
+}
+.show-gallery__item {
+    border-radius: 8px;
+    overflow: hidden;
+    aspect-ratio: 4/3;
+    cursor: pointer;
+}
+.show-gallery__item img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform .2s;
+}
+.show-gallery__item:hover img { transform: scale(1.05); }
+.show-gallery__item--video { cursor: default; }
+.show-gallery__item--video video { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── Lightbox ────────────────────────────────────────────────────────────── */
+.lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.9);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-out;
+}
+.lightbox img {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 576px) {
+    .locations-hero__content { padding: 1.5rem 1rem; }
+    .locations-page { padding: 1.5rem 0.5rem 2rem; }
+}
