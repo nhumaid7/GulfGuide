@@ -5,6 +5,7 @@ $totalPosts = $pdo->query("SELECT COUNT(*) FROM dbProj_post")->fetchColumn();
 $totalUsers = $pdo->query("SELECT COUNT(*) FROM dbProj_user")->fetchColumn();
 
 $pendingCreatorRequests = 0;
+
 try {
     $pendingCreatorRequests = $pdo
         ->query("SELECT COUNT(*) FROM dbProj_creator_request WHERE status = 'pending'")
@@ -40,15 +41,78 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <style>
+    .gg-dashboard-shell {
+        background: #f4f7fb;
+        min-height: 100vh;
+    }
+
+    .gg-dashboard-header {
+        background: linear-gradient(135deg, #4169e1 0%, #3154d4 55%, #2446bb 100%);
+        min-height: 76px;
+        padding: 0 54px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: #ffffff;
+        box-shadow: 0 8px 24px rgba(65, 105, 225, 0.18);
+    }
+
+    .gg-header-logo {
+        color: #ffffff;
+        text-decoration: none;
+        font-weight: 900;
+        font-size: 20px;
+        line-height: 0.95;
+        letter-spacing: 0.4px;
+    }
+
+    .gg-header-logo span {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1.6px;
+        margin-top: 5px;
+    }
+
+    .gg-header-nav {
+        display: flex;
+        align-items: center;
+        gap: 36px;
+    }
+
+    .gg-header-nav a {
+        color: #ffffff;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: lowercase;
+        opacity: 0.95;
+    }
+
+    .gg-header-nav a:hover {
+        opacity: 1;
+        text-decoration: underline;
+        text-underline-offset: 6px;
+    }
+
+    .gg-header-admin {
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        padding: 8px 15px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 800;
+    }
+
     .gg-admin-page {
         padding: 38px 48px 70px;
         background: #f4f7fb;
-        min-height: calc(100vh - 70px);
+        min-height: calc(100vh - 250px);
     }
 
     .gg-hero {
         background: linear-gradient(135deg, #223f72 0%, #31558f 100%);
-        color: #fff;
+        color: #ffffff;
         border-radius: 24px;
         padding: 34px 38px;
         margin-bottom: 28px;
@@ -60,12 +124,23 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     .gg-hero::after {
         content: "";
         position: absolute;
-        width: 260px;
-        height: 260px;
+        width: 270px;
+        height: 270px;
         border-radius: 50%;
         right: -90px;
-        top: -125px;
+        top: -130px;
         background: rgba(255, 255, 255, 0.08);
+    }
+
+    .gg-hero::before {
+        content: "";
+        position: absolute;
+        width: 170px;
+        height: 170px;
+        border-radius: 50%;
+        left: -70px;
+        bottom: -95px;
+        background: rgba(255, 255, 255, 0.05);
     }
 
     .gg-hero-content {
@@ -74,16 +149,17 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     .gg-title {
-        font-size: 34px;
+        font-size: 35px;
         font-weight: 900;
         margin-bottom: 8px;
         letter-spacing: -0.7px;
     }
 
     .gg-subtitle {
-        color: rgba(255, 255, 255, 0.78);
+        color: rgba(255, 255, 255, 0.80);
         margin: 0;
         font-size: 15px;
+        max-width: 720px;
     }
 
     .gg-stats {
@@ -102,6 +178,7 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         align-items: center;
         justify-content: space-between;
         transition: 0.2s ease;
+        backdrop-filter: blur(8px);
     }
 
     .gg-stat-card:hover {
@@ -114,6 +191,7 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         font-weight: 900;
         line-height: 1;
         margin-bottom: 8px;
+        color: #ffffff;
     }
 
     .gg-stat-label {
@@ -132,10 +210,11 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         align-items: center;
         justify-content: center;
         font-size: 21px;
+        color: #ffffff;
     }
 
     .gg-card {
-        background: #fff;
+        background: #ffffff;
         border: 1px solid #e5ebf3;
         border-radius: 22px;
         box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
@@ -151,6 +230,7 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         justify-content: space-between;
         gap: 18px;
         align-items: center;
+        flex-wrap: wrap;
     }
 
     .gg-card-title {
@@ -158,6 +238,7 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         font-size: 22px;
         font-weight: 900;
         color: #101828;
+        letter-spacing: -0.3px;
     }
 
     .gg-card-text {
@@ -191,12 +272,14 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         font-size: 13px;
         text-transform: uppercase;
         letter-spacing: 0.3px;
+        white-space: nowrap;
     }
 
     .gg-table tbody td {
         padding: 16px 20px;
         vertical-align: middle;
         border-bottom: 1px solid #eef2f6;
+        color: #111827;
     }
 
     .gg-table tbody tr:hover {
@@ -226,7 +309,8 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     .gg-desc {
         font-size: 13px;
         color: #667085;
-        max-width: 520px;
+        max-width: 540px;
+        line-height: 1.35;
     }
 
     .gg-pill {
@@ -238,11 +322,12 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         font-size: 13px;
         font-weight: 800;
         display: inline-block;
+        white-space: nowrap;
     }
 
     .gg-btn {
         background: #4169e1;
-        color: #fff;
+        color: #ffffff;
         border: 0;
         border-radius: 11px;
         padding: 11px 18px;
@@ -258,12 +343,12 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     .gg-btn:hover {
         background: #3155c9;
-        color: #fff;
+        color: #ffffff;
         transform: translateY(-1px);
     }
 
     .gg-btn-light {
-        background: #fff;
+        background: #ffffff;
         color: #2446bb;
         border: 1px solid #b9ccff;
         box-shadow: none;
@@ -271,7 +356,7 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     .gg-btn-light:hover {
         background: #4169e1;
-        color: #fff;
+        color: #ffffff;
         border-color: #4169e1;
     }
 
@@ -283,7 +368,7 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         background: #f8f9fc;
         border: 2px solid #e1e6ef;
         border-radius: 16px;
-        min-height: 92px;
+        min-height: 96px;
         padding: 20px 22px;
         display: flex;
         align-items: center;
@@ -294,7 +379,7 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     .gg-action-card:hover {
-        background: #fff;
+        background: #ffffff;
         color: #111827;
         border-color: #4169e1;
         transform: translateY(-3px);
@@ -302,16 +387,16 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     .gg-action-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 12px;
-        background: #fff;
+        width: 40px;
+        height: 40px;
+        border-radius: 13px;
+        background: #ffffff;
         border: 1px solid #e2e8f0;
         color: #4169e1;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 20px;
+        font-size: 21px;
         flex-shrink: 0;
     }
 
@@ -319,15 +404,63 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         margin: 0 0 3px;
         font-weight: 900;
         font-size: 15px;
+        color: #101828;
     }
 
     .gg-action-text {
         margin: 0;
         font-size: 13px;
         color: #667085;
+        line-height: 1.35;
     }
 
-    @media (max-width: 768px) {
+    .gg-dashboard-footer {
+        background: linear-gradient(135deg, #4169e1 0%, #3154d4 55%, #2446bb 100%);
+        min-height: 175px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: #ffffff;
+        text-align: center;
+        box-shadow: 0 -8px 24px rgba(65, 105, 225, 0.12);
+    }
+
+    .gg-footer-logo {
+        font-size: 22px;
+        font-weight: 900;
+        line-height: 0.95;
+        margin-bottom: 15px;
+        letter-spacing: 0.4px;
+    }
+
+    .gg-footer-logo span {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        margin-top: 5px;
+    }
+
+    .gg-footer-text {
+        font-size: 13px;
+        margin: 0;
+        opacity: 0.9;
+    }
+
+    @media (max-width: 992px) {
+        .gg-dashboard-header {
+            padding: 18px 24px;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .gg-header-nav {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 18px;
+        }
+
         .gg-admin-page {
             padding: 28px 18px 50px;
         }
@@ -335,213 +468,276 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .gg-title {
             font-size: 28px;
         }
-
-        .gg-card-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
     }
 </style>
 
-<div class="gg-admin-page">
+<div class="gg-dashboard-shell">
 
-    <section class="gg-hero">
-        <div class="gg-hero-content">
-            <h1 class="gg-title">Admin Dashboard</h1>
-            <p class="gg-subtitle">
-                Manage GulfGuide locations, attractions, posts, creator requests, and users from one control panel.
-            </p>
+    <header class="gg-dashboard-header">
+        <a href="<?= APP_BASE ?>/admin/" class="gg-header-logo">
+            GulfGuide
+            <span>Admin Panel</span>
+        </a>
+
+        <nav class="gg-header-nav">
+            <a href="<?= APP_BASE ?>/admin/analytics">generate reports</a>
+            <a href="<?= APP_BASE ?>/admin/moderate-posts">moderate content</a>
+            <a href="<?= APP_BASE ?>/admin/manage-accounts">account management</a>
+        </nav>
+
+        <div class="gg-header-admin">
+            Admin
         </div>
+    </header>
 
-        <div class="row g-4 gg-stats">
-            <div class="col-lg-3 col-md-6">
-                <div class="gg-stat-card">
-                    <div>
-                        <div class="gg-stat-number"><?= htmlspecialchars($totalUsers) ?></div>
-                        <p class="gg-stat-label">Users</p>
+    <main class="gg-admin-page">
+
+        <section class="gg-hero">
+            <div class="gg-hero-content">
+                <h1 class="gg-title">Admin Dashboard</h1>
+                <p class="gg-subtitle">
+                    Manage GulfGuide locations, attractions, posts, creator requests, and users from one professional control panel.
+                </p>
+            </div>
+
+            <div class="row g-4 gg-stats">
+                <div class="col-lg-3 col-md-6">
+                    <div class="gg-stat-card">
+                        <div>
+                            <div class="gg-stat-number"><?= htmlspecialchars($totalUsers) ?></div>
+                            <p class="gg-stat-label">Users</p>
+                        </div>
+                        <div class="gg-stat-icon">
+                            <i class="ph ph-users"></i>
+                        </div>
                     </div>
-                    <div class="gg-stat-icon"><i class="ph ph-users"></i></div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="gg-stat-card">
+                        <div>
+                            <div class="gg-stat-number"><?= htmlspecialchars($totalLocations) ?></div>
+                            <p class="gg-stat-label">Locations</p>
+                        </div>
+                        <div class="gg-stat-icon">
+                            <i class="ph ph-map-pin"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="gg-stat-card">
+                        <div>
+                            <div class="gg-stat-number"><?= htmlspecialchars($totalAttractions) ?></div>
+                            <p class="gg-stat-label">Attractions</p>
+                        </div>
+                        <div class="gg-stat-icon">
+                            <i class="ph ph-compass"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="gg-stat-card">
+                        <div>
+                            <div class="gg-stat-number"><?= htmlspecialchars($pendingCreatorRequests) ?></div>
+                            <p class="gg-stat-label">Pending Requests</p>
+                        </div>
+                        <div class="gg-stat-icon">
+                            <i class="ph ph-user-check"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </section>
 
-            <div class="col-lg-3 col-md-6">
-                <div class="gg-stat-card">
-                    <div>
-                        <div class="gg-stat-number"><?= htmlspecialchars($totalLocations) ?></div>
-                        <p class="gg-stat-label">Locations</p>
-                    </div>
-                    <div class="gg-stat-icon"><i class="ph ph-map-pin"></i></div>
+        <section class="gg-card">
+            <div class="gg-card-header">
+                <div>
+                    <h2 class="gg-card-title">Latest Attractions</h2>
+                    <p class="gg-card-text">
+                        Recent attractions with their location and related post activity.
+                    </p>
                 </div>
+
+                <span class="gg-badge">
+                    <?= htmlspecialchars(count($attractions)) ?> latest records
+                </span>
             </div>
 
-            <div class="col-lg-3 col-md-6">
-                <div class="gg-stat-card">
-                    <div>
-                        <div class="gg-stat-number"><?= htmlspecialchars($totalAttractions) ?></div>
-                        <p class="gg-stat-label">Attractions</p>
-                    </div>
-                    <div class="gg-stat-icon"><i class="ph ph-compass"></i></div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6">
-                <div class="gg-stat-card">
-                    <div>
-                        <div class="gg-stat-number"><?= htmlspecialchars($pendingCreatorRequests) ?></div>
-                        <p class="gg-stat-label">Pending Requests</p>
-                    </div>
-                    <div class="gg-stat-icon"><i class="ph ph-user-check"></i></div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="gg-card">
-        <div class="gg-card-header">
-            <div>
-                <h2 class="gg-card-title">Latest Attractions</h2>
-                <p class="gg-card-text">Recent attractions with their location and related post activity.</p>
-            </div>
-            <span class="gg-badge"><?= htmlspecialchars(count($attractions)) ?> latest records</span>
-        </div>
-
-        <div class="table-responsive">
-            <table class="table gg-table align-middle">
-                <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Attraction</th>
-                    <th>Location</th>
-                    <th>Posts</th>
-                    <th>Action</th>
-                </tr>
-                </thead>
-
-                <tbody>
-                <?php if (!$attractions): ?>
+            <div class="table-responsive">
+                <table class="table gg-table align-middle">
+                    <thead>
                     <tr>
-                        <td colspan="5" class="text-center text-muted py-4">No attractions found.</td>
+                        <th>ID</th>
+                        <th>Attraction</th>
+                        <th>Location</th>
+                        <th>Posts</th>
+                        <th>Action</th>
                     </tr>
-                <?php endif; ?>
+                    </thead>
 
-                <?php foreach ($attractions as $attraction): ?>
-                    <tr>
-                        <td>
-                            <div class="gg-id"><?= htmlspecialchars($attraction['attraction_id']) ?></div>
-                        </td>
+                    <tbody>
+                    <?php if (!$attractions): ?>
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                No attractions found.
+                            </td>
+                        </tr>
+                    <?php endif; ?>
 
-                        <td>
-                            <div class="gg-attraction-name">
-                                <?= htmlspecialchars($attraction['attraction_name']) ?>
-                            </div>
-                            <div class="gg-desc">
-                                <?= htmlspecialchars(mb_strimwidth($attraction['attraction_description'] ?? '', 0, 90, '...')) ?>
-                            </div>
-                        </td>
+                    <?php foreach ($attractions as $attraction): ?>
+                        <tr>
+                            <td>
+                                <div class="gg-id">
+                                    <?= htmlspecialchars($attraction['attraction_id']) ?>
+                                </div>
+                            </td>
 
-                        <td>
-                            <span class="gg-pill">
-                                <?= htmlspecialchars($attraction['country_name'] ?? 'No location') ?>
-                            </span>
-                        </td>
+                            <td>
+                                <div class="gg-attraction-name">
+                                    <?= htmlspecialchars($attraction['attraction_name']) ?>
+                                </div>
 
-                        <td><?= htmlspecialchars($attraction['posts_count']) ?></td>
+                                <div class="gg-desc">
+                                    <?= htmlspecialchars(mb_strimwidth($attraction['attraction_description'] ?? '', 0, 90, '...')) ?>
+                                </div>
+                            </td>
 
-                        <td>
-                            <?php if (!empty($attraction['country_id'])): ?>
-                                <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($attraction['country_id']) ?>" class="gg-btn gg-btn-light">
-                                    <i class="ph ph-pencil-simple"></i>
-                                    Edit Location
-                                </a>
-                            <?php else: ?>
-                                <span class="text-muted">No location</span>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+                            <td>
+                                <span class="gg-pill">
+                                    <?= htmlspecialchars($attraction['country_name'] ?? 'No location') ?>
+                                </span>
+                            </td>
 
-        <div class="p-4 border-top bg-light">
-            <a href="<?= APP_BASE ?>/admin/location-list" class="gg-btn">
-                <i class="ph ph-map-trifold"></i>
-                Manage All Locations
-            </a>
-        </div>
-    </section>
+                            <td>
+                                <?= htmlspecialchars($attraction['posts_count']) ?>
+                            </td>
 
-    <section class="gg-card">
-        <div class="gg-card-header">
-            <div>
-                <h2 class="gg-card-title">Quick Actions</h2>
-                <p class="gg-card-text">Use these shortcuts to complete your admin tasks faster.</p>
+                            <td>
+                                <?php if (!empty($attraction['country_id'])): ?>
+                                    <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($attraction['country_id']) ?>" class="gg-btn gg-btn-light">
+                                        <i class="ph ph-pencil-simple"></i>
+                                        Edit Location
+                                    </a>
+                                <?php else: ?>
+                                    <span class="text-muted">No location</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
-        </div>
 
-        <div class="gg-actions">
-            <div class="row g-3">
-                <div class="col-lg-4 col-md-6">
-                    <a href="<?= APP_BASE ?>/admin/add-location" class="gg-action-card">
-                        <div class="gg-action-icon"><i class="ph ph-plus"></i></div>
-                        <div>
-                            <p class="gg-action-title">Add Location</p>
-                            <p class="gg-action-text">Create a new travel location.</p>
-                        </div>
-                    </a>
-                </div>
+            <div class="p-4 border-top bg-light">
+                <a href="<?= APP_BASE ?>/admin/location-list" class="gg-btn">
+                    <i class="ph ph-map-trifold"></i>
+                    Manage All Locations
+                </a>
+            </div>
+        </section>
 
-                <div class="col-lg-4 col-md-6">
-                    <a href="<?= APP_BASE ?>/admin/location-list" class="gg-action-card">
-                        <div class="gg-action-icon"><i class="ph ph-map-pin"></i></div>
-                        <div>
-                            <p class="gg-action-title">Manage Locations</p>
-                            <p class="gg-action-text">Edit or delete locations.</p>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="col-lg-4 col-md-6">
-                    <a href="<?= APP_BASE ?>/admin/creator-request" class="gg-action-card">
-                        <div class="gg-action-icon"><i class="ph ph-user-check"></i></div>
-                        <div>
-                            <p class="gg-action-title">Creator Requests</p>
-                            <p class="gg-action-text">Approve or reject applications.</p>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="col-lg-4 col-md-6">
-                    <a href="<?= APP_BASE ?>/admin/moderate-posts" class="gg-action-card">
-                        <div class="gg-action-icon"><i class="ph ph-article"></i></div>
-                        <div>
-                            <p class="gg-action-title">Moderate Posts</p>
-                            <p class="gg-action-text">Review user content.</p>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="col-lg-4 col-md-6">
-                    <a href="<?= APP_BASE ?>/admin/manage-accounts" class="gg-action-card">
-                        <div class="gg-action-icon"><i class="ph ph-users-three"></i></div>
-                        <div>
-                            <p class="gg-action-title">Manage Accounts</p>
-                            <p class="gg-action-text">View and manage users.</p>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="col-lg-4 col-md-6">
-                    <a href="<?= APP_BASE ?>/admin/analytics" class="gg-action-card">
-                        <div class="gg-action-icon"><i class="ph ph-chart-line-up"></i></div>
-                        <div>
-                            <p class="gg-action-title">Analytics</p>
-                            <p class="gg-action-text">View reports and insights.</p>
-                        </div>
-                    </a>
+        <section class="gg-card">
+            <div class="gg-card-header">
+                <div>
+                    <h2 class="gg-card-title">Quick Actions</h2>
+                    <p class="gg-card-text">
+                        Use these shortcuts to complete your admin tasks faster.
+                    </p>
                 </div>
             </div>
+
+            <div class="gg-actions">
+                <div class="row g-3">
+
+                    <div class="col-lg-4 col-md-6">
+                        <a href="<?= APP_BASE ?>/admin/add-location" class="gg-action-card">
+                            <div class="gg-action-icon">
+                                <i class="ph ph-plus"></i>
+                            </div>
+                            <div>
+                                <p class="gg-action-title">Add Location</p>
+                                <p class="gg-action-text">Create a new travel location.</p>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="col-lg-4 col-md-6">
+                        <a href="<?= APP_BASE ?>/admin/location-list" class="gg-action-card">
+                            <div class="gg-action-icon">
+                                <i class="ph ph-map-pin"></i>
+                            </div>
+                            <div>
+                                <p class="gg-action-title">Manage Locations</p>
+                                <p class="gg-action-text">Edit or delete saved locations.</p>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="col-lg-4 col-md-6">
+                        <a href="<?= APP_BASE ?>/admin/creator-request" class="gg-action-card">
+                            <div class="gg-action-icon">
+                                <i class="ph ph-user-check"></i>
+                            </div>
+                            <div>
+                                <p class="gg-action-title">Creator Requests</p>
+                                <p class="gg-action-text">Approve or reject applications.</p>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="col-lg-4 col-md-6">
+                        <a href="<?= APP_BASE ?>/admin/moderate-posts" class="gg-action-card">
+                            <div class="gg-action-icon">
+                                <i class="ph ph-article"></i>
+                            </div>
+                            <div>
+                                <p class="gg-action-title">Moderate Posts</p>
+                                <p class="gg-action-text">Review user content.</p>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="col-lg-4 col-md-6">
+                        <a href="<?= APP_BASE ?>/admin/manage-accounts" class="gg-action-card">
+                            <div class="gg-action-icon">
+                                <i class="ph ph-users-three"></i>
+                            </div>
+                            <div>
+                                <p class="gg-action-title">Manage Accounts</p>
+                                <p class="gg-action-text">View and manage users.</p>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="col-lg-4 col-md-6">
+                        <a href="<?= APP_BASE ?>/admin/analytics" class="gg-action-card">
+                            <div class="gg-action-icon">
+                                <i class="ph ph-chart-line-up"></i>
+                            </div>
+                            <div>
+                                <p class="gg-action-title">Analytics</p>
+                                <p class="gg-action-text">View reports and insights.</p>
+                            </div>
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="gg-dashboard-footer">
+        <div class="gg-footer-logo">
+            GulfGuide
+            <span>Admin Panel</span>
         </div>
-    </section>
+
+        <p class="gg-footer-text">
+            © 2026 GulfGuide. All rights reserved.
+        </p>
+    </footer>
 
 </div>

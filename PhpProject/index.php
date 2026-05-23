@@ -116,7 +116,9 @@ $depth       = count(array_filter(explode('/', trim($uri, '/'))));
 $base_prefix = str_repeat('../', $depth);   // e.g. '../../' for /admin/foo
 
 $isAdminPage = str_starts_with($uri, '/admin/');
-
+if ($isAdminPage) {
+    requireRole(ROLE_ADMIN);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
