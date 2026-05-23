@@ -36,19 +36,19 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     .tp-admin-wrapper {
-        background: #ffffff;
+        background: #f4f7fb;
         min-height: 100vh;
         font-family: inherit;
     }
 
     .tp-admin-header {
         background: linear-gradient(135deg, #4169e1 0%, #3154d4 55%, #2446bb 100%);
-        min-height: 78px;
+        min-height: 74px;
         padding: 0 58px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        box-shadow: 0 8px 24px rgba(65, 105, 225, 0.18);
+        box-shadow: 0 8px 22px rgba(65, 105, 225, 0.18);
     }
 
     .tp-logo {
@@ -70,7 +70,7 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     .tp-admin-nav {
         display: flex;
         align-items: center;
-        gap: 55px;
+        gap: 48px;
     }
 
     .tp-admin-nav a {
@@ -95,41 +95,57 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     .tp-admin-main {
-        padding: 48px 58px 75px;
-        min-height: 650px;
+        padding: 42px 58px 72px;
     }
 
-    .tp-hero {
-        background: linear-gradient(135deg, #ffffff 0%, #f5f8ff 100%);
-        border: 1px solid #e8eef8;
-        border-radius: 20px;
-        padding: 30px 34px;
-        margin-bottom: 28px;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    .tp-control-card {
+        background: linear-gradient(135deg, #233f71 0%, #31558f 100%);
+        color: #ffffff;
+        border-radius: 22px;
+        padding: 32px 36px;
+        margin-bottom: 32px;
+        box-shadow: 0 18px 38px rgba(31, 63, 110, 0.22);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .tp-control-card::after {
+        content: "";
+        position: absolute;
+        width: 260px;
+        height: 260px;
+        border-radius: 50%;
+        right: -80px;
+        top: -120px;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .tp-control-top {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 20px;
+        position: relative;
+        z-index: 2;
     }
 
     .tp-title {
-        font-size: 34px;
+        font-size: 32px;
         font-weight: 900;
-        color: #070707;
         margin-bottom: 8px;
-        letter-spacing: -0.7px;
+        letter-spacing: -0.6px;
     }
 
     .tp-subtitle {
-        color: #5f6b7a;
+        color: rgba(255, 255, 255, 0.78);
         font-size: 15px;
         margin: 0;
     }
 
-    .tp-hero-badge {
-        background: #eaf3ff;
-        color: #2f55c8;
-        border: 1px solid #cfe1ff;
+    .tp-status-pill {
+        background: rgba(255, 255, 255, 0.16);
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        color: #ffffff;
         border-radius: 999px;
         padding: 10px 18px;
         font-size: 13px;
@@ -137,38 +153,40 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         white-space: nowrap;
     }
 
-    .tp-stats-row {
-        margin-bottom: 38px;
+    .tp-stats-inside {
+        margin-top: 34px;
+        position: relative;
+        z-index: 2;
     }
 
     .tp-stat-card {
-        background: linear-gradient(135deg, #d9f4fb 0%, #ecfbff 100%);
-        border: 2px solid #75d5f4;
-        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.20);
+        border-radius: 18px;
+        padding: 22px 24px;
         min-height: 112px;
-        padding: 22px 26px;
         display: flex;
         align-items: center;
         justify-content: space-between;
+        backdrop-filter: blur(8px);
         transition: 0.2s ease;
-        box-shadow: 0 8px 18px rgba(20, 120, 180, 0.07);
     }
 
     .tp-stat-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 14px 28px rgba(20, 120, 180, 0.14);
+        background: rgba(255, 255, 255, 0.17);
     }
 
     .tp-stat-number {
         font-size: 36px;
-        font-weight: 800;
-        color: #06152f;
+        font-weight: 900;
+        color: #ffffff;
         line-height: 1;
         margin-bottom: 9px;
     }
 
     .tp-stat-label {
-        color: #5a6574;
+        color: rgba(255, 255, 255, 0.76);
         font-size: 14px;
         margin: 0;
         text-transform: lowercase;
@@ -178,9 +196,9 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     .tp-stat-icon {
         width: 46px;
         height: 46px;
-        border-radius: 14px;
-        background: rgba(65, 105, 225, 0.12);
-        color: #2446bb;
+        border-radius: 15px;
+        background: rgba(255, 255, 255, 0.15);
+        color: #ffffff;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -188,20 +206,12 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         font-weight: 900;
     }
 
-    .tp-section-title {
-        font-size: 24px;
-        font-weight: 900;
-        color: #080808;
-        margin-bottom: 18px;
-        letter-spacing: -0.4px;
-    }
-
     .tp-table-box {
         background: #ffffff;
-        border-radius: 20px;
+        border-radius: 22px;
         border: 1px solid #e5ebf3;
         box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
-        margin-bottom: 48px;
+        margin-bottom: 42px;
         overflow: hidden;
     }
 
@@ -216,9 +226,10 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     .tp-table-title {
         margin: 0;
-        font-size: 20px;
+        font-size: 22px;
         font-weight: 900;
         color: #101828;
+        letter-spacing: -0.3px;
     }
 
     .tp-table-subtitle {
@@ -259,10 +270,6 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         vertical-align: middle;
         border-bottom: 1px solid #eef2f6;
         color: #111827;
-    }
-
-    .tp-table tbody tr {
-        transition: 0.15s ease;
     }
 
     .tp-table tbody tr:hover {
@@ -313,7 +320,7 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     .tp-attraction-desc {
         font-size: 13px;
         color: #667085;
-        max-width: 520px;
+        max-width: 540px;
         line-height: 1.35;
     }
 
@@ -404,25 +411,33 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     .tp-quick-section {
-        background: linear-gradient(135deg, #ffffff 0%, #f7faff 100%);
+        background: #ffffff;
         border: 1px solid #e7edf5;
-        border-radius: 20px;
-        padding: 28px;
-        max-width: 760px;
+        border-radius: 22px;
+        padding: 30px;
+        max-width: 780px;
         margin: 0 auto 72px;
         box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
     }
 
+    .tp-section-title {
+        font-size: 22px;
+        font-weight: 900;
+        color: #080808;
+        margin-bottom: 18px;
+        letter-spacing: -0.3px;
+    }
+
     .tp-quick-actions {
-        max-width: 620px;
+        max-width: 640px;
         margin: 0 auto;
     }
 
     .tp-quick-card {
         background: #f8f9fc;
         border: 2px solid #e1e6ef;
-        border-radius: 14px;
-        min-height: 82px;
+        border-radius: 15px;
+        min-height: 84px;
         padding: 18px 24px;
         display: flex;
         align-items: center;
@@ -441,13 +456,13 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     .tp-quick-icon {
-        width: 34px;
-        height: 34px;
-        border-radius: 10px;
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 16px;
+        font-size: 17px;
         font-weight: 900;
         background: #ffffff;
         border: 1px solid #e2e8f0;
@@ -468,12 +483,12 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     .tp-quick-title {
         margin: 0;
         font-size: 15px;
-        font-weight: 700;
+        font-weight: 800;
     }
 
     .tp-admin-footer {
         background: linear-gradient(135deg, #4169e1 0%, #3154d4 55%, #2446bb 100%);
-        min-height: 190px;
+        min-height: 180px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -521,7 +536,7 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
             padding: 32px 20px 60px;
         }
 
-        .tp-hero {
+        .tp-control-top {
             flex-direction: column;
             align-items: flex-start;
         }
@@ -548,8 +563,8 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         <nav class="tp-admin-nav">
             <a href="<?= APP_BASE ?>/analytics">generate reports</a>
-            <a href="<?= APP_BASE ?>/moderate-posts">moderate content</a>
-            <a href="<?= APP_BASE ?>/manage-accounts">account management</a>
+            <a href="<?= APP_BASE ?>/admin/moderate-posts">moderate content</a>
+            <a href="<?= APP_BASE ?>/admin/manage-accounts">account management</a>
         </nav>
 
         <div class="tp-admin-name">Admin</div>
@@ -557,62 +572,62 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <main class="tp-admin-main">
 
-        <section class="tp-hero">
-            <div>
-                <h1 class="tp-title">Admin dashboard</h1>
-                <p class="tp-subtitle">
-                    Manage travel content, attractions, locations, posts, and users from one place.
-                </p>
+        <section class="tp-control-card">
+            <div class="tp-control-top">
+                <div>
+                    <h1 class="tp-title">Admin dashboard</h1>
+                    <p class="tp-subtitle">
+                        Manage travel content, attractions, locations, posts, and users from one place.
+                    </p>
+                </div>
+
+                <div class="tp-status-pill">
+                    Travel Pulse Control Panel
+                </div>
             </div>
 
-            <div class="tp-hero-badge">
-                Travel Pulse Control Panel
+            <div class="row g-4 tp-stats-inside">
+                <div class="col-lg-3 col-md-6">
+                    <div class="tp-stat-card">
+                        <div>
+                            <div class="tp-stat-number"><?= htmlspecialchars($totalUsers) ?></div>
+                            <p class="tp-stat-label">users</p>
+                        </div>
+                        <div class="tp-stat-icon">👤</div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="tp-stat-card">
+                        <div>
+                            <div class="tp-stat-number"><?= htmlspecialchars($totalPosts) ?></div>
+                            <p class="tp-stat-label">posts</p>
+                        </div>
+                        <div class="tp-stat-icon">✦</div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="tp-stat-card">
+                        <div>
+                            <div class="tp-stat-number"><?= htmlspecialchars($totalAttractions) ?></div>
+                            <p class="tp-stat-label">attractions</p>
+                        </div>
+                        <div class="tp-stat-icon">⌖</div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="tp-stat-card">
+                        <div>
+                            <div class="tp-stat-number"><?= htmlspecialchars($totalLocations) ?></div>
+                            <p class="tp-stat-label">locations</p>
+                        </div>
+                        <div class="tp-stat-icon">◎</div>
+                    </div>
+                </div>
             </div>
         </section>
-
-        <div class="row g-4 tp-stats-row">
-
-            <div class="col-lg-3 col-md-6">
-                <div class="tp-stat-card">
-                    <div>
-                        <div class="tp-stat-number"><?= htmlspecialchars($totalUsers) ?></div>
-                        <p class="tp-stat-label">users</p>
-                    </div>
-                    <div class="tp-stat-icon">👤</div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6">
-                <div class="tp-stat-card">
-                    <div>
-                        <div class="tp-stat-number"><?= htmlspecialchars($totalPosts) ?></div>
-                        <p class="tp-stat-label">posts</p>
-                    </div>
-                    <div class="tp-stat-icon">✦</div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6">
-                <div class="tp-stat-card">
-                    <div>
-                        <div class="tp-stat-number"><?= htmlspecialchars($totalAttractions) ?></div>
-                        <p class="tp-stat-label">attractions</p>
-                    </div>
-                    <div class="tp-stat-icon">⌖</div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6">
-                <div class="tp-stat-card">
-                    <div>
-                        <div class="tp-stat-number"><?= htmlspecialchars($totalLocations) ?></div>
-                        <p class="tp-stat-label">locations</p>
-                    </div>
-                    <div class="tp-stat-icon">◎</div>
-                </div>
-            </div>
-
-        </div>
 
         <section class="tp-table-box">
             <div class="tp-table-header">
@@ -703,7 +718,7 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
 
             <div class="tp-manage-row">
-                <a href="<?= APP_BASE ?>/locations?role=admin" class="tp-manage-btn">
+                <a href="<?= APP_BASE ?>/locations" class="tp-manage-btn">
                     Manage All Locations
                 </a>
             </div>
@@ -730,14 +745,14 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
 
                     <div class="col-md-6">
-                        <a href="<?= APP_BASE ?>/moderate-posts" class="tp-quick-card">
+                        <a href="<?= APP_BASE ?>/admin/moderate-posts" class="tp-quick-card">
                             <div class="tp-quick-icon tp-blue">□</div>
                             <p class="tp-quick-title">moderate posts</p>
                         </a>
                     </div>
 
                     <div class="col-md-6">
-                        <a href="<?= APP_BASE ?>/manage-accounts" class="tp-quick-card">
+                        <a href="<?= APP_BASE ?>/admin/manage-accounts" class="tp-quick-card">
                             <div class="tp-quick-icon tp-blue">⚙</div>
                             <p class="tp-quick-title">manage accounts</p>
                         </a>
