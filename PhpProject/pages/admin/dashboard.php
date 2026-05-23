@@ -717,8 +717,8 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </table>
             </div>
 
-            <div class="tp-manage-row">
-    <a href="<?= APP_BASE ?>/countries?role=admin" class="tp-manage-btn">
+<div class="tp-manage-row">
+    <a href="<?= APP_BASE ?>/countries" class="tp-manage-btn">
         Manage All Locations
     </a>
 </div>
