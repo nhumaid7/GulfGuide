@@ -1,19 +1,15 @@
 <aside class="sidebar" id="sidebar">
 
     <div class="sidebar-header">
-        <a href="<?php echo APP_BASE ?>/" class="sidebar-brand">
+        <a href="<?php echo APP_BASE ?>/admin/" class="sidebar-brand">
             <span class="brand-icon">
                 <i class="ph ph-compass"></i>
             </span>
+
             <div class="brand-name">
                 GulfGuide
                 <span>Admin Dashboard</span>
             </div>
-        </a>
-
-        <a href="<?php echo APP_BASE ?>/admin/dashboard">
-            <i class="ph ph-house"></i>
-            <span>Dashboard</span>
         </a>
     </div>
 
@@ -24,18 +20,18 @@
         <ul class="sidebar-nav list-unstyled">
 
             <li class="sidebar-nav-item">
-                <a href="<?php echo APP_BASE ?>/admin/dashboard">
+                <a href="<?php echo APP_BASE ?>/admin/">
                     <i class="ph ph-house"></i>
                     <span>Dashboard</span>
                 </a>
             </li>
 
-<li class="sidebar-nav-item">
-    <a href="<?php echo APP_BASE ?>/admin/location-list">
-        <i class="ph ph-map-pin"></i>
-        <span>Locations</span>
-    </a>
-</li>
+            <li class="sidebar-nav-item">
+                <a href="<?php echo APP_BASE ?>/admin/location-list">
+                    <i class="ph ph-map-pin"></i>
+                    <span>Locations</span>
+                </a>
+            </li>
 
             <li class="sidebar-nav-item">
                 <a href="<?php echo APP_BASE ?>/admin/creator-request">
@@ -71,7 +67,7 @@
     <div class="sidebar-promo">
         <h6>Need Help?</h6>
         <p>Check our docs or contact support</p>
-        <a href="help.php">Get Support</a>
+        <a href="<?php echo APP_BASE ?>/">Get Support</a>
     </div>
 
 </aside>
