@@ -4,6 +4,15 @@ $totalAttractions = $pdo->query("SELECT COUNT(*) FROM dbProj_attraction")->fetch
 $totalPosts = $pdo->query("SELECT COUNT(*) FROM dbProj_post")->fetchColumn();
 $totalUsers = $pdo->query("SELECT COUNT(*) FROM dbProj_user")->fetchColumn();
 
+$pendingCreatorRequests = 0;
+try {
+    $pendingCreatorRequests = $pdo
+        ->query("SELECT COUNT(*) FROM dbProj_creator_request WHERE status = 'pending'")
+        ->fetchColumn();
+} catch (Throwable $e) {
+    $pendingCreatorRequests = 0;
+}
+
 $stmt = $pdo->query("
     SELECT 
         a.attraction_id,
@@ -31,214 +40,133 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <style>
-    body {
+    .gg-admin-page {
+        padding: 38px 48px 70px;
         background: #f4f7fb;
+        min-height: calc(100vh - 70px);
     }
 
-    .tp-admin-wrapper {
-        background: #f4f7fb;
-        min-height: 100vh;
-        font-family: inherit;
-    }
-
-    .tp-admin-header {
-        background: linear-gradient(135deg, #4169e1 0%, #3154d4 55%, #2446bb 100%);
-        min-height: 74px;
-        padding: 0 58px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        box-shadow: 0 8px 22px rgba(65, 105, 225, 0.18);
-    }
-
-    .tp-logo {
-        color: #ffffff;
-        font-weight: 900;
-        font-size: 18px;
-        line-height: 0.9;
-        text-decoration: none;
-        letter-spacing: 0.4px;
-    }
-
-    .tp-logo span {
-        display: block;
-        font-size: 11px;
-        letter-spacing: 1.5px;
-        margin-top: 5px;
-    }
-
-    .tp-admin-nav {
-        display: flex;
-        align-items: center;
-        gap: 48px;
-    }
-
-    .tp-admin-nav a {
-        color: #ffffff;
-        text-decoration: none;
-        font-size: 13px;
-        font-weight: 800;
-        text-transform: lowercase;
-        opacity: 0.95;
-    }
-
-    .tp-admin-nav a:hover {
-        opacity: 1;
-        text-decoration: underline;
-        text-underline-offset: 6px;
-    }
-
-    .tp-admin-name {
-        color: #ffffff;
-        font-size: 14px;
-        font-weight: 800;
-    }
-
-    .tp-admin-main {
-        padding: 42px 58px 72px;
-    }
-
-    .tp-control-card {
-        background: linear-gradient(135deg, #233f71 0%, #31558f 100%);
-        color: #ffffff;
-        border-radius: 22px;
-        padding: 32px 36px;
-        margin-bottom: 32px;
+    .gg-hero {
+        background: linear-gradient(135deg, #223f72 0%, #31558f 100%);
+        color: #fff;
+        border-radius: 24px;
+        padding: 34px 38px;
+        margin-bottom: 28px;
         box-shadow: 0 18px 38px rgba(31, 63, 110, 0.22);
         position: relative;
         overflow: hidden;
     }
 
-    .tp-control-card::after {
+    .gg-hero::after {
         content: "";
         position: absolute;
         width: 260px;
         height: 260px;
         border-radius: 50%;
-        right: -80px;
-        top: -120px;
+        right: -90px;
+        top: -125px;
         background: rgba(255, 255, 255, 0.08);
     }
 
-    .tp-control-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 20px;
+    .gg-hero-content {
         position: relative;
         z-index: 2;
     }
 
-    .tp-title {
-        font-size: 32px;
+    .gg-title {
+        font-size: 34px;
         font-weight: 900;
         margin-bottom: 8px;
-        letter-spacing: -0.6px;
+        letter-spacing: -0.7px;
     }
 
-    .tp-subtitle {
+    .gg-subtitle {
         color: rgba(255, 255, 255, 0.78);
-        font-size: 15px;
         margin: 0;
+        font-size: 15px;
     }
 
-    .tp-status-pill {
-        background: rgba(255, 255, 255, 0.16);
-        border: 1px solid rgba(255, 255, 255, 0.24);
-        color: #ffffff;
-        border-radius: 999px;
-        padding: 10px 18px;
-        font-size: 13px;
-        font-weight: 800;
-        white-space: nowrap;
-    }
-
-    .tp-stats-inside {
-        margin-top: 34px;
+    .gg-stats {
+        margin-top: 32px;
         position: relative;
         z-index: 2;
     }
 
-    .tp-stat-card {
-        background: rgba(255, 255, 255, 0.12);
-        border: 1px solid rgba(255, 255, 255, 0.20);
+    .gg-stat-card {
+        background: rgba(255, 255, 255, 0.13);
+        border: 1px solid rgba(255, 255, 255, 0.22);
         border-radius: 18px;
         padding: 22px 24px;
         min-height: 112px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        backdrop-filter: blur(8px);
         transition: 0.2s ease;
     }
 
-    .tp-stat-card:hover {
+    .gg-stat-card:hover {
         transform: translateY(-4px);
-        background: rgba(255, 255, 255, 0.17);
+        background: rgba(255, 255, 255, 0.18);
     }
 
-    .tp-stat-number {
+    .gg-stat-number {
         font-size: 36px;
         font-weight: 900;
-        color: #ffffff;
         line-height: 1;
-        margin-bottom: 9px;
+        margin-bottom: 8px;
     }
 
-    .tp-stat-label {
-        color: rgba(255, 255, 255, 0.76);
+    .gg-stat-label {
+        color: rgba(255, 255, 255, 0.78);
         font-size: 14px;
         margin: 0;
-        text-transform: lowercase;
         font-weight: 600;
     }
 
-    .tp-stat-icon {
+    .gg-stat-icon {
         width: 46px;
         height: 46px;
         border-radius: 15px;
         background: rgba(255, 255, 255, 0.15);
-        color: #ffffff;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 21px;
-        font-weight: 900;
     }
 
-    .tp-table-box {
-        background: #ffffff;
-        border-radius: 22px;
+    .gg-card {
+        background: #fff;
         border: 1px solid #e5ebf3;
+        border-radius: 22px;
         box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
-        margin-bottom: 42px;
+        margin-bottom: 34px;
         overflow: hidden;
     }
 
-    .tp-table-header {
+    .gg-card-header {
         padding: 22px 24px;
         border-bottom: 1px solid #e8eef6;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
         background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: center;
     }
 
-    .tp-table-title {
+    .gg-card-title {
         margin: 0;
         font-size: 22px;
         font-weight: 900;
         color: #101828;
-        letter-spacing: -0.3px;
     }
 
-    .tp-table-subtitle {
-        margin: 4px 0 0;
-        font-size: 13px;
+    .gg-card-text {
+        margin: 5px 0 0;
         color: #667085;
+        font-size: 13px;
     }
 
-    .tp-table-count {
+    .gg-badge {
         background: #eaf3ff;
         color: #2f55c8;
         border: 1px solid #cfe1ff;
@@ -246,37 +174,36 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         padding: 8px 14px;
         font-size: 13px;
         font-weight: 800;
+        white-space: nowrap;
     }
 
-    .tp-table {
+    .gg-table {
         margin: 0;
         font-size: 14px;
     }
 
-    .tp-table thead th {
+    .gg-table thead th {
         background: #fbfdff;
         color: #344054;
         font-weight: 900;
         padding: 15px 20px;
         border-bottom: 1px solid #dde5ef;
-        white-space: nowrap;
         font-size: 13px;
         text-transform: uppercase;
         letter-spacing: 0.3px;
     }
 
-    .tp-table tbody td {
+    .gg-table tbody td {
         padding: 16px 20px;
         vertical-align: middle;
         border-bottom: 1px solid #eef2f6;
-        color: #111827;
     }
 
-    .tp-table tbody tr:hover {
+    .gg-table tbody tr:hover {
         background: #f8fbff;
     }
 
-    .tp-id-badge {
+    .gg-id {
         width: 36px;
         height: 36px;
         border-radius: 50%;
@@ -286,45 +213,23 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         display: flex;
         align-items: center;
         justify-content: center;
+        font-weight: 900;
         font-size: 13px;
-        font-weight: 900;
     }
 
-    .tp-attraction-cell {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-    }
-
-    .tp-attraction-avatar {
-        width: 42px;
-        height: 42px;
-        border-radius: 14px;
-        background: linear-gradient(135deg, #4169e1, #75d5f4);
-        color: #ffffff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 900;
-        font-size: 17px;
-        flex-shrink: 0;
-        box-shadow: 0 8px 16px rgba(65, 105, 225, 0.18);
-    }
-
-    .tp-attraction-name {
+    .gg-attraction-name {
         font-weight: 900;
         color: #101828;
         margin-bottom: 4px;
     }
 
-    .tp-attraction-desc {
+    .gg-desc {
         font-size: 13px;
         color: #667085;
-        max-width: 540px;
-        line-height: 1.35;
+        max-width: 520px;
     }
 
-    .tp-country-pill {
+    .gg-pill {
         background: #f1f7ff;
         color: #2f55c8;
         border: 1px solid #d4e5ff;
@@ -333,445 +238,310 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         font-size: 13px;
         font-weight: 800;
         display: inline-block;
-        white-space: nowrap;
     }
 
-    .tp-post-pill {
-        background: #f8f9fc;
-        color: #344054;
-        border: 1px solid #e4e7ec;
-        border-radius: 999px;
-        padding: 7px 13px;
-        font-size: 13px;
-        font-weight: 800;
-        display: inline-block;
-        min-width: 42px;
-        text-align: center;
-    }
-
-    .tp-edit-location-btn {
-        background: #ffffff;
-        color: #2446bb;
-        border: 1px solid #b9ccff;
-        border-radius: 999px;
-        padding: 8px 15px;
-        font-size: 13px;
+    .gg-btn {
+        background: #4169e1;
+        color: #fff;
+        border: 0;
+        border-radius: 11px;
+        padding: 11px 18px;
+        font-size: 14px;
         font-weight: 900;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 7px;
+        box-shadow: 0 8px 18px rgba(65, 105, 225, 0.22);
         transition: 0.2s ease;
-        white-space: nowrap;
     }
 
-    .tp-edit-location-btn:hover {
-        background: #4169e1;
-        color: #ffffff;
-        border-color: #4169e1;
-        box-shadow: 0 8px 18px rgba(65, 105, 225, 0.22);
-        transform: translateY(-1px);
-    }
-
-    .tp-disabled-btn {
-        background: #f2f4f7;
-        color: #98a2b3;
-        border: 1px solid #e4e7ec;
-        border-radius: 999px;
-        padding: 8px 15px;
-        font-size: 13px;
-        font-weight: 800;
-        display: inline-block;
-        white-space: nowrap;
-    }
-
-    .tp-manage-row {
-        padding: 18px 22px;
-        background: #fbfdff;
-        border-top: 1px solid #eef2f6;
-    }
-
-    .tp-manage-btn {
-        background: #4169e1;
-        color: #ffffff;
-        border: 0;
-        border-radius: 11px;
-        padding: 11px 20px;
-        font-size: 14px;
-        font-weight: 900;
-        text-decoration: none;
-        display: inline-block;
-        box-shadow: 0 8px 18px rgba(65, 105, 225, 0.22);
-    }
-
-    .tp-manage-btn:hover {
+    .gg-btn:hover {
         background: #3155c9;
-        color: #ffffff;
+        color: #fff;
         transform: translateY(-1px);
     }
 
-    .tp-quick-section {
-        background: #ffffff;
-        border: 1px solid #e7edf5;
-        border-radius: 22px;
-        padding: 30px;
-        max-width: 780px;
-        margin: 0 auto 72px;
-        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+    .gg-btn-light {
+        background: #fff;
+        color: #2446bb;
+        border: 1px solid #b9ccff;
+        box-shadow: none;
     }
 
-    .tp-section-title {
-        font-size: 22px;
-        font-weight: 900;
-        color: #080808;
-        margin-bottom: 18px;
-        letter-spacing: -0.3px;
+    .gg-btn-light:hover {
+        background: #4169e1;
+        color: #fff;
+        border-color: #4169e1;
     }
 
-    .tp-quick-actions {
-        max-width: 640px;
-        margin: 0 auto;
+    .gg-actions {
+        padding: 28px;
     }
 
-    .tp-quick-card {
+    .gg-action-card {
         background: #f8f9fc;
         border: 2px solid #e1e6ef;
-        border-radius: 15px;
-        min-height: 84px;
-        padding: 18px 24px;
+        border-radius: 16px;
+        min-height: 92px;
+        padding: 20px 22px;
         display: flex;
         align-items: center;
-        gap: 18px;
-        color: #111111;
+        gap: 16px;
+        color: #111827;
         text-decoration: none;
         transition: 0.2s ease;
     }
 
-    .tp-quick-card:hover {
-        background: #ffffff;
-        color: #111111;
+    .gg-action-card:hover {
+        background: #fff;
+        color: #111827;
         border-color: #4169e1;
         transform: translateY(-3px);
         box-shadow: 0 10px 22px rgba(65, 105, 225, 0.14);
     }
 
-    .tp-quick-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 11px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 17px;
-        font-weight: 900;
-        background: #ffffff;
+    .gg-action-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        background: #fff;
         border: 1px solid #e2e8f0;
-    }
-
-    .tp-orange {
-        color: #f4a000;
-    }
-
-    .tp-purple {
-        color: #6c63ff;
-    }
-
-    .tp-blue {
-        color: #1f7aff;
-    }
-
-    .tp-quick-title {
-        margin: 0;
-        font-size: 15px;
-        font-weight: 800;
-    }
-
-    .tp-admin-footer {
-        background: linear-gradient(135deg, #4169e1 0%, #3154d4 55%, #2446bb 100%);
-        min-height: 180px;
+        color: #4169e1;
         display: flex;
         align-items: center;
         justify-content: center;
-        flex-direction: column;
-        color: #ffffff;
-        text-align: center;
-        box-shadow: 0 -8px 24px rgba(65, 105, 225, 0.12);
+        font-size: 20px;
+        flex-shrink: 0;
     }
 
-    .tp-footer-logo {
-        font-size: 22px;
+    .gg-action-title {
+        margin: 0 0 3px;
         font-weight: 900;
-        line-height: 0.9;
-        margin-bottom: 16px;
-        letter-spacing: 0.4px;
+        font-size: 15px;
     }
 
-    .tp-footer-logo span {
-        display: block;
-        font-size: 12px;
-        letter-spacing: 1.5px;
-        margin-top: 5px;
-    }
-
-    .tp-footer-text {
-        font-size: 13px;
+    .gg-action-text {
         margin: 0;
-        opacity: 0.9;
+        font-size: 13px;
+        color: #667085;
     }
 
-    @media (max-width: 992px) {
-        .tp-admin-header {
-            padding: 18px 25px;
-            flex-direction: column;
-            gap: 16px;
+    @media (max-width: 768px) {
+        .gg-admin-page {
+            padding: 28px 18px 50px;
         }
 
-        .tp-admin-nav {
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 18px;
-        }
-
-        .tp-admin-main {
-            padding: 32px 20px 60px;
-        }
-
-        .tp-control-top {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .tp-title {
+        .gg-title {
             font-size: 28px;
         }
 
-        .tp-table-header {
+        .gg-card-header {
             flex-direction: column;
             align-items: flex-start;
-            gap: 12px;
         }
     }
 </style>
 
-<div class="tp-admin-wrapper">
+<div class="gg-admin-page">
 
-    <header class="tp-admin-header">
-        <a href="<?= APP_BASE ?>/admin/dashboard" class="tp-logo">
-            TRAVEL
-            <span>PULSE</span>
-        </a>
-
-        <nav class="tp-admin-nav">
-            <a href="<?= APP_BASE ?>/analytics">generate reports</a>
-            <a href="<?= APP_BASE ?>/admin/moderate-posts">moderate content</a>
-            <a href="<?= APP_BASE ?>/admin/manage-accounts">account management</a>
-        </nav>
-
-        <div class="tp-admin-name">Admin</div>
-    </header>
-
-    <main class="tp-admin-main">
-
-        <section class="tp-control-card">
-            <div class="tp-control-top">
-                <div>
-                    <h1 class="tp-title">Admin dashboard</h1>
-                    <p class="tp-subtitle">
-                        Manage travel content, attractions, locations, posts, and users from one place.
-                    </p>
-                </div>
-
-                <div class="tp-status-pill">
-                    Travel Pulse Control Panel
-                </div>
-            </div>
-
-            <div class="row g-4 tp-stats-inside">
-                <div class="col-lg-3 col-md-6">
-                    <div class="tp-stat-card">
-                        <div>
-                            <div class="tp-stat-number"><?= htmlspecialchars($totalUsers) ?></div>
-                            <p class="tp-stat-label">users</p>
-                        </div>
-                        <div class="tp-stat-icon">👤</div>
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-md-6">
-                    <div class="tp-stat-card">
-                        <div>
-                            <div class="tp-stat-number"><?= htmlspecialchars($totalPosts) ?></div>
-                            <p class="tp-stat-label">posts</p>
-                        </div>
-                        <div class="tp-stat-icon">✦</div>
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-md-6">
-                    <div class="tp-stat-card">
-                        <div>
-                            <div class="tp-stat-number"><?= htmlspecialchars($totalAttractions) ?></div>
-                            <p class="tp-stat-label">attractions</p>
-                        </div>
-                        <div class="tp-stat-icon">⌖</div>
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-md-6">
-                    <div class="tp-stat-card">
-                        <div>
-                            <div class="tp-stat-number"><?= htmlspecialchars($totalLocations) ?></div>
-                            <p class="tp-stat-label">locations</p>
-                        </div>
-                        <div class="tp-stat-icon">◎</div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="tp-table-box">
-            <div class="tp-table-header">
-                <div>
-                    <h2 class="tp-table-title">Checkout latest attractions</h2>
-                    <p class="tp-table-subtitle">
-                        Recent attractions with their location and related post activity.
-                    </p>
-                </div>
-
-                <div class="tp-table-count">
-                    <?= htmlspecialchars(count($attractions)) ?> latest records
-                </div>
-            </div>
-
-            <div class="table-responsive">
-                <table class="table tp-table align-middle">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Attraction</th>
-                            <th>Country</th>
-                            <th>Posts</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        <?php if (!$attractions): ?>
-                            <tr>
-                                <td colspan="5" class="text-center text-muted py-4">
-                                    No attractions found.
-                                </td>
-                            </tr>
-                        <?php endif; ?>
-
-                        <?php foreach ($attractions as $attraction): ?>
-                            <tr>
-                                <td>
-                                    <div class="tp-id-badge">
-                                        <?= htmlspecialchars($attraction['attraction_id']) ?>
-                                    </div>
-                                </td>
-
-                                <td>
-                                    <div class="tp-attraction-cell">
-                                        <div class="tp-attraction-avatar">
-                                            <?= htmlspecialchars(mb_substr($attraction['attraction_name'] ?? 'A', 0, 1)) ?>
-                                        </div>
-
-                                        <div>
-                                            <div class="tp-attraction-name">
-                                                <?= htmlspecialchars($attraction['attraction_name']) ?>
-                                            </div>
-
-                                            <div class="tp-attraction-desc">
-                                                <?= htmlspecialchars(mb_strimwidth($attraction['attraction_description'] ?? '', 0, 95, '...')) ?>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-
-                                <td>
-                                    <span class="tp-country-pill">
-                                        <?= htmlspecialchars($attraction['country_name'] ?? 'No country') ?>
-                                    </span>
-                                </td>
-
-                                <td>
-                                    <span class="tp-post-pill">
-                                        <?= htmlspecialchars($attraction['posts_count']) ?>
-                                    </span>
-                                </td>
-
-                                <td>
-                                    <?php if (!empty($attraction['country_id'])): ?>
-                                        <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($attraction['country_id']) ?>" class="tp-edit-location-btn">
-                                            ✎ Edit Location
-                                        </a>
-                                    <?php else: ?>
-                                        <span class="tp-disabled-btn">No location</span>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-
-<a href="<?= APP_BASE ?>/admin/location-list" class="tp-manage-btn">
-    Manage All Locations
-</a>
-            </div>
-        </section>
-
-        <section class="tp-quick-section">
-            <h2 class="tp-section-title text-center">Quick Actions</h2>
-
-            <div class="tp-quick-actions">
-                <div class="row g-3">
-
-                    <div class="col-md-6">
-                        <a href="<?= APP_BASE ?>/analytics" class="tp-quick-card">
-                            <div class="tp-quick-icon tp-orange">◴</div>
-                            <p class="tp-quick-title">view analytics</p>
-                        </a>
-                    </div>
-
-                    <div class="col-md-6">
-                        <a href="<?= APP_BASE ?>/admin/add-location" class="tp-quick-card">
-                            <div class="tp-quick-icon tp-purple">＋</div>
-                            <p class="tp-quick-title">Add new location</p>
-                        </a>
-                    </div>
-
-                    <div class="col-md-6">
-                        <a href="<?= APP_BASE ?>/admin/moderate-posts" class="tp-quick-card">
-                            <div class="tp-quick-icon tp-blue">□</div>
-                            <p class="tp-quick-title">moderate posts</p>
-                        </a>
-                    </div>
-
-                    <div class="col-md-6">
-                        <a href="<?= APP_BASE ?>/admin/manage-accounts" class="tp-quick-card">
-                            <div class="tp-quick-icon tp-blue">⚙</div>
-                            <p class="tp-quick-title">manage accounts</p>
-                        </a>
-                    </div>
-
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <footer class="tp-admin-footer">
-        <div class="tp-footer-logo">
-            TRAVEL
-            <span>PULSE</span>
+    <section class="gg-hero">
+        <div class="gg-hero-content">
+            <h1 class="gg-title">Admin Dashboard</h1>
+            <p class="gg-subtitle">
+                Manage GulfGuide locations, attractions, posts, creator requests, and users from one control panel.
+            </p>
         </div>
 
-        <p class="tp-footer-text">
-            © 2023 Travel Pulse. All rights reserved.
-        </p>
-    </footer>
+        <div class="row g-4 gg-stats">
+            <div class="col-lg-3 col-md-6">
+                <div class="gg-stat-card">
+                    <div>
+                        <div class="gg-stat-number"><?= htmlspecialchars($totalUsers) ?></div>
+                        <p class="gg-stat-label">Users</p>
+                    </div>
+                    <div class="gg-stat-icon"><i class="ph ph-users"></i></div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <div class="gg-stat-card">
+                    <div>
+                        <div class="gg-stat-number"><?= htmlspecialchars($totalLocations) ?></div>
+                        <p class="gg-stat-label">Locations</p>
+                    </div>
+                    <div class="gg-stat-icon"><i class="ph ph-map-pin"></i></div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <div class="gg-stat-card">
+                    <div>
+                        <div class="gg-stat-number"><?= htmlspecialchars($totalAttractions) ?></div>
+                        <p class="gg-stat-label">Attractions</p>
+                    </div>
+                    <div class="gg-stat-icon"><i class="ph ph-compass"></i></div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <div class="gg-stat-card">
+                    <div>
+                        <div class="gg-stat-number"><?= htmlspecialchars($pendingCreatorRequests) ?></div>
+                        <p class="gg-stat-label">Pending Requests</p>
+                    </div>
+                    <div class="gg-stat-icon"><i class="ph ph-user-check"></i></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="gg-card">
+        <div class="gg-card-header">
+            <div>
+                <h2 class="gg-card-title">Latest Attractions</h2>
+                <p class="gg-card-text">Recent attractions with their location and related post activity.</p>
+            </div>
+            <span class="gg-badge"><?= htmlspecialchars(count($attractions)) ?> latest records</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table gg-table align-middle">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Attraction</th>
+                    <th>Location</th>
+                    <th>Posts</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <?php if (!$attractions): ?>
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">No attractions found.</td>
+                    </tr>
+                <?php endif; ?>
+
+                <?php foreach ($attractions as $attraction): ?>
+                    <tr>
+                        <td>
+                            <div class="gg-id"><?= htmlspecialchars($attraction['attraction_id']) ?></div>
+                        </td>
+
+                        <td>
+                            <div class="gg-attraction-name">
+                                <?= htmlspecialchars($attraction['attraction_name']) ?>
+                            </div>
+                            <div class="gg-desc">
+                                <?= htmlspecialchars(mb_strimwidth($attraction['attraction_description'] ?? '', 0, 90, '...')) ?>
+                            </div>
+                        </td>
+
+                        <td>
+                            <span class="gg-pill">
+                                <?= htmlspecialchars($attraction['country_name'] ?? 'No location') ?>
+                            </span>
+                        </td>
+
+                        <td><?= htmlspecialchars($attraction['posts_count']) ?></td>
+
+                        <td>
+                            <?php if (!empty($attraction['country_id'])): ?>
+                                <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($attraction['country_id']) ?>" class="gg-btn gg-btn-light">
+                                    <i class="ph ph-pencil-simple"></i>
+                                    Edit Location
+                                </a>
+                            <?php else: ?>
+                                <span class="text-muted">No location</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="p-4 border-top bg-light">
+            <a href="<?= APP_BASE ?>/admin/location-list" class="gg-btn">
+                <i class="ph ph-map-trifold"></i>
+                Manage All Locations
+            </a>
+        </div>
+    </section>
+
+    <section class="gg-card">
+        <div class="gg-card-header">
+            <div>
+                <h2 class="gg-card-title">Quick Actions</h2>
+                <p class="gg-card-text">Use these shortcuts to complete your admin tasks faster.</p>
+            </div>
+        </div>
+
+        <div class="gg-actions">
+            <div class="row g-3">
+                <div class="col-lg-4 col-md-6">
+                    <a href="<?= APP_BASE ?>/admin/add-location" class="gg-action-card">
+                        <div class="gg-action-icon"><i class="ph ph-plus"></i></div>
+                        <div>
+                            <p class="gg-action-title">Add Location</p>
+                            <p class="gg-action-text">Create a new travel location.</p>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <a href="<?= APP_BASE ?>/admin/location-list" class="gg-action-card">
+                        <div class="gg-action-icon"><i class="ph ph-map-pin"></i></div>
+                        <div>
+                            <p class="gg-action-title">Manage Locations</p>
+                            <p class="gg-action-text">Edit or delete locations.</p>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <a href="<?= APP_BASE ?>/admin/creator-request" class="gg-action-card">
+                        <div class="gg-action-icon"><i class="ph ph-user-check"></i></div>
+                        <div>
+                            <p class="gg-action-title">Creator Requests</p>
+                            <p class="gg-action-text">Approve or reject applications.</p>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <a href="<?= APP_BASE ?>/admin/moderate-posts" class="gg-action-card">
+                        <div class="gg-action-icon"><i class="ph ph-article"></i></div>
+                        <div>
+                            <p class="gg-action-title">Moderate Posts</p>
+                            <p class="gg-action-text">Review user content.</p>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <a href="<?= APP_BASE ?>/admin/manage-accounts" class="gg-action-card">
+                        <div class="gg-action-icon"><i class="ph ph-users-three"></i></div>
+                        <div>
+                            <p class="gg-action-title">Manage Accounts</p>
+                            <p class="gg-action-text">View and manage users.</p>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <a href="<?= APP_BASE ?>/admin/analytics" class="gg-action-card">
+                        <div class="gg-action-icon"><i class="ph ph-chart-line-up"></i></div>
+                        <div>
+                            <p class="gg-action-title">Analytics</p>
+                            <p class="gg-action-text">View reports and insights.</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
 
 </div>
