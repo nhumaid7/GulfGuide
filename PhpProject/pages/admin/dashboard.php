@@ -138,7 +138,7 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     .tp-stats-row {
-        margin-bottom: 36px;
+        margin-bottom: 38px;
     }
 
     .tp-stat-card {
@@ -184,24 +184,57 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 22px;
+        font-size: 21px;
         font-weight: 900;
     }
 
     .tp-section-title {
-        font-size: 21px;
+        font-size: 24px;
         font-weight: 900;
         color: #080808;
-        margin-bottom: 16px;
+        margin-bottom: 18px;
+        letter-spacing: -0.4px;
     }
 
     .tp-table-box {
         background: #ffffff;
-        border-radius: 18px;
-        border: 1px solid #e7edf5;
-        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
-        margin-bottom: 44px;
+        border-radius: 20px;
+        border: 1px solid #e5ebf3;
+        box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
+        margin-bottom: 48px;
         overflow: hidden;
+    }
+
+    .tp-table-header {
+        padding: 22px 24px;
+        border-bottom: 1px solid #e8eef6;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+    }
+
+    .tp-table-title {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 900;
+        color: #101828;
+    }
+
+    .tp-table-subtitle {
+        margin: 4px 0 0;
+        font-size: 13px;
+        color: #667085;
+    }
+
+    .tp-table-count {
+        background: #eaf3ff;
+        color: #2f55c8;
+        border: 1px solid #cfe1ff;
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 800;
     }
 
     .tp-table {
@@ -210,71 +243,164 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     .tp-table thead th {
-        background: #f8fbff;
-        color: #111111;
+        background: #fbfdff;
+        color: #344054;
         font-weight: 900;
-        padding: 16px 18px;
+        padding: 15px 20px;
         border-bottom: 1px solid #dde5ef;
         white-space: nowrap;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
     }
 
     .tp-table tbody td {
-        padding: 14px 18px;
+        padding: 16px 20px;
         vertical-align: middle;
         border-bottom: 1px solid #eef2f6;
-        color: #111111;
+        color: #111827;
+    }
+
+    .tp-table tbody tr {
+        transition: 0.15s ease;
     }
 
     .tp-table tbody tr:hover {
         background: #f8fbff;
     }
 
+    .tp-id-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #eef6ff;
+        color: #2f55c8;
+        border: 1px solid #cfe1ff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 900;
+    }
+
+    .tp-attraction-cell {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .tp-attraction-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #4169e1, #75d5f4);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 17px;
+        flex-shrink: 0;
+        box-shadow: 0 8px 16px rgba(65, 105, 225, 0.18);
+    }
+
     .tp-attraction-name {
         font-weight: 900;
         color: #101828;
-        margin-bottom: 3px;
+        margin-bottom: 4px;
     }
 
     .tp-attraction-desc {
         font-size: 13px;
         color: #667085;
+        max-width: 520px;
+        line-height: 1.35;
     }
 
-    .tp-edit-btn {
-        background: #f3f6fb;
-        color: #1f2937;
-        border: 1px solid #e3e8f0;
-        border-radius: 9px;
-        padding: 7px 15px;
+    .tp-country-pill {
+        background: #f1f7ff;
+        color: #2f55c8;
+        border: 1px solid #d4e5ff;
+        border-radius: 999px;
+        padding: 7px 13px;
         font-size: 13px;
         font-weight: 800;
-        text-decoration: none;
         display: inline-block;
+        white-space: nowrap;
     }
 
-    .tp-edit-btn:hover {
+    .tp-post-pill {
+        background: #f8f9fc;
+        color: #344054;
+        border: 1px solid #e4e7ec;
+        border-radius: 999px;
+        padding: 7px 13px;
+        font-size: 13px;
+        font-weight: 800;
+        display: inline-block;
+        min-width: 42px;
+        text-align: center;
+    }
+
+    .tp-edit-location-btn {
+        background: #ffffff;
+        color: #2446bb;
+        border: 1px solid #b9ccff;
+        border-radius: 999px;
+        padding: 8px 15px;
+        font-size: 13px;
+        font-weight: 900;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .tp-edit-location-btn:hover {
         background: #4169e1;
         color: #ffffff;
         border-color: #4169e1;
+        box-shadow: 0 8px 18px rgba(65, 105, 225, 0.22);
+        transform: translateY(-1px);
+    }
+
+    .tp-disabled-btn {
+        background: #f2f4f7;
+        color: #98a2b3;
+        border: 1px solid #e4e7ec;
+        border-radius: 999px;
+        padding: 8px 15px;
+        font-size: 13px;
+        font-weight: 800;
+        display: inline-block;
+        white-space: nowrap;
+    }
+
+    .tp-manage-row {
+        padding: 18px 22px;
+        background: #fbfdff;
+        border-top: 1px solid #eef2f6;
     }
 
     .tp-manage-btn {
         background: #4169e1;
         color: #ffffff;
         border: 0;
-        border-radius: 10px;
+        border-radius: 11px;
         padding: 11px 20px;
         font-size: 14px;
-        font-weight: 800;
+        font-weight: 900;
         text-decoration: none;
         display: inline-block;
-        margin: 18px;
         box-shadow: 0 8px 18px rgba(65, 105, 225, 0.22);
     }
 
     .tp-manage-btn:hover {
         background: #3155c9;
         color: #ffffff;
+        transform: translateY(-1px);
     }
 
     .tp-quick-section {
@@ -403,6 +529,12 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .tp-title {
             font-size: 28px;
         }
+
+        .tp-table-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
     }
 </style>
 
@@ -482,9 +614,20 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         </div>
 
-        <h2 class="tp-section-title">checkout latest attractions</h2>
+        <section class="tp-table-box">
+            <div class="tp-table-header">
+                <div>
+                    <h2 class="tp-table-title">Checkout latest attractions</h2>
+                    <p class="tp-table-subtitle">
+                        Recent attractions with their location and related post activity.
+                    </p>
+                </div>
 
-        <div class="tp-table-box">
+                <div class="tp-table-count">
+                    <?= htmlspecialchars(count($attractions)) ?> latest records
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table class="table tp-table align-middle">
                     <thead>
@@ -508,29 +651,50 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                         <?php foreach ($attractions as $attraction): ?>
                             <tr>
-                                <td><?= htmlspecialchars($attraction['attraction_id']) ?></td>
-
                                 <td>
-                                    <div class="tp-attraction-name">
-                                        <?= htmlspecialchars($attraction['attraction_name']) ?>
-                                    </div>
-                                    <div class="tp-attraction-desc">
-                                        <?= htmlspecialchars(mb_strimwidth($attraction['attraction_description'] ?? '', 0, 85, '...')) ?>
+                                    <div class="tp-id-badge">
+                                        <?= htmlspecialchars($attraction['attraction_id']) ?>
                                     </div>
                                 </td>
 
                                 <td>
-                                    <?= htmlspecialchars($attraction['country_name'] ?? 'No country') ?>
+                                    <div class="tp-attraction-cell">
+                                        <div class="tp-attraction-avatar">
+                                            <?= htmlspecialchars(mb_substr($attraction['attraction_name'] ?? 'A', 0, 1)) ?>
+                                        </div>
+
+                                        <div>
+                                            <div class="tp-attraction-name">
+                                                <?= htmlspecialchars($attraction['attraction_name']) ?>
+                                            </div>
+
+                                            <div class="tp-attraction-desc">
+                                                <?= htmlspecialchars(mb_strimwidth($attraction['attraction_description'] ?? '', 0, 95, '...')) ?>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </td>
 
                                 <td>
-                                    <?= htmlspecialchars($attraction['posts_count']) ?>
+                                    <span class="tp-country-pill">
+                                        <?= htmlspecialchars($attraction['country_name'] ?? 'No country') ?>
+                                    </span>
                                 </td>
 
                                 <td>
-                                    <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($attraction['country_id']) ?>" class="tp-edit-btn">
-                                        Edit
-                                    </a>
+                                    <span class="tp-post-pill">
+                                        <?= htmlspecialchars($attraction['posts_count']) ?>
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <?php if (!empty($attraction['country_id'])): ?>
+                                        <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($attraction['country_id']) ?>" class="tp-edit-location-btn">
+                                            ✎ Edit Location
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="tp-disabled-btn">No location</span>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -538,10 +702,12 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </table>
             </div>
 
-            <a href="<?= APP_BASE ?>/locations?role=admin" class="tp-manage-btn">
-                Manage All Locations
-            </a>
-        </div>
+            <div class="tp-manage-row">
+                <a href="<?= APP_BASE ?>/locations?role=admin" class="tp-manage-btn">
+                    Manage All Locations
+                </a>
+            </div>
+        </section>
 
         <section class="tp-quick-section">
             <h2 class="tp-section-title text-center">Quick Actions</h2>
