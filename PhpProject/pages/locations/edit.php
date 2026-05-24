@@ -78,373 +78,113 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <style>
-    .edit-location-page {
-        padding: 42px 54px 70px;
-        background: #f4f7fb;
-        min-height: calc(100vh - 70px);
-    }
-
-    .edit-location-hero {
-        background: linear-gradient(135deg, #233f71 0%, #31558f 100%);
-        color: #ffffff;
-        border-radius: 22px;
-        padding: 32px 36px;
-        margin-bottom: 28px;
-        box-shadow: 0 18px 38px rgba(31, 63, 110, 0.20);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 20px;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .edit-location-hero::after {
-        content: "";
-        position: absolute;
-        width: 260px;
-        height: 260px;
-        border-radius: 50%;
-        right: -90px;
-        top: -120px;
-        background: rgba(255, 255, 255, 0.08);
-    }
-
-    .edit-location-hero-content {
-        position: relative;
-        z-index: 2;
-    }
-
-    .edit-location-title {
-        font-size: 32px;
-        font-weight: 900;
-        margin-bottom: 8px;
-        letter-spacing: -0.6px;
-    }
-
-    .edit-location-subtitle {
-        color: rgba(255, 255, 255, 0.78);
-        font-size: 15px;
-        margin: 0;
-    }
-
-    .edit-location-back-btn {
-        position: relative;
-        z-index: 2;
-        background: rgba(255, 255, 255, 0.14);
-        color: #ffffff;
-        border: 1px solid rgba(255, 255, 255, 0.28);
-        border-radius: 999px;
-        padding: 10px 18px;
-        font-size: 13px;
-        font-weight: 800;
-        text-decoration: none;
-        transition: 0.2s ease;
-        white-space: nowrap;
-    }
-
-    .edit-location-back-btn:hover {
-        background: #ffffff;
-        color: #2446bb;
-    }
-
-    .edit-location-card {
-        background: #ffffff;
-        border: 1px solid #e5ebf3;
-        border-radius: 22px;
-        box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
-        overflow: hidden;
-    }
-
-    .edit-location-card-header {
-        padding: 24px 28px;
-        border-bottom: 1px solid #e8eef6;
-        background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 18px;
-    }
-
-    .edit-location-card-title {
-        margin: 0;
-        font-size: 22px;
-        font-weight: 900;
-        color: #101828;
-        letter-spacing: -0.3px;
-    }
-
-    .edit-location-card-text {
-        margin: 5px 0 0;
-        color: #667085;
-        font-size: 13px;
-    }
-
-    .edit-location-id {
-        background: #eaf3ff;
-        color: #2f55c8;
-        border: 1px solid #cfe1ff;
-        border-radius: 999px;
-        padding: 8px 14px;
-        font-size: 13px;
-        font-weight: 800;
-        white-space: nowrap;
-    }
-
-    .edit-location-card-body {
-        padding: 28px;
-    }
-
-    .edit-location-label {
-        font-size: 14px;
-        font-weight: 800;
-        color: #344054;
-        margin-bottom: 8px;
-    }
-
-    .edit-location-input,
-    .edit-location-textarea {
-        border: 1px solid #d9e2ef;
-        border-radius: 12px;
-        padding: 12px 14px;
-        font-size: 14px;
-        color: #111827;
-        background: #ffffff;
-        transition: 0.2s ease;
-    }
-
-    .edit-location-input:focus,
-    .edit-location-textarea:focus {
-        border-color: #4169e1;
-        box-shadow: 0 0 0 4px rgba(65, 105, 225, 0.10);
-    }
-
-    .edit-location-help {
-        font-size: 12px;
-        color: #7b8794;
-        margin-top: 6px;
-    }
-
-    .edit-location-alert {
-        border-radius: 16px;
-        border: 1px solid #ffd1d1;
-        background: #fff5f5;
-        color: #b42318;
-        padding: 16px 18px;
-        margin-bottom: 22px;
-        font-size: 14px;
-        font-weight: 600;
-    }
-
-    .edit-location-actions {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-top: 26px;
-        padding-top: 22px;
-        border-top: 1px solid #eef2f6;
-    }
-
-    .edit-location-save-btn {
-        background: #4169e1;
-        color: #ffffff;
-        border: 0;
-        border-radius: 11px;
-        padding: 12px 22px;
-        font-size: 14px;
-        font-weight: 900;
-        box-shadow: 0 8px 18px rgba(65, 105, 225, 0.22);
-        transition: 0.2s ease;
-    }
-
-    .edit-location-save-btn:hover {
-        background: #3155c9;
-        color: #ffffff;
-        transform: translateY(-1px);
-    }
-
-    .edit-location-cancel-btn {
-        background: #f3f6fb;
-        color: #344054;
-        border: 1px solid #e3e8f0;
-        border-radius: 11px;
-        padding: 12px 20px;
-        font-size: 14px;
-        font-weight: 800;
-        text-decoration: none;
-        transition: 0.2s ease;
-    }
-
-    .edit-location-cancel-btn:hover {
-        background: #eaf3ff;
-        color: #2446bb;
-        border-color: #cfe1ff;
-    }
-
-    @media (max-width: 768px) {
-        .edit-location-page {
-            padding: 28px 18px 50px;
-        }
-
-        .edit-location-hero {
-            flex-direction: column;
-            align-items: flex-start;
-            padding: 26px;
-        }
-
-        .edit-location-title {
-            font-size: 27px;
-        }
-
-        .edit-location-card-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .edit-location-card-body {
-            padding: 22px;
-        }
-
-        .edit-location-actions {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .edit-location-save-btn,
-        .edit-location-cancel-btn {
-            width: 100%;
-            text-align: center;
-        }
-    }
+    <?php /* Same style as add page */ ?>
+    .gg-form-page{padding:38px 48px 70px;background:#f4f7fb;min-height:calc(100vh - 70px)}
+    .gg-form-hero{background:linear-gradient(135deg,#223f72 0%,#31558f 100%);color:#fff;border-radius:24px;padding:34px 38px;margin-bottom:28px;box-shadow:0 18px 38px rgba(31,63,110,.22);display:flex;justify-content:space-between;align-items:center;gap:18px;position:relative;overflow:hidden}
+    .gg-form-hero::after{content:"";position:absolute;width:250px;height:250px;border-radius:50%;right:-90px;top:-120px;background:rgba(255,255,255,.08)}
+    .gg-form-hero-content{position:relative;z-index:2}
+    .gg-form-title{font-size:34px;font-weight:900;margin-bottom:8px;letter-spacing:-.7px}
+    .gg-form-subtitle{color:rgba(255,255,255,.78);margin:0;font-size:15px}
+    .gg-back-btn{position:relative;z-index:2;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:10px 18px;font-size:13px;font-weight:800;text-decoration:none;transition:.2s ease;white-space:nowrap}
+    .gg-back-btn:hover{background:#fff;color:#2446bb}
+    .gg-form-card{background:#fff;border:1px solid #e5ebf3;border-radius:22px;box-shadow:0 14px 34px rgba(15,23,42,.07);overflow:hidden}
+    .gg-form-card-header{padding:24px 28px;border-bottom:1px solid #e8eef6;background:linear-gradient(135deg,#fff 0%,#f8fbff 100%);display:flex;justify-content:space-between;align-items:center;gap:18px}
+    .gg-form-card-title{margin:0;font-size:22px;font-weight:900;color:#101828}
+    .gg-form-card-text{margin:6px 0 0;color:#667085;font-size:13px}
+    .gg-form-id{background:#eaf3ff;color:#2f55c8;border:1px solid #cfe1ff;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:800;white-space:nowrap}
+    .gg-form-card-body{padding:28px}
+    .gg-label{font-size:14px;font-weight:800;color:#344054;margin-bottom:8px}
+    .gg-input,.gg-textarea{border:1px solid #d9e2ef;border-radius:12px;padding:12px 14px;font-size:14px;transition:.2s ease}
+    .gg-input:focus,.gg-textarea:focus{border-color:#4169e1;box-shadow:0 0 0 4px rgba(65,105,225,.10)}
+    .gg-help{font-size:12px;color:#7b8794;margin-top:6px}
+    .gg-alert{border-radius:16px;border:1px solid #ffd1d1;background:#fff5f5;color:#b42318;padding:16px 18px;margin-bottom:22px;font-size:14px;font-weight:600}
+    .gg-form-actions{display:flex;gap:12px;margin-top:26px;padding-top:22px;border-top:1px solid #eef2f6}
+    .gg-save-btn{background:#4169e1;color:#fff;border:0;border-radius:11px;padding:12px 22px;font-size:14px;font-weight:900;box-shadow:0 8px 18px rgba(65,105,225,.22);transition:.2s ease}
+    .gg-save-btn:hover{background:#3155c9;color:#fff;transform:translateY(-1px)}
+    .gg-cancel-btn{background:#f3f6fb;color:#344054;border:1px solid #e3e8f0;border-radius:11px;padding:12px 20px;font-size:14px;font-weight:800;text-decoration:none;transition:.2s ease}
+    .gg-cancel-btn:hover{background:#eaf3ff;color:#2446bb;border-color:#cfe1ff}
 </style>
 
-<div class="edit-location-page">
+<div class="gg-form-page">
 
-    <section class="edit-location-hero">
-        <div class="edit-location-hero-content">
-            <h1 class="edit-location-title">Edit Location</h1>
-            <p class="edit-location-subtitle">
-                Update the selected country or travel location information.
-            </p>
+    <section class="gg-form-hero">
+        <div class="gg-form-hero-content">
+            <h1 class="gg-form-title">Edit Location</h1>
+            <p class="gg-form-subtitle">Update the selected GulfGuide travel location.</p>
         </div>
 
-        <a href="<?= APP_BASE ?>/admin/location-list" class="edit-location-back-btn">
+        <a href="<?= APP_BASE ?>/admin/location-list" class="gg-back-btn">
             ← Back to Locations
         </a>
     </section>
 
     <?php if ($errors): ?>
-        <div class="edit-location-alert">
+        <div class="gg-alert">
             <?php foreach ($errors as $error): ?>
                 <div><?= htmlspecialchars($error) ?></div>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
 
-    <section class="edit-location-card">
-        <div class="edit-location-card-header">
+    <section class="gg-form-card">
+        <div class="gg-form-card-header">
             <div>
-                <h2 class="edit-location-card-title">
+                <h2 class="gg-form-card-title">
                     Edit <?= htmlspecialchars($_POST['name'] ?? $location['name']) ?>
                 </h2>
-                <p class="edit-location-card-text">
-                    Change the details below, then save your updates.
-                </p>
+                <p class="gg-form-card-text">Change the details below, then save your updates.</p>
             </div>
 
-            <div class="edit-location-id">
-                Location ID: <?= htmlspecialchars($id) ?>
-            </div>
+            <span class="gg-form-id">Location ID: <?= htmlspecialchars($id) ?></span>
         </div>
 
-        <div class="edit-location-card-body">
+        <div class="gg-form-card-body">
             <form method="POST" action="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($id) ?>">
-
                 <div class="row g-4">
 
                     <div class="col-md-6">
-                        <label class="form-label edit-location-label">Location Name</label>
-                        <input
-                            type="text"
-                            name="name"
-                            class="form-control edit-location-input"
-                            value="<?= htmlspecialchars($_POST['name'] ?? $location['name']) ?>"
-                            placeholder="Example: Kingdom of Bahrain"
-                            required
-                        >
-                        <div class="edit-location-help">
-                            Update the country or location name.
-                        </div>
+                        <label class="form-label gg-label">Location Name</label>
+                        <input type="text" name="name" class="form-control gg-input"
+                               value="<?= htmlspecialchars($_POST['name'] ?? $location['name']) ?>"
+                               required>
+                        <div class="gg-help">Update the country or location name.</div>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label edit-location-label">Official Tourism Website</label>
-                        <input
-                            type="text"
-                            name="official_tourism_website"
-                            class="form-control edit-location-input"
-                            value="<?= htmlspecialchars($_POST['official_tourism_website'] ?? $location['official_tourism_website']) ?>"
-                            placeholder="https://example.com"
-                            required
-                        >
-                        <div class="edit-location-help">
-                            Add or update the official tourism link.
-                        </div>
+                        <label class="form-label gg-label">Official Tourism Website</label>
+                        <input type="text" name="official_tourism_website" class="form-control gg-input"
+                               value="<?= htmlspecialchars($_POST['official_tourism_website'] ?? $location['official_tourism_website']) ?>"
+                               required>
+                        <div class="gg-help">Update the official tourism website link.</div>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label edit-location-label">Flag Image Path</label>
-                        <input
-                            type="text"
-                            name="flag_image"
-                            class="form-control edit-location-input"
-                            value="<?= htmlspecialchars($_POST['flag_image'] ?? $location['flag_image']) ?>"
-                            placeholder="assets/images/flags/bahrain.png"
-                            required
-                        >
-                        <div class="edit-location-help">
-                            Use a valid flag image path or URL.
-                        </div>
+                        <label class="form-label gg-label">Flag Image Path</label>
+                        <input type="text" name="flag_image" class="form-control gg-input"
+                               value="<?= htmlspecialchars($_POST['flag_image'] ?? $location['flag_image']) ?>"
+                               required>
+                        <div class="gg-help">Use a valid flag image path or URL.</div>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label edit-location-label">Display Image Path</label>
-                        <input
-                            type="text"
-                            name="display_image"
-                            class="form-control edit-location-input"
-                            value="<?= htmlspecialchars($_POST['display_image'] ?? $location['display_image']) ?>"
-                            placeholder="assets/images/countries/bahrain.jpg"
-                            required
-                        >
-                        <div class="edit-location-help">
-                            This image appears on the location page.
-                        </div>
+                        <label class="form-label gg-label">Display Image Path</label>
+                        <input type="text" name="display_image" class="form-control gg-input"
+                               value="<?= htmlspecialchars($_POST['display_image'] ?? $location['display_image']) ?>"
+                               required>
+                        <div class="gg-help">This image appears on the location page.</div>
                     </div>
 
                     <div class="col-12">
-                        <label class="form-label edit-location-label">Description</label>
-                        <textarea
-                            name="description"
-                            class="form-control edit-location-textarea"
-                            rows="6"
-                            placeholder="Write a short description about this location..."
-                            required
-                        ><?= htmlspecialchars($_POST['description'] ?? $location['description']) ?></textarea>
+                        <label class="form-label gg-label">Description</label>
+                        <textarea name="description" class="form-control gg-textarea" rows="6"
+                                  required><?= htmlspecialchars($_POST['description'] ?? $location['description']) ?></textarea>
                     </div>
-
                 </div>
 
-                <div class="edit-location-actions">
-                    <button type="submit" class="edit-location-save-btn">
-                        Update Location
-                    </button>
-
-                    <a href="<?= APP_BASE ?>/admin/location-list" class="edit-location-cancel-btn">
-                        Cancel
-                    </a>
+                <div class="gg-form-actions">
+                    <button type="submit" class="gg-save-btn">Update Location</button>
+                    <a href="<?= APP_BASE ?>/admin/location-list" class="gg-cancel-btn">Cancel</a>
                 </div>
-
             </form>
         </div>
     </section>
