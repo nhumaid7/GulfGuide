@@ -1,375 +1,476 @@
 <?php
-$totalLocations = $pdo->query("SELECT COUNT(*) FROM dbProj_country")->fetchColumn();
-$totalAttractions = $pdo->query("SELECT COUNT(*) FROM dbProj_attraction")->fetchColumn();
-$totalPosts = $pdo->query("SELECT COUNT(*) FROM dbProj_post")->fetchColumn();
-$totalUsers = $pdo->query("SELECT COUNT(*) FROM dbProj_user")->fetchColumn();
-
-$pendingCreatorRequests = 0;
+$totalUsers = 0;
+$totalPosts = 0;
+$totalCreators = 0;
 
 try {
-    $pendingCreatorRequests = $pdo
-        ->query("SELECT COUNT(*) FROM dbProj_creator_request WHERE status = 'pending'")
-        ->fetchColumn();
+    $totalUsers = $pdo->query("SELECT COUNT(*) FROM dbProj_user")->fetchColumn();
 } catch (Throwable $e) {
-    $pendingCreatorRequests = 0;
+    $totalUsers = 0;
 }
 
-$stmt = $pdo->query("
-    SELECT 
-        a.attraction_id,
-        a.name AS attraction_name,
-        a.description AS attraction_description,
-        c.country_id,
-        c.name AS country_name,
-        COUNT(DISTINCT p.post_id) AS posts_count
-    FROM dbProj_attraction a
-    LEFT JOIN dbProj_country c 
-        ON a.country_id = c.country_id
-    LEFT JOIN dbProj_post p 
-        ON c.country_id = p.country_id
-    GROUP BY 
-        a.attraction_id,
-        a.name,
-        a.description,
-        c.country_id,
-        c.name
-    ORDER BY a.attraction_id DESC
-    LIMIT 6
-");
+try {
+    $totalPosts = $pdo->query("SELECT COUNT(*) FROM dbProj_post")->fetchColumn();
+} catch (Throwable $e) {
+    $totalPosts = 0;
+}
 
-$attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $creatorRole = defined('ROLE_CREATOR') ? ROLE_CREATOR : 'creator';
+
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM dbProj_user WHERE role = ?");
+    $stmt->execute([$creatorRole]);
+    $totalCreators = $stmt->fetchColumn();
+} catch (Throwable $e) {
+    $totalCreators = 0;
+}
+
+$latestPosts = [];
+
+try {
+    $stmt = $pdo->query("
+        SELECT 
+            p.*,
+            u.username AS author_username,
+            u.role AS author_role,
+            c.name AS country_name
+        FROM dbProj_post p
+        LEFT JOIN dbProj_user u 
+            ON p.user_id = u.user_id
+        LEFT JOIN dbProj_country c 
+            ON p.country_id = c.country_id
+        ORDER BY p.post_id DESC
+        LIMIT 10
+    ");
+
+    $latestPosts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    try {
+        $stmt = $pdo->query("
+            SELECT *
+            FROM dbProj_post
+            ORDER BY post_id DESC
+            LIMIT 10
+        ");
+
+        $latestPosts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e2) {
+        $latestPosts = [];
+    }
+}
+
+$ggValue = function (array $row, array $keys, string $default = '—'): string {
+    foreach ($keys as $key) {
+        if (isset($row[$key]) && trim((string)$row[$key]) !== '') {
+            return (string)$row[$key];
+        }
+    }
+
+    return $default;
+};
+
+$ggPostTitle = function (array $post) use ($ggValue): string {
+    $title = $ggValue($post, [
+        'title',
+        'post_title',
+        'caption',
+        'content',
+        'body',
+        'description',
+        'text',
+        'post_content'
+    ], 'Untitled post');
+
+    return mb_strimwidth($title, 0, 85, '...');
+};
+
+$ggPostDate = function (array $post) use ($ggValue): string {
+    $dateValue = $ggValue($post, [
+        'created_at',
+        'posted_at',
+        'updated_at',
+        'date_created',
+        'post_date'
+    ], '');
+
+    if ($dateValue === '') {
+        return '—';
+    }
+
+    $timestamp = strtotime($dateValue);
+
+    if (!$timestamp) {
+        return $dateValue;
+    }
+
+    return date('d M Y - h:i A', $timestamp);
+};
+
+$ggPostStatus = function (array $post): string {
+    if (isset($post['status']) && trim((string)$post['status']) !== '') {
+        return (string)$post['status'];
+    }
+
+    if (isset($post['approval_status']) && trim((string)$post['approval_status']) !== '') {
+        return (string)$post['approval_status'];
+    }
+
+    if (isset($post['is_approved'])) {
+        return ((int)$post['is_approved'] === 1) ? 'Approved' : 'Pending';
+    }
+
+    return 'Active';
+};
+
+$ggStatusClass = function (string $status): string {
+    $lower = strtolower($status);
+
+    if (str_contains($lower, 'approve') || str_contains($lower, 'confirm') || str_contains($lower, 'active') || str_contains($lower, 'checked out')) {
+        return 'gg-status-approved';
+    }
+
+    if (str_contains($lower, 'pending') || str_contains($lower, 'review') || str_contains($lower, 'schedule') || str_contains($lower, 'checked in')) {
+        return 'gg-status-pending';
+    }
+
+    if (str_contains($lower, 'reject') || str_contains($lower, 'cancel') || str_contains($lower, 'delete')) {
+        return 'gg-status-rejected';
+    }
+
+    return 'gg-status-neutral';
+};
 ?>
 
 <style>
-    .gg-dashboard-shell {
-        background: #f4f7fb;
+    .tp-dashboard-shell {
+        background: #ffffff;
         min-height: 100vh;
+        font-family: inherit;
     }
 
-    .gg-dashboard-header {
-        background: linear-gradient(135deg, #4169e1 0%, #3154d4 55%, #2446bb 100%);
-        min-height: 76px;
-        padding: 0 54px;
-        display: flex;
+    .tp-dashboard-header {
+        background: #4169e1;
+        min-height: 96px;
+        padding: 0 58px;
+        display: grid;
+        grid-template-columns: 190px 1fr 120px;
         align-items: center;
-        justify-content: space-between;
         color: #ffffff;
-        box-shadow: 0 8px 24px rgba(65, 105, 225, 0.18);
     }
 
-    .gg-header-logo {
+    .tp-header-logo {
         color: #ffffff;
         text-decoration: none;
         font-weight: 900;
-        font-size: 20px;
-        line-height: 0.95;
-        letter-spacing: 0.4px;
+        line-height: 0.92;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: flex-start;
     }
 
-    .gg-header-logo span {
-        display: block;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 1.6px;
-        margin-top: 5px;
+    .tp-logo-small {
+        font-size: 16px;
+        letter-spacing: 1.8px;
     }
 
-    .gg-header-nav {
+    .tp-logo-big {
+        font-size: 25px;
+        letter-spacing: 1.1px;
+    }
+
+    .tp-header-nav {
         display: flex;
         align-items: center;
-        gap: 36px;
+        justify-content: center;
+        gap: 70px;
     }
 
-    .gg-header-nav a {
+    .tp-header-nav a {
         color: #ffffff;
         text-decoration: none;
-        font-size: 13px;
-        font-weight: 800;
+        font-size: 15px;
+        font-weight: 900;
         text-transform: lowercase;
-        opacity: 0.95;
     }
 
-    .gg-header-nav a:hover {
-        opacity: 1;
-        text-decoration: underline;
-        text-underline-offset: 6px;
+    .tp-header-nav a:hover {
+        opacity: 0.85;
     }
 
-    .gg-header-admin {
-        background: rgba(255, 255, 255, 0.14);
-        border: 1px solid rgba(255, 255, 255, 0.24);
-        padding: 8px 15px;
-        border-radius: 999px;
-        font-size: 13px;
-        font-weight: 800;
-    }
-
-    .gg-admin-page {
-        padding: 38px 48px 70px;
-        background: #f4f7fb;
-        min-height: calc(100vh - 250px);
-    }
-
-    .gg-hero {
-        background: linear-gradient(135deg, #223f72 0%, #31558f 100%);
+    .tp-header-admin {
+        justify-self: end;
         color: #ffffff;
-        border-radius: 24px;
-        padding: 34px 38px;
-        margin-bottom: 28px;
-        box-shadow: 0 18px 38px rgba(31, 63, 110, 0.22);
-        position: relative;
-        overflow: hidden;
+        font-size: 16px;
+        font-weight: 900;
     }
 
-    .gg-hero::after {
-        content: "";
-        position: absolute;
-        width: 270px;
-        height: 270px;
-        border-radius: 50%;
-        right: -90px;
-        top: -130px;
-        background: rgba(255, 255, 255, 0.08);
+    .tp-dashboard-main {
+        background: #ffffff;
+        padding: 82px 84px 88px;
+        min-height: calc(100vh - 270px);
     }
 
-    .gg-hero::before {
-        content: "";
-        position: absolute;
-        width: 170px;
-        height: 170px;
-        border-radius: 50%;
-        left: -70px;
-        bottom: -95px;
-        background: rgba(255, 255, 255, 0.05);
-    }
-
-    .gg-hero-content {
-        position: relative;
-        z-index: 2;
-    }
-
-    .gg-title {
+    .tp-title {
         font-size: 35px;
         font-weight: 900;
-        margin-bottom: 8px;
+        color: #050505;
+        margin-bottom: 24px;
         letter-spacing: -0.7px;
     }
 
-    .gg-subtitle {
-        color: rgba(255, 255, 255, 0.80);
-        margin: 0;
-        font-size: 15px;
-        max-width: 720px;
+    .tp-stats-row {
+        margin-bottom: 62px;
     }
 
-    .gg-stats {
-        margin-top: 32px;
-        position: relative;
-        z-index: 2;
-    }
-
-    .gg-stat-card {
-        background: rgba(255, 255, 255, 0.13);
-        border: 1px solid rgba(255, 255, 255, 0.22);
-        border-radius: 18px;
-        padding: 22px 24px;
-        min-height: 112px;
+    .tp-stat-card {
+        background: #d9f4fb;
+        border: 4px solid #7fd7f2;
+        border-radius: 16px;
+        min-height: 150px;
+        padding: 26px 34px;
         display: flex;
         align-items: center;
         justify-content: space-between;
         transition: 0.2s ease;
-        backdrop-filter: blur(8px);
     }
 
-    .gg-stat-card:hover {
+    .tp-stat-card:hover {
         transform: translateY(-4px);
-        background: rgba(255, 255, 255, 0.18);
+        box-shadow: 0 14px 28px rgba(65, 105, 225, 0.12);
     }
 
-    .gg-stat-number {
-        font-size: 36px;
-        font-weight: 900;
+    .tp-stat-number {
+        font-size: 48px;
+        font-weight: 500;
+        color: #000000;
         line-height: 1;
-        margin-bottom: 8px;
-        color: #ffffff;
+        margin-bottom: 14px;
     }
 
-    .gg-stat-label {
-        color: rgba(255, 255, 255, 0.78);
-        font-size: 14px;
+    .tp-stat-label {
+        font-size: 22px;
+        color: #555555;
         margin: 0;
-        font-weight: 600;
+        text-transform: lowercase;
     }
 
-    .gg-stat-icon {
-        width: 46px;
-        height: 46px;
-        border-radius: 15px;
-        background: rgba(255, 255, 255, 0.15);
+    .tp-stat-icon {
+        font-size: 74px;
+        color: #071f4a;
+        line-height: 1;
+    }
+
+    .tp-section-header {
         display: flex;
         align-items: center;
-        justify-content: center;
-        font-size: 21px;
-        color: #ffffff;
-    }
-
-    .gg-card {
-        background: #ffffff;
-        border: 1px solid #e5ebf3;
-        border-radius: 22px;
-        box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
-        margin-bottom: 34px;
-        overflow: hidden;
-    }
-
-    .gg-card-header {
-        padding: 22px 24px;
-        border-bottom: 1px solid #e8eef6;
-        background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
-        display: flex;
         justify-content: space-between;
         gap: 18px;
-        align-items: center;
-        flex-wrap: wrap;
+        margin-bottom: 34px;
     }
 
-    .gg-card-title {
-        margin: 0;
-        font-size: 22px;
+    .tp-section-title {
+        font-size: 34px;
         font-weight: 900;
-        color: #101828;
-        letter-spacing: -0.3px;
+        color: #050505;
+        margin: 0;
+        letter-spacing: -0.6px;
+        text-transform: lowercase;
     }
 
-    .gg-card-text {
-        margin: 5px 0 0;
-        color: #667085;
-        font-size: 13px;
-    }
-
-    .gg-badge {
-        background: #eaf3ff;
-        color: #2f55c8;
-        border: 1px solid #cfe1ff;
+    .tp-outline-btn {
+        background: #ffffff;
+        color: #4169e1;
+        border: 1.5px solid #4169e1;
         border-radius: 999px;
-        padding: 8px 14px;
-        font-size: 13px;
+        padding: 14px 28px;
+        font-size: 16px;
         font-weight: 800;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: 0.2s ease;
         white-space: nowrap;
     }
 
-    .gg-table {
+    .tp-outline-btn:hover {
+        background: #4169e1;
+        color: #ffffff;
+        box-shadow: 0 10px 22px rgba(65, 105, 225, 0.16);
+        transform: translateY(-1px);
+    }
+
+    .tp-posts-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 0;
+        overflow: hidden;
+        margin-bottom: 62px;
+    }
+
+    .tp-table {
         margin: 0;
         font-size: 14px;
     }
 
-    .gg-table thead th {
-        background: #fbfdff;
-        color: #344054;
+    .tp-table thead th {
+        background: #ffffff;
+        color: #10213f;
         font-weight: 900;
-        padding: 15px 20px;
-        border-bottom: 1px solid #dde5ef;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
+        padding: 16px 18px;
+        border-bottom: 1px solid #e5e7eb;
         white-space: nowrap;
+        font-size: 13px;
     }
 
-    .gg-table tbody td {
-        padding: 16px 20px;
+    .tp-table tbody td {
+        padding: 16px 18px;
         vertical-align: middle;
-        border-bottom: 1px solid #eef2f6;
-        color: #111827;
+        border-bottom: 1px solid #e5e7eb;
+        color: #10213f;
     }
 
-    .gg-table tbody tr:hover {
-        background: #f8fbff;
+    .tp-table tbody tr:hover {
+        background: #fbfdff;
     }
 
-    .gg-id {
-        width: 36px;
-        height: 36px;
+    .tp-author {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .tp-avatar {
+        width: 42px;
+        height: 42px;
         border-radius: 50%;
-        background: #eef6ff;
-        color: #2f55c8;
-        border: 1px solid #cfe1ff;
+        background: linear-gradient(135deg, #4169e1, #75d5f4);
+        color: #ffffff;
         display: flex;
         align-items: center;
         justify-content: center;
+        font-size: 15px;
         font-weight: 900;
-        font-size: 13px;
+        flex-shrink: 0;
+        box-shadow: 0 8px 16px rgba(65, 105, 225, 0.16);
     }
 
-    .gg-attraction-name {
+    .tp-author-name {
         font-weight: 900;
-        color: #101828;
-        margin-bottom: 4px;
+        color: #10213f;
+        margin-bottom: 2px;
     }
 
-    .gg-desc {
-        font-size: 13px;
+    .tp-author-role {
+        font-size: 12px;
         color: #667085;
-        max-width: 540px;
+        text-transform: capitalize;
+    }
+
+    .tp-post-title {
+        color: #10213f;
+        font-weight: 600;
+        max-width: 520px;
         line-height: 1.35;
     }
 
-    .gg-pill {
+    .tp-post-id {
+        display: block;
+        color: #667085;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .tp-location-pill {
         background: #f1f7ff;
         color: #2f55c8;
         border: 1px solid #d4e5ff;
         border-radius: 999px;
-        padding: 7px 13px;
-        font-size: 13px;
+        padding: 6px 12px;
+        font-size: 12px;
         font-weight: 800;
         display: inline-block;
         white-space: nowrap;
     }
 
-    .gg-btn {
-        background: #4169e1;
-        color: #ffffff;
-        border: 0;
-        border-radius: 11px;
-        padding: 11px 18px;
-        font-size: 14px;
-        font-weight: 900;
+    .tp-status {
+        border-radius: 7px;
+        padding: 5px 10px;
+        font-size: 12px;
+        font-weight: 700;
+        display: inline-block;
+        text-transform: capitalize;
+        white-space: nowrap;
+    }
+
+    .gg-status-approved {
+        background: #e9fff2;
+        color: #00a85a;
+        border: 1px solid #19c975;
+    }
+
+    .gg-status-pending {
+        background: #fff9e8;
+        color: #d99a00;
+        border: 1px solid #f0c14b;
+    }
+
+    .gg-status-rejected {
+        background: #fff1f1;
+        color: #ff1f1f;
+        border: 1px solid #ff4b4b;
+    }
+
+    .gg-status-neutral {
+        background: #eef6ff;
+        color: #2f55c8;
+        border: 1px solid #8ab8ff;
+    }
+
+    .tp-review-btn {
+        background: #ffffff;
+        color: #4169e1;
+        border: 1px solid #c9d6ff;
+        border-radius: 9px;
+        padding: 8px 12px;
+        font-size: 13px;
+        font-weight: 800;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
-        gap: 7px;
-        box-shadow: 0 8px 18px rgba(65, 105, 225, 0.22);
+        gap: 6px;
         transition: 0.2s ease;
     }
 
-    .gg-btn:hover {
-        background: #3155c9;
-        color: #ffffff;
-        transform: translateY(-1px);
-    }
-
-    .gg-btn-light {
-        background: #ffffff;
-        color: #2446bb;
-        border: 1px solid #b9ccff;
-        box-shadow: none;
-    }
-
-    .gg-btn-light:hover {
+    .tp-review-btn:hover {
         background: #4169e1;
         color: #ffffff;
         border-color: #4169e1;
     }
 
-    .gg-actions {
-        padding: 28px;
+    .tp-actions-section {
+        margin-top: 10px;
     }
 
-    .gg-action-card {
+    .tp-actions-title {
+        font-size: 24px;
+        font-weight: 900;
+        color: #050505;
+        margin-bottom: 18px;
+    }
+
+    .tp-action-grid {
+        max-width: 720px;
+        margin: 0 auto;
+    }
+
+    .tp-action-card {
         background: #f8f9fc;
         border: 2px solid #e1e6ef;
-        border-radius: 16px;
-        min-height: 96px;
-        padding: 20px 22px;
+        border-radius: 15px;
+        min-height: 88px;
+        padding: 18px 22px;
         display: flex;
         align-items: center;
         gap: 16px;
@@ -378,7 +479,7 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         transition: 0.2s ease;
     }
 
-    .gg-action-card:hover {
+    .tp-action-card:hover {
         background: #ffffff;
         color: #111827;
         border-color: #4169e1;
@@ -386,36 +487,35 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         box-shadow: 0 10px 22px rgba(65, 105, 225, 0.14);
     }
 
-    .gg-action-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 13px;
+    .tp-action-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
         background: #ffffff;
         border: 1px solid #e2e8f0;
         color: #4169e1;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 21px;
+        font-size: 18px;
         flex-shrink: 0;
     }
 
-    .gg-action-title {
+    .tp-action-title {
         margin: 0 0 3px;
         font-weight: 900;
         font-size: 15px;
         color: #101828;
     }
 
-    .gg-action-text {
+    .tp-action-text {
         margin: 0;
         font-size: 13px;
         color: #667085;
-        line-height: 1.35;
     }
 
-    .gg-dashboard-footer {
-        background: linear-gradient(135deg, #4169e1 0%, #3154d4 55%, #2446bb 100%);
+    .tp-dashboard-footer {
+        background: #4169e1;
         min-height: 175px;
         display: flex;
         align-items: center;
@@ -423,18 +523,17 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         flex-direction: column;
         color: #ffffff;
         text-align: center;
-        box-shadow: 0 -8px 24px rgba(65, 105, 225, 0.12);
     }
 
-    .gg-footer-logo {
+    .tp-footer-logo {
         font-size: 22px;
         font-weight: 900;
         line-height: 0.95;
-        margin-bottom: 15px;
+        margin-bottom: 14px;
         letter-spacing: 0.4px;
     }
 
-    .gg-footer-logo span {
+    .tp-footer-logo span {
         display: block;
         font-size: 12px;
         font-weight: 700;
@@ -442,283 +541,264 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         margin-top: 5px;
     }
 
-    .gg-footer-text {
+    .tp-footer-text {
         font-size: 13px;
         margin: 0;
         opacity: 0.9;
     }
 
     @media (max-width: 992px) {
-        .gg-dashboard-header {
+        .tp-dashboard-header {
             padding: 18px 24px;
-            flex-direction: column;
+            grid-template-columns: 1fr;
             gap: 16px;
+            text-align: center;
         }
 
-        .gg-header-nav {
+        .tp-header-logo {
+            align-items: center;
+        }
+
+        .tp-header-nav {
             flex-wrap: wrap;
-            justify-content: center;
             gap: 18px;
         }
 
-        .gg-admin-page {
-            padding: 28px 18px 50px;
+        .tp-header-admin {
+            justify-self: center;
         }
 
-        .gg-title {
+        .tp-dashboard-main {
+            padding: 36px 22px 60px;
+        }
+
+        .tp-section-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .tp-title,
+        .tp-section-title {
             font-size: 28px;
+        }
+
+        .tp-stat-card {
+            min-height: 120px;
         }
     }
 </style>
 
-<div class="gg-dashboard-shell">
+<div class="tp-dashboard-shell">
 
-    <header class="gg-dashboard-header">
-        <a href="<?= APP_BASE ?>/admin/" class="gg-header-logo">
-            GulfGuide
-            <span>Admin Panel</span>
+    <header class="tp-dashboard-header">
+        <a href="<?= APP_BASE ?>/admin/" class="tp-header-logo">
+            <span class="tp-logo-small">TRAVEL</span>
+            <span class="tp-logo-big">PULSE</span>
         </a>
 
-        <nav class="gg-header-nav">
+        <nav class="tp-header-nav">
             <a href="<?= APP_BASE ?>/admin/analytics">generate reports</a>
             <a href="<?= APP_BASE ?>/admin/moderate-posts">moderate content</a>
             <a href="<?= APP_BASE ?>/admin/manage-accounts">account management</a>
         </nav>
 
-        <div class="gg-header-admin">
+        <div class="tp-header-admin">
             Admin
         </div>
     </header>
 
-    <main class="gg-admin-page">
+    <main class="tp-dashboard-main">
 
-        <section class="gg-hero">
-            <div class="gg-hero-content">
-                <h1 class="gg-title">Admin Dashboard</h1>
-                <p class="gg-subtitle">
-                    Manage GulfGuide locations, attractions, posts, creator requests, and users from one professional control panel.
-                </p>
-            </div>
+        <h1 class="tp-title">Admin dashboard</h1>
 
-            <div class="row g-4 gg-stats">
-                <div class="col-lg-3 col-md-6">
-                    <div class="gg-stat-card">
-                        <div>
-                            <div class="gg-stat-number"><?= htmlspecialchars($totalUsers) ?></div>
-                            <p class="gg-stat-label">Users</p>
-                        </div>
-                        <div class="gg-stat-icon">
-                            <i class="ph ph-users"></i>
-                        </div>
+        <div class="row g-4 tp-stats-row">
+
+            <div class="col-lg-4 col-md-6">
+                <div class="tp-stat-card">
+                    <div>
+                        <div class="tp-stat-number"><?= htmlspecialchars($totalUsers) ?></div>
+                        <p class="tp-stat-label">users</p>
                     </div>
-                </div>
-
-                <div class="col-lg-3 col-md-6">
-                    <div class="gg-stat-card">
-                        <div>
-                            <div class="gg-stat-number"><?= htmlspecialchars($totalLocations) ?></div>
-                            <p class="gg-stat-label">Locations</p>
-                        </div>
-                        <div class="gg-stat-icon">
-                            <i class="ph ph-map-pin"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-md-6">
-                    <div class="gg-stat-card">
-                        <div>
-                            <div class="gg-stat-number"><?= htmlspecialchars($totalAttractions) ?></div>
-                            <p class="gg-stat-label">Attractions</p>
-                        </div>
-                        <div class="gg-stat-icon">
-                            <i class="ph ph-compass"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-md-6">
-                    <div class="gg-stat-card">
-                        <div>
-                            <div class="gg-stat-number"><?= htmlspecialchars($pendingCreatorRequests) ?></div>
-                            <p class="gg-stat-label">Pending Requests</p>
-                        </div>
-                        <div class="gg-stat-icon">
-                            <i class="ph ph-user-check"></i>
-                        </div>
+                    <div class="tp-stat-icon">
+                        <i class="ph ph-user"></i>
                     </div>
                 </div>
             </div>
-        </section>
 
-        <section class="gg-card">
-            <div class="gg-card-header">
-                <div>
-                    <h2 class="gg-card-title">Latest Attractions</h2>
-                    <p class="gg-card-text">
-                        Recent attractions with their location and related post activity.
-                    </p>
+            <div class="col-lg-4 col-md-6">
+                <div class="tp-stat-card">
+                    <div>
+                        <div class="tp-stat-number"><?= htmlspecialchars($totalPosts) ?></div>
+                        <p class="tp-stat-label">posts</p>
+                    </div>
+                    <div class="tp-stat-icon">
+                        <i class="ph ph-article"></i>
+                    </div>
                 </div>
-
-                <span class="gg-badge">
-                    <?= htmlspecialchars(count($attractions)) ?> latest records
-                </span>
             </div>
 
-            <div class="table-responsive">
-                <table class="table gg-table align-middle">
-                    <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Attraction</th>
-                        <th>Location</th>
-                        <th>Posts</th>
-                        <th>Action</th>
-                    </tr>
-                    </thead>
-
-                    <tbody>
-                    <?php if (!$attractions): ?>
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">
-                                No attractions found.
-                            </td>
-                        </tr>
-                    <?php endif; ?>
-
-                    <?php foreach ($attractions as $attraction): ?>
-                        <tr>
-                            <td>
-                                <div class="gg-id">
-                                    <?= htmlspecialchars($attraction['attraction_id']) ?>
-                                </div>
-                            </td>
-
-                            <td>
-                                <div class="gg-attraction-name">
-                                    <?= htmlspecialchars($attraction['attraction_name']) ?>
-                                </div>
-
-                                <div class="gg-desc">
-                                    <?= htmlspecialchars(mb_strimwidth($attraction['attraction_description'] ?? '', 0, 90, '...')) ?>
-                                </div>
-                            </td>
-
-                            <td>
-                                <span class="gg-pill">
-                                    <?= htmlspecialchars($attraction['country_name'] ?? 'No location') ?>
-                                </span>
-                            </td>
-
-                            <td>
-                                <?= htmlspecialchars($attraction['posts_count']) ?>
-                            </td>
-
-                            <td>
-                                <?php if (!empty($attraction['country_id'])): ?>
-                                    <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($attraction['country_id']) ?>" class="gg-btn gg-btn-light">
-                                        <i class="ph ph-pencil-simple"></i>
-                                        Edit Location
-                                    </a>
-                                <?php else: ?>
-                                    <span class="text-muted">No location</span>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
+            <div class="col-lg-4 col-md-6">
+                <div class="tp-stat-card">
+                    <div>
+                        <div class="tp-stat-number"><?= htmlspecialchars($totalCreators) ?></div>
+                        <p class="tp-stat-label">creators</p>
+                    </div>
+                    <div class="tp-stat-icon">
+                        <i class="ph ph-user-check"></i>
+                    </div>
+                </div>
             </div>
 
-            <div class="p-4 border-top bg-light">
-                <a href="<?= APP_BASE ?>/admin/location-list" class="gg-btn">
-                    <i class="ph ph-map-trifold"></i>
-                    Manage All Locations
+        </div>
+
+        <section class="tp-posts-section">
+            <div class="tp-section-header">
+                <h2 class="tp-section-title">checkout latest posts</h2>
+
+                <a href="<?= APP_BASE ?>/admin/moderate-posts" class="tp-outline-btn">
+                    moderate Posts
                 </a>
             </div>
-        </section>
 
-        <section class="gg-card">
-            <div class="gg-card-header">
-                <div>
-                    <h2 class="gg-card-title">Quick Actions</h2>
-                    <p class="gg-card-text">
-                        Use these shortcuts to complete your admin tasks faster.
-                    </p>
+            <div class="tp-posts-card">
+                <div class="table-responsive">
+                    <table class="table tp-table align-middle">
+                        <thead>
+                        <tr>
+                            <th>Creator</th>
+                            <th>Post Title</th>
+                            <th>Date & Time</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <?php if (!$latestPosts): ?>
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    No posts found.
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+
+                        <?php foreach ($latestPosts as $post): ?>
+                            <?php
+                            $authorName = $ggValue($post, ['author_username', 'username', 'name'], 'Unknown user');
+                            $authorRole = $ggValue($post, ['author_role', 'role'], 'creator');
+                            $postStatus = $ggPostStatus($post);
+                            $postId = $ggValue($post, ['post_id', 'id'], '—');
+                            ?>
+
+                            <tr>
+                                <td>
+                                    <div class="tp-author">
+                                        <div class="tp-avatar">
+                                            <?= htmlspecialchars(mb_strtoupper(mb_substr($authorName, 0, 1))) ?>
+                                        </div>
+
+                                        <div>
+                                            <div class="tp-author-name">
+                                                <?= htmlspecialchars($authorName) ?>
+                                            </div>
+                                            <div class="tp-author-role">
+                                                <?= htmlspecialchars($authorRole) ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="tp-post-title">
+                                        <?= htmlspecialchars($ggPostTitle($post)) ?>
+                                    </div>
+                                    <span class="tp-post-id">
+                                        Post ID: <?= htmlspecialchars($postId) ?>
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <?= htmlspecialchars($ggPostDate($post)) ?>
+                                </td>
+
+                                <td>
+                                    <span class="tp-location-pill">
+                                        <?= htmlspecialchars($ggValue($post, ['country_name'], 'No location')) ?>
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="tp-status <?= $ggStatusClass($postStatus) ?>">
+                                        <?= htmlspecialchars($postStatus) ?>
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <a href="<?= APP_BASE ?>/admin/moderate-posts" class="tp-review-btn">
+                                        <i class="ph ph-dots-three-outline-vertical"></i>
+                                        Review
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+
+                    </table>
                 </div>
             </div>
+        </section>
 
-            <div class="gg-actions">
+        <section class="tp-actions-section">
+            <h2 class="tp-actions-title text-center">Quick Actions</h2>
+
+            <div class="tp-action-grid">
                 <div class="row g-3">
 
-                    <div class="col-lg-4 col-md-6">
-                        <a href="<?= APP_BASE ?>/admin/add-location" class="gg-action-card">
-                            <div class="gg-action-icon">
-                                <i class="ph ph-plus"></i>
-                            </div>
-                            <div>
-                                <p class="gg-action-title">Add Location</p>
-                                <p class="gg-action-text">Create a new travel location.</p>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-lg-4 col-md-6">
-                        <a href="<?= APP_BASE ?>/admin/location-list" class="gg-action-card">
-                            <div class="gg-action-icon">
-                                <i class="ph ph-map-pin"></i>
-                            </div>
-                            <div>
-                                <p class="gg-action-title">Manage Locations</p>
-                                <p class="gg-action-text">Edit or delete saved locations.</p>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-lg-4 col-md-6">
-                        <a href="<?= APP_BASE ?>/admin/creator-request" class="gg-action-card">
-                            <div class="gg-action-icon">
-                                <i class="ph ph-user-check"></i>
-                            </div>
-                            <div>
-                                <p class="gg-action-title">Creator Requests</p>
-                                <p class="gg-action-text">Approve or reject applications.</p>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-lg-4 col-md-6">
-                        <a href="<?= APP_BASE ?>/admin/moderate-posts" class="gg-action-card">
-                            <div class="gg-action-icon">
-                                <i class="ph ph-article"></i>
-                            </div>
-                            <div>
-                                <p class="gg-action-title">Moderate Posts</p>
-                                <p class="gg-action-text">Review user content.</p>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-lg-4 col-md-6">
-                        <a href="<?= APP_BASE ?>/admin/manage-accounts" class="gg-action-card">
-                            <div class="gg-action-icon">
-                                <i class="ph ph-users-three"></i>
-                            </div>
-                            <div>
-                                <p class="gg-action-title">Manage Accounts</p>
-                                <p class="gg-action-text">View and manage users.</p>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-lg-4 col-md-6">
-                        <a href="<?= APP_BASE ?>/admin/analytics" class="gg-action-card">
-                            <div class="gg-action-icon">
+                    <div class="col-md-6">
+                        <a href="<?= APP_BASE ?>/admin/analytics" class="tp-action-card">
+                            <div class="tp-action-icon">
                                 <i class="ph ph-chart-line-up"></i>
                             </div>
                             <div>
-                                <p class="gg-action-title">Analytics</p>
-                                <p class="gg-action-text">View reports and insights.</p>
+                                <p class="tp-action-title">View analytics</p>
+                                <p class="tp-action-text">Open reports and insights.</p>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="col-md-6">
+                        <a href="<?= APP_BASE ?>/admin/add-location" class="tp-action-card">
+                            <div class="tp-action-icon">
+                                <i class="ph ph-plus"></i>
+                            </div>
+                            <div>
+                                <p class="tp-action-title">Add new location</p>
+                                <p class="tp-action-text">Create a new travel location.</p>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="col-md-6">
+                        <a href="<?= APP_BASE ?>/admin/moderate-posts" class="tp-action-card">
+                            <div class="tp-action-icon">
+                                <i class="ph ph-article"></i>
+                            </div>
+                            <div>
+                                <p class="tp-action-title">Moderate posts</p>
+                                <p class="tp-action-text">Review user content.</p>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="col-md-6">
+                        <a href="<?= APP_BASE ?>/admin/manage-accounts" class="tp-action-card">
+                            <div class="tp-action-icon">
+                                <i class="ph ph-users"></i>
+                            </div>
+                            <div>
+                                <p class="tp-action-title">Manage accounts</p>
+                                <p class="tp-action-text">View and manage users.</p>
                             </div>
                         </a>
                     </div>
@@ -729,14 +809,14 @@ $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     </main>
 
-    <footer class="gg-dashboard-footer">
-        <div class="gg-footer-logo">
-            GulfGuide
-            <span>Admin Panel</span>
+    <footer class="tp-dashboard-footer">
+        <div class="tp-footer-logo">
+            TRAVEL
+            <span>PULSE</span>
         </div>
 
-        <p class="gg-footer-text">
-            © 2026 GulfGuide. All rights reserved.
+        <p class="tp-footer-text">
+            © 2026 Travel Pulse. All rights reserved.
         </p>
     </footer>
 
