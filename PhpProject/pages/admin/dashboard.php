@@ -123,21 +123,43 @@ $ggPostStatus = function (array $post): string {
 };
 
 $ggStatusClass = function (string $status): string {
-    $lower = strtolower($status);
+    $lower = strtolower(trim($status));
 
-    if (str_contains($lower, 'approve') || str_contains($lower, 'confirm') || str_contains($lower, 'active') || str_contains($lower, 'checked out')) {
-        return 'gg-status-approved';
+    if (
+        str_contains($lower, 'published') ||
+        str_contains($lower, 'approve') ||
+        str_contains($lower, 'confirmed') ||
+        str_contains($lower, 'active')
+    ) {
+        return 'tp-status-published';
     }
 
-    if (str_contains($lower, 'pending') || str_contains($lower, 'review') || str_contains($lower, 'schedule') || str_contains($lower, 'checked in')) {
-        return 'gg-status-pending';
+    if (str_contains($lower, 'draft')) {
+        return 'tp-status-draft';
     }
 
-    if (str_contains($lower, 'reject') || str_contains($lower, 'cancel') || str_contains($lower, 'delete')) {
-        return 'gg-status-rejected';
+    if (
+        str_contains($lower, 'pending') ||
+        str_contains($lower, 'review') ||
+        str_contains($lower, 'scheduled') ||
+        str_contains($lower, 'checked in')
+    ) {
+        return 'tp-status-pending';
     }
 
-    return 'gg-status-neutral';
+    if (
+        str_contains($lower, 'rejected') ||
+        str_contains($lower, 'cancelled') ||
+        str_contains($lower, 'deleted')
+    ) {
+        return 'tp-status-rejected';
+    }
+
+    if (str_contains($lower, 'archived')) {
+        return 'tp-status-archived';
+    }
+
+    return 'tp-status-neutral';
 };
 ?>
 
@@ -394,39 +416,93 @@ $ggStatusClass = function (string $status): string {
         white-space: nowrap;
     }
 
-    .tp-status {
-        border-radius: 7px;
-        padding: 5px 10px;
-        font-size: 12px;
-        font-weight: 700;
-        display: inline-block;
-        text-transform: capitalize;
-        white-space: nowrap;
-    }
+.tp-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: capitalize;
+    white-space: nowrap;
+    border: 1px solid transparent;
+    letter-spacing: 0.2px;
+}
 
-    .gg-status-approved {
-        background: #e9fff2;
-        color: #00a85a;
-        border: 1px solid #19c975;
-    }
+.tp-status::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
 
-    .gg-status-pending {
-        background: #fff9e8;
-        color: #d99a00;
-        border: 1px solid #f0c14b;
-    }
+/* Published - green */
+.tp-status-published {
+    background: #eafaf1;
+    color: #157347;
+    border-color: #b7ebc9;
+}
 
-    .gg-status-rejected {
-        background: #fff1f1;
-        color: #ff1f1f;
-        border: 1px solid #ff4b4b;
-    }
+.tp-status-published::before {
+    background: #22c55e;
+}
 
-    .gg-status-neutral {
-        background: #eef6ff;
-        color: #2f55c8;
-        border: 1px solid #8ab8ff;
-    }
+/* Draft - purple/blue */
+.tp-status-draft {
+    background: #f3efff;
+    color: #6f42c1;
+    border-color: #d6c5ff;
+}
+
+.tp-status-draft::before {
+    background: #8b5cf6;
+}
+
+/* Pending - orange/yellow */
+.tp-status-pending {
+    background: #fff7e8;
+    color: #b26a00;
+    border-color: #f6d28b;
+}
+
+.tp-status-pending::before {
+    background: #f59e0b;
+}
+
+/* Rejected / Cancelled - red */
+.tp-status-rejected {
+    background: #fff1f2;
+    color: #c1121f;
+    border-color: #ffb3ba;
+}
+
+.tp-status-rejected::before {
+    background: #ef4444;
+}
+
+/* Archived - gray */
+.tp-status-archived {
+    background: #f3f4f6;
+    color: #4b5563;
+    border-color: #d1d5db;
+}
+
+.tp-status-archived::before {
+    background: #9ca3af;
+}
+
+/* Neutral - soft blue */
+.tp-status-neutral {
+    background: #eef4ff;
+    color: #3155c9;
+    border-color: #c9d8ff;
+}
+
+.tp-status-neutral::before {
+    background: #4169e1;
+}
 
     .tp-review-btn {
         background: #ffffff;
