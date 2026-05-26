@@ -476,6 +476,101 @@ if ($search !== '') {
         font-size: 13px;
         opacity: 0.9;
     }
+    .gg-quick-access {
+    background: #ffffff;
+    border: 1px solid #e5ebf3;
+    border-radius: 22px;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
+    margin-bottom: 34px;
+    overflow: hidden;
+}
+
+.gg-quick-access-header {
+    padding: 24px 26px;
+    border-bottom: 1px solid #e8eef6;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.gg-quick-access-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 900;
+    color: #101828;
+}
+
+.gg-quick-access-text {
+    margin: 6px 0 0;
+    color: #667085;
+    font-size: 13px;
+}
+
+.gg-quick-access-body {
+    padding: 26px;
+}
+
+.gg-quick-access-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.gg-quick-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-decoration: none;
+    background: #f8fbff;
+    border: 1px solid #e4ecf7;
+    border-radius: 18px;
+    padding: 18px 18px;
+    transition: 0.2s ease;
+}
+
+.gg-quick-card:hover {
+    transform: translateY(-2px);
+    border-color: #cfe0ff;
+    box-shadow: 0 12px 24px rgba(36, 70, 187, 0.08);
+    background: #eef4ff;
+}
+
+.gg-quick-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #4169e1 0%, #6f8cff 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 21px;
+    flex-shrink: 0;
+    box-shadow: 0 10px 20px rgba(65, 105, 225, 0.18);
+}
+
+.gg-quick-label {
+    font-size: 15px;
+    font-weight: 900;
+    color: #101828;
+    margin-bottom: 3px;
+}
+
+.gg-quick-subtext {
+    font-size: 13px;
+    color: #667085;
+    margin: 0;
+}
+
+@media (max-width: 992px) {
+    .gg-quick-access-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 576px) {
+    .gg-quick-access-grid {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
 
 <div class="gg-admin-dashboard">
@@ -661,7 +756,80 @@ if ($search !== '') {
             </a>
         </div>
     </section>
+<section class="gg-quick-access">
+    <div class="gg-quick-access-header">
+        <h2 class="gg-quick-access-title">Quick Access</h2>
+        <p class="gg-quick-access-text">
+            Open the most used admin tools directly from the dashboard.
+        </p>
+    </div>
 
+    <div class="gg-quick-access-body">
+        <div class="gg-quick-access-grid">
+
+            <a href="<?= APP_BASE ?>/admin/location-list" class="gg-quick-card">
+                <div class="gg-quick-icon">
+                    <i class="ph ph-map-pin-line"></i>
+                </div>
+                <div>
+                    <div class="gg-quick-label">Manage Locations</div>
+                    <p class="gg-quick-subtext">View, edit, add, and delete locations.</p>
+                </div>
+            </a>
+
+            <a href="<?= APP_BASE ?>/admin/creator-request" class="gg-quick-card">
+                <div class="gg-quick-icon">
+                    <i class="ph ph-user-switch"></i>
+                </div>
+                <div>
+                    <div class="gg-quick-label">Creator Requests</div>
+                    <p class="gg-quick-subtext">Review and approve creator upgrade requests.</p>
+                </div>
+            </a>
+
+            <a href="<?= APP_BASE ?>/admin/moderate-posts" class="gg-quick-card">
+                <div class="gg-quick-icon">
+                    <i class="ph ph-note-pencil"></i>
+                </div>
+                <div>
+                    <div class="gg-quick-label">Moderate Posts</div>
+                    <p class="gg-quick-subtext">Check posts and moderate submitted content.</p>
+                </div>
+            </a>
+
+            <a href="<?= APP_BASE ?>/admin/manage-accounts" class="gg-quick-card">
+                <div class="gg-quick-icon">
+                    <i class="ph ph-users-three"></i>
+                </div>
+                <div>
+                    <div class="gg-quick-label">Manage Accounts</div>
+                    <p class="gg-quick-subtext">Open user account controls and permissions.</p>
+                </div>
+            </a>
+
+            <a href="<?= APP_BASE ?>/admin/analytics" class="gg-quick-card">
+                <div class="gg-quick-icon">
+                    <i class="ph ph-chart-line-up"></i>
+                </div>
+                <div>
+                    <div class="gg-quick-label">Analytics</div>
+                    <p class="gg-quick-subtext">See platform activity and admin insights.</p>
+                </div>
+            </a>
+
+            <a href="<?= APP_BASE ?>/admin/add-location" class="gg-quick-card">
+                <div class="gg-quick-icon">
+                    <i class="ph ph-plus-circle"></i>
+                </div>
+                <div>
+                    <div class="gg-quick-label">Add Location</div>
+                    <p class="gg-quick-subtext">Create a new destination quickly.</p>
+                </div>
+            </a>
+
+        </div>
+    </div>
+</section>
     <footer class="gg-dashboard-footer">
         <div class="gg-dashboard-footer-logo">GulfGuide</div>
         <p class="gg-dashboard-footer-text">© 2026 GulfGuide. All rights reserved.</p>
