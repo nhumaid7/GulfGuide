@@ -30,14 +30,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$errors) {
         try {
-            $duplicateStmt = $pdo->prepare("
+            $checkStmt = $pdo->prepare("
                 SELECT COUNT(*)
                 FROM dbProj_country
-                WHERE LOWER(name) = LOWER(?)
+                WHERE name = ?
             ");
-            $duplicateStmt->execute([$name]);
+            $checkStmt->execute([$name]);
 
-            if ((int) $duplicateStmt->fetchColumn() > 0) {
+            if ((int) $checkStmt->fetchColumn() > 0) {
                 $errors[] = 'A location with this name already exists.';
             } else {
                 $stmt = $pdo->prepare("
@@ -61,7 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 echo "<script>window.location.href='" . APP_BASE . "/admin/location-list';</script>";
                 exit;
             }
-
         } catch (Throwable $e) {
             $errors[] = 'Add failed: ' . $e->getMessage();
         }
@@ -128,9 +127,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         color: #ffffff;
         border: 1px solid rgba(255, 255, 255, 0.28);
         border-radius: 999px;
-        padding: 10px 18px;
+        padding: 11px 18px;
         font-size: 13px;
-        font-weight: 800;
+        font-weight: 900;
         text-decoration: none;
         transition: 0.2s ease;
         white-space: nowrap;
@@ -139,6 +138,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .gg-back-btn:hover {
         background: #ffffff;
         color: #2446bb;
+    }
+
+    .gg-alert {
+        border-radius: 16px;
+        background: #fff5f5;
+        color: #b42318;
+        border: 1px solid #f5b5b5;
+        padding: 15px 18px;
+        margin-bottom: 22px;
+        font-size: 14px;
+        font-weight: 700;
     }
 
     .gg-form-card {
@@ -152,20 +162,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .gg-form-card-header {
         padding: 24px 28px;
         border-bottom: 1px solid #e8eef6;
-        background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+        background: linear-gradient(135deg, #ffffff 0%, #f7faff 100%);
     }
 
     .gg-form-card-title {
-        margin: 0;
+        margin: 0 0 6px;
         font-size: 22px;
         font-weight: 900;
-        color: #101828;
+        color: #1f2937;
     }
 
     .gg-form-card-text {
-        margin: 6px 0 0;
+        margin: 0;
+        font-size: 14px;
         color: #667085;
-        font-size: 13px;
     }
 
     .gg-form-card-body {
@@ -173,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     .gg-label {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 800;
         color: #344054;
         margin-bottom: 8px;
@@ -181,34 +191,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     .gg-input,
     .gg-textarea {
-        border: 1px solid #d9e2ef;
+        border: 1px solid #d6deea;
         border-radius: 12px;
         padding: 12px 14px;
         font-size: 14px;
-        transition: 0.2s ease;
+        box-shadow: none !important;
     }
 
     .gg-input:focus,
     .gg-textarea:focus {
         border-color: #4169e1;
-        box-shadow: 0 0 0 4px rgba(65, 105, 225, 0.10);
+        box-shadow: 0 0 0 4px rgba(65, 105, 225, 0.10) !important;
+    }
+
+    .gg-textarea {
+        min-height: 160px;
+        resize: vertical;
     }
 
     .gg-help {
+        margin-top: 7px;
         font-size: 12px;
-        color: #7b8794;
-        margin-top: 6px;
-    }
-
-    .gg-alert {
-        border-radius: 16px;
-        border: 1px solid #ffd1d1;
-        background: #fff5f5;
-        color: #b42318;
-        padding: 16px 18px;
-        margin-bottom: 22px;
-        font-size: 14px;
-        font-weight: 600;
+        color: #667085;
     }
 
     .gg-form-actions {
@@ -324,10 +328,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             name="flag_image"
                             class="form-control gg-input"
                             value="<?= htmlspecialchars($_POST['flag_image'] ?? '') ?>"
-                            placeholder="assets/images/flags/bahrain.png"
+                            placeholder="/assets/images/flags/bahrain.png"
                             required
                         >
-                        <div class="gg-help">Use a valid flag image path or URL.</div>
+                        <div class="gg-help">Provide the flag image path or URL.</div>
                     </div>
 
                     <div class="col-md-6">
@@ -337,10 +341,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             name="display_image"
                             class="form-control gg-input"
                             value="<?= htmlspecialchars($_POST['display_image'] ?? '') ?>"
-                            placeholder="assets/images/countries/bahrain.jpg"
+                            placeholder="/assets/images/locations/bahrain.jpg"
                             required
                         >
-                        <div class="gg-help">This image appears on the location page.</div>
+                        <div class="gg-help">Provide the main location display image path or URL.</div>
                     </div>
 
                     <div class="col-12">
@@ -348,25 +352,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <textarea
                             name="description"
                             class="form-control gg-textarea"
-                            rows="6"
-                            placeholder="Write a short description about this location..."
+                            placeholder="Write a short description about this destination..."
                             required
                         ><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
+                        <div class="gg-help">Add a destination summary for visitors.</div>
                     </div>
                 </div>
 
                 <div class="gg-form-actions">
-                    <button type="submit" class="gg-save-btn">
-                        Save Location
-                    </button>
-
-                    <a href="<?= APP_BASE ?>/admin/location-list" class="gg-cancel-btn">
-                        Cancel
-                    </a>
+                    <button type="submit" class="gg-save-btn">Save Location</button>
+                    <a href="<?= APP_BASE ?>/admin/location-list" class="gg-cancel-btn">Cancel</a>
                 </div>
 
             </form>
         </div>
     </section>
-
 </div>

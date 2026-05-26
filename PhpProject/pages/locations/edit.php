@@ -49,31 +49,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$errors) {
         try {
-            $stmt = $pdo->prepare("
-                UPDATE dbProj_country
-                SET
-                    name = ?,
-                    description = ?,
-                    flag_image = ?,
-                    display_image = ?,
-                    official_tourism_website = ?
-                WHERE country_id = ?
+            $checkStmt = $pdo->prepare("
+                SELECT COUNT(*)
+                FROM dbProj_country
+                WHERE name = ?
+                  AND country_id != ?
             ");
+            $checkStmt->execute([$name, $id]);
 
-            $stmt->execute([
-                $name,
-                $description,
-                $flagImage,
-                $displayImage,
-                $tourismWebsite,
-                $id
-            ]);
+            if ((int) $checkStmt->fetchColumn() > 0) {
+                $errors[] = 'Another location with this name already exists.';
+            } else {
+                $stmt = $pdo->prepare("
+                    UPDATE dbProj_country
+                    SET
+                        name = ?,
+                        description = ?,
+                        flag_image = ?,
+                        display_image = ?,
+                        official_tourism_website = ?
+                    WHERE country_id = ?
+                ");
 
-            $_SESSION['status'] = 'Location updated successfully.';
-            $_SESSION['status_code'] = 'success';
+                $stmt->execute([
+                    $name,
+                    $description,
+                    $flagImage,
+                    $displayImage,
+                    $tourismWebsite,
+                    $id
+                ]);
 
-            echo "<script>window.location.href='" . APP_BASE . "/admin/location-list';</script>";
-            exit;
+                $_SESSION['status'] = 'Location updated successfully.';
+                $_SESSION['status_code'] = 'success';
+
+                echo "<script>window.location.href='" . APP_BASE . "/admin/location-list';</script>";
+                exit;
+            }
         } catch (Throwable $e) {
             $errors[] = 'Update failed: ' . $e->getMessage();
         }
@@ -140,9 +152,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         color: #ffffff;
         border: 1px solid rgba(255, 255, 255, 0.28);
         border-radius: 999px;
-        padding: 10px 18px;
+        padding: 11px 18px;
         font-size: 13px;
-        font-weight: 800;
+        font-weight: 900;
         text-decoration: none;
         transition: 0.2s ease;
         white-space: nowrap;
@@ -151,6 +163,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .gg-back-btn:hover {
         background: #ffffff;
         color: #2446bb;
+    }
+
+    .gg-alert {
+        border-radius: 16px;
+        background: #fff5f5;
+        color: #b42318;
+        border: 1px solid #f5b5b5;
+        padding: 15px 18px;
+        margin-bottom: 22px;
+        font-size: 14px;
+        font-weight: 700;
     }
 
     .gg-form-card {
@@ -164,103 +187,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .gg-form-card-header {
         padding: 24px 28px;
         border-bottom: 1px solid #e8eef6;
-        background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+        background: linear-gradient(135deg, #ffffff 0%, #f7faff 100%);
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 18px;
+        gap: 16px;
+        flex-wrap: wrap;
     }
 
     .gg-form-card-title {
-        margin: 0;
+        margin: 0 0 6px;
         font-size: 22px;
         font-weight: 900;
-        color: #101828;
+        color: #1f2937;
     }
 
     .gg-form-card-text {
-        margin: 6px 0 0;
+        margin: 0;
+        font-size: 14px;
         color: #667085;
-        font-size: 13px;
     }
 
     .gg-form-id {
-        background: #eaf3ff;
-        color: #2f55c8;
-        border: 1px solid #cfe1ff;
+        background: #eef4ff;
+        color: #2446bb;
         border-radius: 999px;
         padding: 8px 14px;
         font-size: 13px;
         font-weight: 800;
-        white-space: nowrap;
     }
 
     .gg-form-card-body {
         padding: 28px;
     }
 
-    .gg-label {
-        font-size: 14px;
-        font-weight: 800;
-        color: #344054;
-        margin-bottom: 8px;
-    }
-
-    .gg-input,
-    .gg-textarea {
-        border: 1px solid #d9e2ef;
-        border-radius: 12px;
-        padding: 12px 14px;
-        font-size: 14px;
-        transition: 0.2s ease;
-    }
-
-    .gg-input:focus,
-    .gg-textarea:focus {
-        border-color: #4169e1;
-        box-shadow: 0 0 0 4px rgba(65, 105, 225, 0.10);
-    }
-
-    .gg-help {
-        font-size: 12px;
-        color: #7b8794;
-        margin-top: 6px;
-    }
-
-    .gg-alert {
-        border-radius: 16px;
-        border: 1px solid #ffd1d1;
-        background: #fff5f5;
-        color: #b42318;
-        padding: 16px 18px;
-        margin-bottom: 22px;
-        font-size: 14px;
-        font-weight: 600;
-    }
-
     .gg-preview-box {
         background: #f8fbff;
-        border: 1px solid #e3ecf8;
-        border-radius: 16px;
-        padding: 16px;
+        border: 1px solid #e3ecfb;
+        border-radius: 18px;
+        padding: 18px;
         display: flex;
-        gap: 14px;
         align-items: center;
+        gap: 16px;
         margin-bottom: 24px;
     }
 
     .gg-preview-img {
-        width: 76px;
-        height: 76px;
+        width: 68px;
+        height: 68px;
         border-radius: 18px;
-        overflow: hidden;
-        background: linear-gradient(135deg, #4169e1, #75d5f4);
+        background: linear-gradient(135deg, #4169e1 0%, #6f8cff 100%);
         color: #ffffff;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 900;
+        overflow: hidden;
         font-size: 24px;
+        font-weight: 900;
         flex-shrink: 0;
     }
 
@@ -271,15 +254,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     .gg-preview-title {
+        font-size: 16px;
         font-weight: 900;
-        color: #101828;
+        color: #111827;
         margin-bottom: 4px;
     }
 
     .gg-preview-text {
-        color: #667085;
-        font-size: 13px;
         margin: 0;
+        font-size: 13px;
+        color: #667085;
+    }
+
+    .gg-label {
+        font-size: 13px;
+        font-weight: 800;
+        color: #344054;
+        margin-bottom: 8px;
+    }
+
+    .gg-input,
+    .gg-textarea {
+        border: 1px solid #d6deea;
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-size: 14px;
+        box-shadow: none !important;
+    }
+
+    .gg-input:focus,
+    .gg-textarea:focus {
+        border-color: #4169e1;
+        box-shadow: 0 0 0 4px rgba(65, 105, 225, 0.10) !important;
+    }
+
+    .gg-textarea {
+        min-height: 160px;
+        resize: vertical;
+    }
+
+    .gg-help {
+        margin-top: 7px;
+        font-size: 12px;
+        color: #667085;
     }
 
     .gg-form-actions {
@@ -438,7 +455,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             value="<?= htmlspecialchars($_POST['display_image'] ?? $location['display_image']) ?>"
                             required
                         >
-                        <div class="gg-help">Edit the image shown on the location page.</div>
+                        <div class="gg-help">Edit the main display image path or URL.</div>
                     </div>
 
                     <div class="col-12">
@@ -446,25 +463,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <textarea
                             name="description"
                             class="form-control gg-textarea"
-                            rows="6"
                             required
                         ><?= htmlspecialchars($_POST['description'] ?? $location['description']) ?></textarea>
-                        <div class="gg-help">Edit the description for this location.</div>
+                        <div class="gg-help">Update the destination description.</div>
                     </div>
-
                 </div>
 
                 <div class="gg-form-actions">
-                    <button type="submit" class="gg-save-btn">
-                        Update Location
-                    </button>
-
-                    <a href="<?= APP_BASE ?>/admin/location-list" class="gg-cancel-btn">
-                        Cancel
-                    </a>
+                    <button type="submit" class="gg-save-btn">Update Location</button>
+                    <a href="<?= APP_BASE ?>/admin/location-list" class="gg-cancel-btn">Cancel</a>
                 </div>
             </form>
         </div>
     </section>
-
 </div>

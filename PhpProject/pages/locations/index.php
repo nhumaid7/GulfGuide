@@ -71,7 +71,7 @@ if ($isAdminLocationList) {
             $_SESSION['status_code'] = 'error';
         }
 
-        header('Location: ' . APP_BASE . '/admin/location-list');
+        echo "<script>window.location.href='" . APP_BASE . "/admin/location-list';</script>";
         exit;
     }
 
@@ -100,12 +100,15 @@ if ($isAdminLocationList) {
     if ($adminSearch !== '') {
         $sql .= "
             WHERE
-                CAST(c.country_id AS CHAR) LIKE :search
-                OR c.name LIKE :search
-                OR c.description LIKE :search
-                OR c.official_tourism_website LIKE :search
+                CAST(c.country_id AS CHAR) LIKE :id_search
+                OR c.name LIKE :name_search
+                OR c.description LIKE :description_search
+                OR c.official_tourism_website LIKE :website_search
         ";
-        $params[':search'] = '%' . $adminSearch . '%';
+        $params[':id_search'] = '%' . $adminSearch . '%';
+        $params[':name_search'] = '%' . $adminSearch . '%';
+        $params[':description_search'] = '%' . $adminSearch . '%';
+        $params[':website_search'] = '%' . $adminSearch . '%';
     }
 
     $sql .= "
@@ -657,8 +660,7 @@ if ($isAdminLocationList) {
             </div>
         </section>
     </div>
-
-<?php
+    <?php
     return;
 }
 
@@ -676,13 +678,13 @@ $offset      = ($currentPage - 1) * $perPage;
 
 if ($search !== '') {
     $countStmt = $pdo->prepare("
-        SELECT COUNT(*) 
-        FROM dbProj_attraction a 
-        WHERE a.name LIKE :s OR a.description LIKE :s2
+        SELECT COUNT(*)
+        FROM dbProj_attraction a
+        WHERE a.name LIKE :name_search OR a.description LIKE :description_search
     ");
     $countStmt->execute([
-        ':s'  => '%' . $search . '%',
-        ':s2' => '%' . $search . '%'
+        ':name_search' => '%' . $search . '%',
+        ':description_search' => '%' . $search . '%'
     ]);
 } else {
     $countStmt = $pdo->query("SELECT COUNT(*) FROM dbProj_attraction");
@@ -693,37 +695,37 @@ $totalPages = (int) ceil($totalRows / $perPage);
 
 if ($search !== '') {
     $stmt = $pdo->prepare("
-        SELECT 
+        SELECT
             a.*,
             c.name AS country_name,
             t.name AS type_name
         FROM dbProj_attraction a
-        LEFT JOIN dbProj_country c 
+        LEFT JOIN dbProj_country c
             ON a.country_id = c.country_id
-        LEFT JOIN dbProj_attraction_type t 
+        LEFT JOIN dbProj_attraction_type t
             ON a.type_id = t.type_id
-        WHERE 
-            a.name LIKE :s 
-            OR a.description LIKE :s2
+        WHERE
+            a.name LIKE :name_search
+            OR a.description LIKE :description_search
         ORDER BY a.created_at DESC
         LIMIT :limit OFFSET :offset
     ");
 
-    $stmt->bindValue(':s', '%' . $search . '%');
-    $stmt->bindValue(':s2', '%' . $search . '%');
+    $stmt->bindValue(':name_search', '%' . $search . '%', PDO::PARAM_STR);
+    $stmt->bindValue(':description_search', '%' . $search . '%', PDO::PARAM_STR);
     $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
 } else {
     $stmt = $pdo->prepare("
-        SELECT 
+        SELECT
             a.*,
             c.name AS country_name,
             t.name AS type_name
         FROM dbProj_attraction a
-        LEFT JOIN dbProj_country c 
+        LEFT JOIN dbProj_country c
             ON a.country_id = c.country_id
-        LEFT JOIN dbProj_attraction_type t 
+        LEFT JOIN dbProj_attraction_type t
             ON a.type_id = t.type_id
         ORDER BY a.created_at DESC
         LIMIT :limit OFFSET :offset

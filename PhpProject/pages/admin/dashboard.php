@@ -5,25 +5,25 @@ $totalPosts = 0;
 $totalUsers = 0;
 
 try {
-    $totalLocations = (int) $pdo->query("SELECT COUNT(*) FROM dbProj_country")->fetchColumn();
+    $totalLocations = $pdo->query("SELECT COUNT(*) FROM dbProj_country")->fetchColumn();
 } catch (Throwable $e) {
     $totalLocations = 0;
 }
 
 try {
-    $totalAttractions = (int) $pdo->query("SELECT COUNT(*) FROM dbProj_attraction")->fetchColumn();
+    $totalAttractions = $pdo->query("SELECT COUNT(*) FROM dbProj_attraction")->fetchColumn();
 } catch (Throwable $e) {
     $totalAttractions = 0;
 }
 
 try {
-    $totalPosts = (int) $pdo->query("SELECT COUNT(*) FROM dbProj_post")->fetchColumn();
+    $totalPosts = $pdo->query("SELECT COUNT(*) FROM dbProj_post")->fetchColumn();
 } catch (Throwable $e) {
     $totalPosts = 0;
 }
 
 try {
-    $totalUsers = (int) $pdo->query("SELECT COUNT(*) FROM dbProj_user")->fetchColumn();
+    $totalUsers = $pdo->query("SELECT COUNT(*) FROM dbProj_user")->fetchColumn();
 } catch (Throwable $e) {
     $totalUsers = 0;
 }
@@ -31,59 +31,89 @@ try {
 $search = trim($_GET['search'] ?? '');
 $attractions = [];
 
-$sql = "
-    SELECT 
-        a.attraction_id,
-        a.name AS attraction_name,
-        a.description AS attraction_description,
-        a.cover_image,
-        a.country_id,
-        a.type_id,
-        a.created_at,
-        c.name AS country_name,
-        t.name AS type_name,
-        COUNT(DISTINCT p.post_id) AS posts_count
-    FROM dbProj_attraction a
-    LEFT JOIN dbProj_country c
-        ON a.country_id = c.country_id
-    LEFT JOIN dbProj_attraction_type t
-        ON a.type_id = t.type_id
-    LEFT JOIN dbProj_post p
-        ON a.country_id = p.country_id
-";
-
-$params = [];
-
 if ($search !== '') {
-    $sql .= "
-        WHERE
-            CAST(a.attraction_id AS CHAR) LIKE :search
-            OR a.name LIKE :search
-            OR a.description LIKE :search
-            OR c.name LIKE :search
-            OR t.name LIKE :search
-    ";
-    $params[':search'] = '%' . $search . '%';
+    $stmt = $pdo->prepare("
+        SELECT 
+            a.attraction_id,
+            a.name AS attraction_name,
+            a.description AS attraction_description,
+            a.cover_image,
+            a.country_id,
+            a.type_id,
+            a.created_at,
+            c.name AS country_name,
+            t.name AS type_name,
+            COUNT(DISTINCT p.post_id) AS posts_count
+        FROM dbProj_attraction a
+        LEFT JOIN dbProj_country c
+            ON a.country_id = c.country_id
+        LEFT JOIN dbProj_attraction_type t
+            ON a.type_id = t.type_id
+        LEFT JOIN dbProj_post p
+            ON a.country_id = p.country_id
+        WHERE 
+            a.name LIKE :name_search
+            OR a.description LIKE :description_search
+            OR c.name LIKE :country_search
+            OR t.name LIKE :type_search
+        GROUP BY
+            a.attraction_id,
+            a.name,
+            a.description,
+            a.cover_image,
+            a.country_id,
+            a.type_id,
+            a.created_at,
+            c.name,
+            t.name
+        ORDER BY a.attraction_id DESC
+        LIMIT 10
+    ");
+
+    $stmt->execute([
+        ':name_search' => '%' . $search . '%',
+        ':description_search' => '%' . $search . '%',
+        ':country_search' => '%' . $search . '%',
+        ':type_search' => '%' . $search . '%'
+    ]);
+
+    $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} else {
+    $stmt = $pdo->query("
+        SELECT 
+            a.attraction_id,
+            a.name AS attraction_name,
+            a.description AS attraction_description,
+            a.cover_image,
+            a.country_id,
+            a.type_id,
+            a.created_at,
+            c.name AS country_name,
+            t.name AS type_name,
+            COUNT(DISTINCT p.post_id) AS posts_count
+        FROM dbProj_attraction a
+        LEFT JOIN dbProj_country c
+            ON a.country_id = c.country_id
+        LEFT JOIN dbProj_attraction_type t
+            ON a.type_id = t.type_id
+        LEFT JOIN dbProj_post p
+            ON a.country_id = p.country_id
+        GROUP BY
+            a.attraction_id,
+            a.name,
+            a.description,
+            a.cover_image,
+            a.country_id,
+            a.type_id,
+            a.created_at,
+            c.name,
+            t.name
+        ORDER BY a.attraction_id DESC
+        LIMIT 10
+    ");
+
+    $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
-
-$sql .= "
-    GROUP BY
-        a.attraction_id,
-        a.name,
-        a.description,
-        a.cover_image,
-        a.country_id,
-        a.type_id,
-        a.created_at,
-        c.name,
-        t.name
-    ORDER BY a.attraction_id DESC
-    LIMIT 10
-";
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute($params);
-$attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <style>
