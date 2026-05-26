@@ -1,13 +1,6 @@
 <?php
 $errors = [];
 
-$id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
-
-if (!$id) {
-    echo "<script>window.location.href='" . APP_BASE . "/admin/location-list';</script>";
-    exit;
-}
-
 $countries = [];
 $types = [];
 
@@ -33,21 +26,15 @@ try {
     $types = [];
 }
 
-$stmt = $pdo->prepare("
-    SELECT *
-    FROM dbProj_attraction
-    WHERE attraction_id = ?
-    LIMIT 1
-");
-$stmt->execute([$id]);
-$attraction = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$attraction) {
-    $_SESSION['status'] = 'Attraction not found.';
-    $_SESSION['status_code'] = 'error';
-
-    echo "<script>window.location.href='" . APP_BASE . "/admin/location-list';</script>";
-    exit;
+function ggAttractionColumnExists(PDO $pdo, string $column): bool
+{
+    try {
+        $stmt = $pdo->prepare("SHOW COLUMNS FROM dbProj_attraction LIKE ?");
+        $stmt->execute([$column]);
+        return (bool) $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {
+        return false;
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -79,43 +66,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$errors) {
         try {
-            $stmt = $pdo->prepare("
-                UPDATE dbProj_attraction
-                SET
-                    country_id = ?,
-                    type_id = ?,
-                    name = ?,
-                    description = ?,
-                    cover_image = ?
-                WHERE attraction_id = ?
-            ");
+            $columns = ['country_id', 'type_id', 'name', 'description', 'cover_image', 'created_at'];
+            $placeholders = ['?', '?', '?', '?', '?', 'NOW()'];
+            $values = [$countryId, $typeId, $name, $description, $coverImage];
 
-            $stmt->execute([
-                $countryId,
-                $typeId,
-                $name,
-                $description,
-                $coverImage,
-                $id
-            ]);
+            if (ggAttractionColumnExists($pdo, 'view_count')) {
+                $columns[] = 'view_count';
+                $placeholders[] = '?';
+                $values[] = 0;
+            }
 
-            $_SESSION['status'] = 'Attraction updated successfully.';
+            $sql = "
+                INSERT INTO dbProj_attraction
+                    (" . implode(', ', $columns) . ")
+                VALUES
+                    (" . implode(', ', $placeholders) . ")
+            ";
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($values);
+
+            $_SESSION['status'] = 'Attraction added successfully.';
             $_SESSION['status_code'] = 'success';
 
             echo "<script>window.location.href='" . APP_BASE . "/admin/location-list';</script>";
             exit;
-
         } catch (Throwable $e) {
-            $errors[] = 'Update failed: ' . $e->getMessage();
+            $errors[] = 'Add failed: ' . $e->getMessage();
         }
     }
 }
-
-$currentCountryId = $_POST['country_id'] ?? $attraction['country_id'];
-$currentTypeId = $_POST['type_id'] ?? $attraction['type_id'];
-$currentName = $_POST['name'] ?? $attraction['name'];
-$currentDescription = $_POST['description'] ?? $attraction['description'];
-$currentCoverImage = $_POST['cover_image'] ?? $attraction['cover_image'];
 ?>
 
 <style>
@@ -201,10 +181,6 @@ $currentCoverImage = $_POST['cover_image'] ?? $attraction['cover_image'];
         padding: 24px 28px;
         border-bottom: 1px solid #e8eef6;
         background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 18px;
     }
 
     .gg-form-card-title {
@@ -218,17 +194,6 @@ $currentCoverImage = $_POST['cover_image'] ?? $attraction['cover_image'];
         margin: 6px 0 0;
         color: #667085;
         font-size: 13px;
-    }
-
-    .gg-id-pill {
-        background: #eaf3ff;
-        color: #2f55c8;
-        border: 1px solid #cfe1ff;
-        border-radius: 999px;
-        padding: 8px 14px;
-        font-size: 13px;
-        font-weight: 800;
-        white-space: nowrap;
     }
 
     .gg-form-card-body {
@@ -276,50 +241,6 @@ $currentCoverImage = $_POST['cover_image'] ?? $attraction['cover_image'];
         margin-bottom: 22px;
         font-size: 14px;
         font-weight: 600;
-    }
-
-    .gg-preview-box {
-        background: #f8fbff;
-        border: 1px solid #e3ecf8;
-        border-radius: 16px;
-        padding: 16px;
-        display: flex;
-        gap: 14px;
-        align-items: center;
-        margin-bottom: 24px;
-    }
-
-    .gg-preview-img {
-        width: 74px;
-        height: 74px;
-        border-radius: 18px;
-        overflow: hidden;
-        background: linear-gradient(135deg, #4169e1, #75d5f4);
-        color: #ffffff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 900;
-        font-size: 24px;
-        flex-shrink: 0;
-    }
-
-    .gg-preview-img img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .gg-preview-title {
-        font-weight: 900;
-        color: #101828;
-        margin-bottom: 4px;
-    }
-
-    .gg-preview-text {
-        color: #667085;
-        font-size: 13px;
-        margin: 0;
     }
 
     .gg-form-actions {
@@ -382,18 +303,8 @@ $currentCoverImage = $_POST['cover_image'] ?? $attraction['cover_image'];
             font-size: 28px;
         }
 
-        .gg-form-card-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
         .gg-form-card-body {
             padding: 22px;
-        }
-
-        .gg-preview-box {
-            flex-direction: column;
-            align-items: flex-start;
         }
 
         .gg-form-actions {
@@ -413,9 +324,9 @@ $currentCoverImage = $_POST['cover_image'] ?? $attraction['cover_image'];
 
     <section class="gg-form-hero">
         <div class="gg-form-hero-content">
-            <h1 class="gg-form-title">Edit Attraction</h1>
+            <h1 class="gg-form-title">Add Attraction</h1>
             <p class="gg-form-subtitle">
-                Update attraction information, location, type, description, and cover image.
+                Create a new attraction and connect it to an existing location and attraction type.
             </p>
         </div>
 
@@ -434,45 +345,14 @@ $currentCoverImage = $_POST['cover_image'] ?? $attraction['cover_image'];
 
     <section class="gg-form-card">
         <div class="gg-form-card-header">
-            <div>
-                <h2 class="gg-form-card-title">
-                    Edit <?= htmlspecialchars($currentName) ?>
-                </h2>
-                <p class="gg-form-card-text">
-                    Change the attraction details below, then save your updates.
-                </p>
-            </div>
-
-            <span class="gg-id-pill">
-                Attraction ID: <?= htmlspecialchars($id) ?>
-            </span>
+            <h2 class="gg-form-card-title">Attraction Details</h2>
+            <p class="gg-form-card-text">
+                Fill in the required information to add a new attraction.
+            </p>
         </div>
 
         <div class="gg-form-card-body">
-
-            <div class="gg-preview-box">
-                <div class="gg-preview-img">
-                    <?php if (!empty($currentCoverImage)): ?>
-                        <img
-                            src="<?= htmlspecialchars($currentCoverImage) ?>"
-                            alt="<?= htmlspecialchars($currentName) ?>"
-                        >
-                    <?php else: ?>
-                        <?= htmlspecialchars(mb_strtoupper(mb_substr($currentName ?? 'A', 0, 1))) ?>
-                    <?php endif; ?>
-                </div>
-
-                <div>
-                    <div class="gg-preview-title">
-                        <?= htmlspecialchars($currentName) ?>
-                    </div>
-                    <p class="gg-preview-text">
-                        Preview of the selected attraction cover image and name.
-                    </p>
-                </div>
-            </div>
-
-            <form method="POST" action="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($id) ?>">
+            <form method="POST" action="<?= APP_BASE ?>/admin/add-location">
 
                 <div class="row g-4">
 
@@ -484,7 +364,7 @@ $currentCoverImage = $_POST['cover_image'] ?? $attraction['cover_image'];
                             <?php foreach ($countries as $country): ?>
                                 <option
                                     value="<?= htmlspecialchars($country['country_id']) ?>"
-                                    <?= ((string)$currentCountryId === (string)$country['country_id']) ? 'selected' : '' ?>
+                                    <?= ((string)($_POST['country_id'] ?? '') === (string)$country['country_id']) ? 'selected' : '' ?>
                                 >
                                     <?= htmlspecialchars($country['name']) ?>
                                 </option>
@@ -501,7 +381,7 @@ $currentCoverImage = $_POST['cover_image'] ?? $attraction['cover_image'];
                             <?php foreach ($types as $type): ?>
                                 <option
                                     value="<?= htmlspecialchars($type['type_id']) ?>"
-                                    <?= ((string)$currentTypeId === (string)$type['type_id']) ? 'selected' : '' ?>
+                                    <?= ((string)($_POST['type_id'] ?? '') === (string)$type['type_id']) ? 'selected' : '' ?>
                                 >
                                     <?= htmlspecialchars($type['name']) ?>
                                 </option>
@@ -516,10 +396,11 @@ $currentCoverImage = $_POST['cover_image'] ?? $attraction['cover_image'];
                             type="text"
                             name="name"
                             class="form-control gg-input"
-                            value="<?= htmlspecialchars($currentName) ?>"
+                            value="<?= htmlspecialchars($_POST['name'] ?? '') ?>"
+                            placeholder="Example: Qal'at Al Bahrain"
                             required
                         >
-                        <div class="gg-help">Update the attraction name shown to users.</div>
+                        <div class="gg-help">Enter the attraction name shown to users.</div>
                     </div>
 
                     <div class="col-12">
@@ -528,7 +409,8 @@ $currentCoverImage = $_POST['cover_image'] ?? $attraction['cover_image'];
                             type="text"
                             name="cover_image"
                             class="form-control gg-input"
-                            value="<?= htmlspecialchars($currentCoverImage) ?>"
+                            value="<?= htmlspecialchars($_POST['cover_image'] ?? '') ?>"
+                            placeholder="assets/images/attractions/example.jpg"
                             required
                         >
                         <div class="gg-help">Use a valid image path or URL for the attraction card.</div>
@@ -540,15 +422,16 @@ $currentCoverImage = $_POST['cover_image'] ?? $attraction['cover_image'];
                             name="description"
                             class="form-control gg-textarea"
                             rows="6"
+                            placeholder="Write a short description about this attraction..."
                             required
-                        ><?= htmlspecialchars($currentDescription) ?></textarea>
+                        ><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
                     </div>
 
                 </div>
 
                 <div class="gg-form-actions">
                     <button type="submit" class="gg-save-btn">
-                        Update Attraction
+                        Save Attraction
                     </button>
 
                     <a href="<?= APP_BASE ?>/admin/location-list" class="gg-cancel-btn">

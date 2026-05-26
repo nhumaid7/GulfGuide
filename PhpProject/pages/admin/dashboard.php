@@ -32,6 +32,18 @@ $search = trim($_GET['search'] ?? '');
 $attractions = [];
 
 if ($search !== '') {
+    $words = preg_split('/\s+/', $search);
+    $fullTextSearch = '';
+
+    foreach ($words as $word) {
+        $word = trim($word);
+        if ($word !== '') {
+            $fullTextSearch .= '+' . $word . '* ';
+        }
+    }
+
+    $fullTextSearch = trim($fullTextSearch);
+
     try {
         $stmt = $pdo->prepare("
             SELECT 
@@ -45,7 +57,7 @@ if ($search !== '') {
                 c.name AS country_name,
                 t.name AS type_name,
                 COUNT(DISTINCT p.post_id) AS posts_count,
-                MATCH(a.name, a.description) AGAINST(:search IN NATURAL LANGUAGE MODE) AS relevance
+                MATCH(a.name, a.description) AGAINST(:ft_select IN BOOLEAN MODE) AS relevance
             FROM dbProj_attraction a
             LEFT JOIN dbProj_country c
                 ON a.country_id = c.country_id
@@ -54,9 +66,9 @@ if ($search !== '') {
             LEFT JOIN dbProj_post p
                 ON a.country_id = p.country_id
             WHERE 
-                MATCH(a.name, a.description) AGAINST(:search IN NATURAL LANGUAGE MODE)
-                OR c.name LIKE :likeSearch
-                OR t.name LIKE :likeSearch
+                MATCH(a.name, a.description) AGAINST(:ft_where IN BOOLEAN MODE)
+                OR c.name LIKE :like_search
+                OR t.name LIKE :like_search
             GROUP BY
                 a.attraction_id,
                 a.name,
@@ -72,12 +84,12 @@ if ($search !== '') {
         ");
 
         $stmt->execute([
-            ':search' => $search,
-            ':likeSearch' => '%' . $search . '%'
+            ':ft_select' => $fullTextSearch,
+            ':ft_where' => $fullTextSearch,
+            ':like_search' => '%' . $search . '%'
         ]);
 
         $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
     } catch (Throwable $e) {
         $stmt = $pdo->prepare("
             SELECT 
@@ -99,10 +111,10 @@ if ($search !== '') {
             LEFT JOIN dbProj_post p
                 ON a.country_id = p.country_id
             WHERE 
-                a.name LIKE :likeSearch
-                OR a.description LIKE :likeSearch
-                OR c.name LIKE :likeSearch
-                OR t.name LIKE :likeSearch
+                a.name LIKE :like_search
+                OR a.description LIKE :like_search
+                OR c.name LIKE :like_search
+                OR t.name LIKE :like_search
             GROUP BY
                 a.attraction_id,
                 a.name,
@@ -118,7 +130,7 @@ if ($search !== '') {
         ");
 
         $stmt->execute([
-            ':likeSearch' => '%' . $search . '%'
+            ':like_search' => '%' . $search . '%'
         ]);
 
         $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -572,6 +584,32 @@ if ($search !== '') {
         line-height: 1.35;
     }
 
+    .gg-dashboard-footer {
+        background: #4169e1;
+        min-height: 155px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: #ffffff;
+        text-align: center;
+        border-radius: 22px;
+        margin-top: 34px;
+    }
+
+    .gg-dashboard-footer-logo {
+        font-size: 22px;
+        font-weight: 900;
+        line-height: 1;
+        margin-bottom: 10px;
+    }
+
+    .gg-dashboard-footer-text {
+        margin: 0;
+        font-size: 13px;
+        opacity: 0.9;
+    }
+
     @media (max-width: 992px) {
         .gg-admin-dashboard {
             padding: 28px 18px 50px;
@@ -657,7 +695,13 @@ if ($search !== '') {
             <div>
                 <h2 class="gg-card-title">Latest Attractions</h2>
                 <p class="gg-card-text">
-                    <?= $search ? 'Full-text search results for "' . htmlspecialchars($search) . '"' : 'Recent attractions with their location, type, and related post activity.' ?>
+                    <?php if ($search && $attractions): ?>
+                        Full-text search results for "<?= htmlspecialchars($search) ?>".
+                    <?php elseif ($search && !$attractions): ?>
+                        No attraction results found for "<?= htmlspecialchars($search) ?>". Try another keyword.
+                    <?php else: ?>
+                        Recent attractions with their location, type, and related post activity.
+                    <?php endif; ?>
                 </p>
             </div>
 
@@ -700,7 +744,7 @@ if ($search !== '') {
                     <?php if (!$attractions): ?>
                         <tr>
                             <td colspan="6" class="text-center text-muted py-4">
-                                No attractions found.
+                                <?= $search ? 'No attractions matched your search.' : 'No attractions found.' ?>
                             </td>
                         </tr>
                     <?php endif; ?>
@@ -868,5 +912,14 @@ if ($search !== '') {
             </div>
         </div>
     </section>
+
+    <footer class="gg-dashboard-footer">
+        <div class="gg-dashboard-footer-logo">
+            GulfGuide
+        </div>
+        <p class="gg-dashboard-footer-text">
+            © 2026 GulfGuide. All rights reserved.
+        </p>
+    </footer>
 
 </div>
