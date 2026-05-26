@@ -30,26 +30,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$errors) {
         try {
-            $stmt = $pdo->prepare("
-                INSERT INTO dbProj_country
-                    (name, description, flag_image, display_image, official_tourism_website)
-                VALUES
-                    (?, ?, ?, ?, ?)
+            $duplicateStmt = $pdo->prepare("
+                SELECT COUNT(*)
+                FROM dbProj_country
+                WHERE LOWER(name) = LOWER(?)
             ");
+            $duplicateStmt->execute([$name]);
 
-            $stmt->execute([
-                $name,
-                $description,
-                $flagImage,
-                $displayImage,
-                $tourismWebsite
-            ]);
+            if ((int) $duplicateStmt->fetchColumn() > 0) {
+                $errors[] = 'A location with this name already exists.';
+            } else {
+                $stmt = $pdo->prepare("
+                    INSERT INTO dbProj_country
+                        (name, description, flag_image, display_image, official_tourism_website)
+                    VALUES
+                        (?, ?, ?, ?, ?)
+                ");
 
-            $_SESSION['status'] = 'Location added successfully.';
-            $_SESSION['status_code'] = 'success';
+                $stmt->execute([
+                    $name,
+                    $description,
+                    $flagImage,
+                    $displayImage,
+                    $tourismWebsite
+                ]);
 
-            echo "<script>window.location.href='" . APP_BASE . "/admin/location-list';</script>";
-            exit;
+                $_SESSION['status'] = 'Location added successfully.';
+                $_SESSION['status_code'] = 'success';
+
+                echo "<script>window.location.href='" . APP_BASE . "/admin/location-list';</script>";
+                exit;
+            }
+
         } catch (Throwable $e) {
             $errors[] = 'Add failed: ' . $e->getMessage();
         }

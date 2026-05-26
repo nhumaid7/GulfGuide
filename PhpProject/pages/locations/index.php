@@ -1,6 +1,4 @@
 <?php
-require_once __DIR__ . '/../../classes/attraction.php';
-
 $isAdminLocationList = isset($uri) && $uri === '/admin/location-list';
 
 if ($isAdminLocationList) {
@@ -8,117 +6,129 @@ if ($isAdminLocationList) {
         requireRole(ROLE_ADMIN);
     }
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_attraction'])) {
-        $attractionId = filter_input(INPUT_POST, 'attraction_id', FILTER_VALIDATE_INT);
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_location'])) {
+        $locationId = filter_input(INPUT_POST, 'location_id', FILTER_VALIDATE_INT);
 
-        if ($attractionId) {
+        if ($locationId) {
             try {
                 $pdo->beginTransaction();
 
-                $pdo->prepare("
-                    DELETE FROM dbProj_attraction_media
-                    WHERE attraction_id = ?
-                ")->execute([$attractionId]);
+                $attractionIdsStmt = $pdo->prepare("
+                    SELECT attraction_id
+                    FROM dbProj_attraction
+                    WHERE country_id = ?
+                ");
+                $attractionIdsStmt->execute([$locationId]);
+                $attractionIds = $attractionIdsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+                if (!empty($attractionIds)) {
+                    $placeholders = implode(',', array_fill(0, count($attractionIds), '?'));
+
+                    $pdo->prepare("
+                        DELETE FROM dbProj_attraction_media
+                        WHERE attraction_id IN ($placeholders)
+                    ")->execute($attractionIds);
+
+                    $deleteAttractionsParams = $attractionIds;
+                    $deleteAttractionsParams[] = $locationId;
+
+                    $pdo->prepare("
+                        DELETE FROM dbProj_attraction
+                        WHERE attraction_id IN ($placeholders)
+                          AND country_id = ?
+                    ")->execute($deleteAttractionsParams);
+                }
 
                 $pdo->prepare("
-                    DELETE FROM dbProj_attraction
-                    WHERE attraction_id = ?
-                ")->execute([$attractionId]);
+                    DELETE FROM dbProj_post
+                    WHERE country_id = ?
+                ")->execute([$locationId]);
+
+                $countryDelete = $pdo->prepare("
+                    DELETE FROM dbProj_country
+                    WHERE country_id = ?
+                ");
+                $countryDelete->execute([$locationId]);
+
+                if ($countryDelete->rowCount() < 1) {
+                    throw new RuntimeException('Location not found or already deleted.');
+                }
 
                 $pdo->commit();
 
-                $_SESSION['status'] = 'Attraction deleted successfully.';
+                $_SESSION['status'] = 'Location deleted successfully.';
                 $_SESSION['status_code'] = 'success';
             } catch (Throwable $e) {
-                $pdo->rollBack();
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
 
                 $_SESSION['status'] = 'Delete failed: ' . $e->getMessage();
                 $_SESSION['status_code'] = 'error';
             }
+        } else {
+            $_SESSION['status'] = 'Invalid location selected.';
+            $_SESSION['status_code'] = 'error';
         }
 
-        echo "<script>window.location.href='" . APP_BASE . "/admin/location-list';</script>";
+        header('Location: ' . APP_BASE . '/admin/location-list');
         exit;
     }
 
     $adminSearch = trim($_GET['search'] ?? '');
-    $attractions = [];
+    $locations = [];
+
+    $sql = "
+        SELECT
+            c.country_id,
+            c.name,
+            c.description,
+            c.flag_image,
+            c.display_image,
+            c.official_tourism_website,
+            COUNT(DISTINCT a.attraction_id) AS attractions_count,
+            COUNT(DISTINCT p.post_id) AS posts_count
+        FROM dbProj_country c
+        LEFT JOIN dbProj_attraction a
+            ON c.country_id = a.country_id
+        LEFT JOIN dbProj_post p
+            ON c.country_id = p.country_id
+    ";
+
+    $params = [];
 
     if ($adminSearch !== '') {
-        $stmt = $pdo->prepare("
-            SELECT 
-                a.attraction_id,
-                a.name,
-                a.description,
-                a.cover_image,
-                a.created_at,
-                c.name AS country_name,
-                t.name AS type_name,
-                COUNT(DISTINCT p.post_id) AS posts_count
-            FROM dbProj_attraction a
-            LEFT JOIN dbProj_country c
-                ON a.country_id = c.country_id
-            LEFT JOIN dbProj_attraction_type t
-                ON a.type_id = t.type_id
-            LEFT JOIN dbProj_post p
-                ON a.country_id = p.country_id
-            WHERE 
-                a.name LIKE :search
-                OR a.description LIKE :search
+        $sql .= "
+            WHERE
+                CAST(c.country_id AS CHAR) LIKE :search
                 OR c.name LIKE :search
-                OR t.name LIKE :search
-            GROUP BY
-                a.attraction_id,
-                a.name,
-                a.description,
-                a.cover_image,
-                a.created_at,
-                c.name,
-                t.name
-            ORDER BY a.attraction_id DESC
-        ");
-
-        $stmt->execute([
-            ':search' => '%' . $adminSearch . '%'
-        ]);
-    } else {
-        $stmt = $pdo->query("
-            SELECT 
-                a.attraction_id,
-                a.name,
-                a.description,
-                a.cover_image,
-                a.created_at,
-                c.name AS country_name,
-                t.name AS type_name,
-                COUNT(DISTINCT p.post_id) AS posts_count
-            FROM dbProj_attraction a
-            LEFT JOIN dbProj_country c
-                ON a.country_id = c.country_id
-            LEFT JOIN dbProj_attraction_type t
-                ON a.type_id = t.type_id
-            LEFT JOIN dbProj_post p
-                ON a.country_id = p.country_id
-            GROUP BY
-                a.attraction_id,
-                a.name,
-                a.description,
-                a.cover_image,
-                a.created_at,
-                c.name,
-                t.name
-            ORDER BY a.attraction_id DESC
-        ");
+                OR c.description LIKE :search
+                OR c.official_tourism_website LIKE :search
+        ";
+        $params[':search'] = '%' . $adminSearch . '%';
     }
 
-    $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $sql .= "
+        GROUP BY
+            c.country_id,
+            c.name,
+            c.description,
+            c.flag_image,
+            c.display_image,
+            c.official_tourism_website
+        ORDER BY c.country_id DESC
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $locations = $stmt->fetchAll(PDO::FETCH_ASSOC);
     ?>
 
     <style>
         .gg-admin-location-page {
-            padding: 38px 48px 70px;
             background: #f4f7fb;
             min-height: calc(100vh - 70px);
+            padding: 38px 48px 70px;
         }
 
         .gg-location-hero {
@@ -143,7 +153,7 @@ if ($isAdminLocationList) {
             height: 260px;
             border-radius: 50%;
             right: -90px;
-            top: -125px;
+            top: -120px;
             background: rgba(255, 255, 255, 0.08);
         }
 
@@ -157,36 +167,61 @@ if ($isAdminLocationList) {
             font-weight: 900;
             margin-bottom: 8px;
             letter-spacing: -0.7px;
-            color: #ffffff !important;
+            color: #ffffff;
         }
 
         .gg-location-subtitle {
-            color: rgba(255, 255, 255, 0.86) !important;
+            color: rgba(255, 255, 255, 0.82);
             margin: 0;
             font-size: 15px;
+            max-width: 720px;
         }
 
-        .gg-location-add-btn {
+        .gg-location-add-btn,
+        .gg-primary-btn {
             position: relative;
             z-index: 2;
-            background: rgba(255, 255, 255, 0.14);
-            color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.28);
+            background: #ffffff;
+            color: #2446bb;
+            border: 0;
             border-radius: 999px;
             padding: 11px 18px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 900;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 7px;
+            gap: 8px;
+            box-shadow: 0 10px 22px rgba(20, 47, 108, 0.18);
             transition: 0.2s ease;
             white-space: nowrap;
         }
 
-        .gg-location-add-btn:hover {
-            background: #ffffff;
-            color: #2446bb;
+        .gg-location-add-btn:hover,
+        .gg-primary-btn:hover {
+            transform: translateY(-1px);
+            background: #eaf1ff;
+            color: #1b3ea5;
+        }
+
+        .gg-flash {
+            border-radius: 16px;
+            padding: 15px 18px;
+            margin-bottom: 22px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .gg-flash.alert-success {
+            background: #edfdf4;
+            color: #027a48;
+            border: 1px solid #abefc6;
+        }
+
+        .gg-flash.alert-danger {
+            background: #fff5f5;
+            color: #b42318;
+            border: 1px solid #f5b5b5;
         }
 
         .gg-location-card {
@@ -198,28 +233,27 @@ if ($isAdminLocationList) {
         }
 
         .gg-location-card-header {
-            padding: 22px 24px;
+            padding: 24px 28px;
             border-bottom: 1px solid #e8eef6;
-            background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 18px;
+            gap: 16px;
             flex-wrap: wrap;
+            background: linear-gradient(135deg, #ffffff 0%, #f7faff 100%);
         }
 
         .gg-location-card-title {
-            margin: 0;
+            margin: 0 0 6px;
             font-size: 22px;
             font-weight: 900;
-            color: #101828;
-            letter-spacing: -0.3px;
+            color: #1f2937;
         }
 
         .gg-location-card-text {
-            margin: 5px 0 0;
+            margin: 0;
+            font-size: 14px;
             color: #667085;
-            font-size: 13px;
         }
 
         .gg-location-search {
@@ -230,12 +264,13 @@ if ($isAdminLocationList) {
         }
 
         .gg-location-search input {
-            border: 1px solid #d9e2ef;
-            border-radius: 12px;
-            padding: 10px 13px;
+            min-width: 240px;
+            border: 1px solid #d6deea;
+            border-radius: 999px;
+            padding: 11px 16px;
             font-size: 14px;
-            width: 260px;
             outline: none;
+            transition: 0.2s ease;
         }
 
         .gg-location-search input:focus {
@@ -243,35 +278,13 @@ if ($isAdminLocationList) {
             box-shadow: 0 0 0 4px rgba(65, 105, 225, 0.10);
         }
 
-        .gg-primary-btn {
-            background: #4169e1;
-            color: #ffffff;
-            border: 0;
-            border-radius: 11px;
-            padding: 10px 17px;
-            font-size: 14px;
-            font-weight: 900;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            box-shadow: 0 8px 18px rgba(65, 105, 225, 0.22);
-            transition: 0.2s ease;
-        }
-
-        .gg-primary-btn:hover {
-            background: #3155c9;
-            color: #ffffff;
-            transform: translateY(-1px);
-        }
-
         .gg-clear-btn {
             background: #f3f6fb;
             color: #344054;
             border: 1px solid #e3e8f0;
-            border-radius: 11px;
+            border-radius: 999px;
             padding: 10px 16px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 800;
             text-decoration: none;
             transition: 0.2s ease;
@@ -283,101 +296,31 @@ if ($isAdminLocationList) {
             border-color: #cfe1ff;
         }
 
-        .gg-flash {
-            border-radius: 16px;
-            padding: 15px 18px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
         .gg-table {
             margin: 0;
-            font-size: 14px;
         }
 
         .gg-table thead th {
-            background: #fbfdff;
-            color: #344054;
+            font-size: 12px;
             font-weight: 900;
-            padding: 15px 20px;
-            border-bottom: 1px solid #dde5ef;
-            font-size: 13px;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.06em;
+            color: #667085;
+            background: #f8fbff;
+            padding: 16px 22px;
+            border-bottom: 1px solid #e8eef6;
             white-space: nowrap;
         }
 
         .gg-table tbody td {
-            padding: 17px 20px;
+            padding: 20px 22px;
             vertical-align: middle;
-            border-bottom: 1px solid #eef2f6;
-            color: #111827;
-        }
-
-        .gg-table tbody tr:hover {
-            background: #f8fbff;
+            border-top: 1px solid #eef2f6;
         }
 
         .gg-location-id {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: #eef6ff;
-            color: #2f55c8;
-            border: 1px solid #cfe1ff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            font-weight: 900;
-        }
-
-        .gg-location-info {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .gg-location-thumb {
-            width: 50px;
-            height: 50px;
-            border-radius: 14px;
-            overflow: hidden;
-            background: linear-gradient(135deg, #4169e1, #75d5f4);
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: 18px;
-            flex-shrink: 0;
-            box-shadow: 0 8px 16px rgba(65, 105, 225, 0.16);
-        }
-
-        .gg-location-thumb img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .gg-location-name {
-            font-weight: 900;
-            color: #101828;
-            margin-bottom: 4px;
-        }
-
-        .gg-location-desc {
-            font-size: 13px;
-            color: #667085;
-            max-width: 560px;
-            line-height: 1.35;
-        }
-
-        .gg-pill {
-            background: #f1f7ff;
-            color: #2f55c8;
-            border: 1px solid #d4e5ff;
+            background: #eef4ff;
+            color: #2446bb;
             border-radius: 999px;
             padding: 7px 13px;
             font-size: 13px;
@@ -388,7 +331,75 @@ if ($isAdminLocationList) {
             white-space: nowrap;
         }
 
-        .gg-type-pill {
+        .gg-location-cell {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 260px;
+        }
+
+        .gg-location-image {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #4169e1 0%, #6f8cff 100%);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 20px;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 10px 24px rgba(65, 105, 225, 0.22);
+        }
+
+        .gg-location-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .gg-location-name {
+            font-size: 15px;
+            font-weight: 800;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .gg-location-desc {
+            font-size: 13px;
+            color: #667085;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .gg-site-link {
+            color: #2446bb;
+            text-decoration: none;
+            font-weight: 700;
+            word-break: break-word;
+        }
+
+        .gg-site-link:hover {
+            text-decoration: underline;
+        }
+
+        .gg-count-pill {
+            background: #eff8ff;
+            color: #175cd3;
+            border: 1px solid #bfdcff;
+            border-radius: 999px;
+            padding: 7px 13px;
+            font-size: 13px;
+            font-weight: 800;
+            display: inline-block;
+            min-width: 42px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .gg-post-pill {
             background: #f3efff;
             color: #6f42c1;
             border: 1px solid #d6c5ff;
@@ -473,6 +484,7 @@ if ($isAdminLocationList) {
 
             .gg-location-search input {
                 width: 100%;
+                min-width: 100%;
             }
         }
     </style>
@@ -483,13 +495,13 @@ if ($isAdminLocationList) {
             <div class="gg-location-hero-content">
                 <h1 class="gg-location-title">Manage Locations</h1>
                 <p class="gg-location-subtitle">
-                    View, search, edit, and delete GulfGuide attractions.
+                    View, search, edit, and delete GulfGuide locations.
                 </p>
             </div>
 
             <a href="<?= APP_BASE ?>/admin/add-location" class="gg-location-add-btn">
                 <i class="ph ph-plus"></i>
-                Add Attraction
+                Add Location
             </a>
         </section>
 
@@ -503,9 +515,9 @@ if ($isAdminLocationList) {
         <section class="gg-location-card">
             <div class="gg-location-card-header">
                 <div>
-                    <h2 class="gg-location-card-title">All Attractions</h2>
+                    <h2 class="gg-location-card-title">All Locations</h2>
                     <p class="gg-location-card-text">
-                        <?= $adminSearch ? 'Search results for "' . htmlspecialchars($adminSearch) . '"' : 'Browse all saved attractions.' ?>
+                        <?= $adminSearch ? 'Search results for "' . htmlspecialchars($adminSearch) . '"' : 'Browse all saved locations.' ?>
                     </p>
                 </div>
 
@@ -513,7 +525,7 @@ if ($isAdminLocationList) {
                     <input
                         type="text"
                         name="search"
-                        placeholder="Search attractions..."
+                        placeholder="Search locations..."
                         value="<?= htmlspecialchars($adminSearch) ?>"
                     >
 
@@ -535,77 +547,86 @@ if ($isAdminLocationList) {
                     <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Attraction</th>
                         <th>Location</th>
-                        <th>Type</th>
+                        <th>Tourism Site</th>
+                        <th>Attractions</th>
                         <th>Posts</th>
                         <th>Actions</th>
                     </tr>
                     </thead>
 
                     <tbody>
-                    <?php if (!$attractions): ?>
+                    <?php if (!$locations): ?>
                         <tr>
                             <td colspan="6" class="text-center text-muted py-4">
-                                <?= $adminSearch ? 'No attractions matched your search.' : 'No attractions found.' ?>
+                                <?= $adminSearch ? 'No locations matched your search.' : 'No locations found.' ?>
                             </td>
                         </tr>
                     <?php endif; ?>
 
-                    <?php foreach ($attractions as $attraction): ?>
+                    <?php foreach ($locations as $location): ?>
                         <tr>
                             <td>
                                 <div class="gg-location-id">
-                                    <?= htmlspecialchars($attraction['attraction_id']) ?>
+                                    <?= htmlspecialchars($location['country_id']) ?>
                                 </div>
                             </td>
 
                             <td>
-                                <div class="gg-location-info">
-                                    <div class="gg-location-thumb">
-                                        <?php if (!empty($attraction['cover_image'])): ?>
+                                <div class="gg-location-cell">
+                                    <div class="gg-location-image">
+                                        <?php if (!empty($location['display_image'])): ?>
                                             <img
-                                                src="<?= htmlspecialchars($attraction['cover_image']) ?>"
-                                                alt="<?= htmlspecialchars($attraction['name']) ?>"
+                                                src="<?= htmlspecialchars($location['display_image']) ?>"
+                                                alt="<?= htmlspecialchars($location['name']) ?>"
                                             >
                                         <?php else: ?>
-                                            <?= htmlspecialchars(mb_strtoupper(mb_substr($attraction['name'] ?? 'A', 0, 1))) ?>
+                                            <?= htmlspecialchars(mb_strtoupper(mb_substr($location['name'] ?? 'L', 0, 1))) ?>
                                         <?php endif; ?>
                                     </div>
 
                                     <div>
                                         <div class="gg-location-name">
-                                            <?= htmlspecialchars($attraction['name']) ?>
+                                            <?= htmlspecialchars($location['name']) ?>
                                         </div>
 
-                                        <div class="gg-location-desc">
-                                            <?= htmlspecialchars(mb_strimwidth($attraction['description'] ?? '', 0, 95, '...')) ?>
-                                        </div>
+                                        <p class="gg-location-desc">
+                                            <?= htmlspecialchars(mb_strimwidth($location['description'] ?? '', 0, 95, '...')) ?>
+                                        </p>
                                     </div>
                                 </div>
                             </td>
 
                             <td>
-                                <span class="gg-pill">
-                                    <?= htmlspecialchars($attraction['country_name'] ?? 'No location') ?>
+                                <?php if (!empty($location['official_tourism_website'])): ?>
+                                    <a
+                                        href="<?= htmlspecialchars($location['official_tourism_website']) ?>"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="gg-site-link"
+                                    >
+                                        <?= htmlspecialchars($location['official_tourism_website']) ?>
+                                    </a>
+                                <?php else: ?>
+                                    <span class="text-muted">No website</span>
+                                <?php endif; ?>
+                            </td>
+
+                            <td>
+                                <span class="gg-count-pill">
+                                    <?= htmlspecialchars($location['attractions_count']) ?>
                                 </span>
                             </td>
 
                             <td>
-                                <span class="gg-type-pill">
-                                    <?= htmlspecialchars($attraction['type_name'] ?? 'No type') ?>
-                                </span>
-                            </td>
-
-                            <td>
-                                <span class="gg-pill">
-                                    <?= htmlspecialchars($attraction['posts_count']) ?>
+                                <span class="gg-post-pill">
+                                    <?= htmlspecialchars($location['posts_count']) ?>
                                 </span>
                             </td>
 
                             <td>
                                 <div class="gg-actions">
-                                    <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($attraction['attraction_id']) ?>" class="gg-edit-btn">
+                                    <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($location['country_id']) ?>" class="gg-edit-btn">
                                         <i class="ph ph-pencil-simple"></i>
                                         Edit
                                     </a>
@@ -613,15 +634,15 @@ if ($isAdminLocationList) {
                                     <form
                                         method="POST"
                                         action="<?= APP_BASE ?>/admin/location-list"
-                                        onsubmit="return confirm('Are you sure you want to delete this attraction?');"
+                                        onsubmit="return confirm('Are you sure you want to delete this location? This will also delete its attractions, media, and posts.');"
                                     >
                                         <input
                                             type="hidden"
-                                            name="attraction_id"
-                                            value="<?= htmlspecialchars($attraction['attraction_id']) ?>"
+                                            name="location_id"
+                                            value="<?= htmlspecialchars($location['country_id']) ?>"
                                         >
 
-                                        <button type="submit" name="delete_attraction" class="gg-delete-btn">
+                                        <button type="submit" name="delete_location" class="gg-delete-btn">
                                             <i class="ph ph-trash"></i>
                                             Delete
                                         </button>
@@ -630,14 +651,14 @@ if ($isAdminLocationList) {
                             </td>
                         </tr>
                     <?php endforeach; ?>
+
                     </tbody>
                 </table>
             </div>
         </section>
-
     </div>
 
-    <?php
+<?php
     return;
 }
 
