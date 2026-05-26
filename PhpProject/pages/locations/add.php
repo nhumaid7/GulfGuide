@@ -4,45 +4,45 @@ $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
     $flagImage = trim($_POST['flag_image'] ?? '');
-    $tourismWebsite = trim($_POST['official_tourism_website'] ?? '');
     $displayImage = trim($_POST['display_image'] ?? '');
+    $tourismWebsite = trim($_POST['official_tourism_website'] ?? '');
     $description = trim($_POST['description'] ?? '');
 
     if ($name === '') {
         $errors[] = 'Location name is required.';
     }
 
-    if ($flagImage === '') {
-        $errors[] = 'Flag image path is required.';
+    if ($description === '') {
+        $errors[] = 'Description is required.';
     }
 
-    if ($tourismWebsite === '') {
-        $errors[] = 'Official tourism website is required.';
+    if ($flagImage === '') {
+        $errors[] = 'Flag image path is required.';
     }
 
     if ($displayImage === '') {
         $errors[] = 'Display image path is required.';
     }
 
-    if ($description === '') {
-        $errors[] = 'Description is required.';
+    if ($tourismWebsite === '') {
+        $errors[] = 'Official tourism website is required.';
     }
 
     if (!$errors) {
         try {
             $stmt = $pdo->prepare("
                 INSERT INTO dbProj_country
-                    (flag_image, official_tourism_website, display_image, name, description)
+                    (name, description, flag_image, display_image, official_tourism_website)
                 VALUES
                     (?, ?, ?, ?, ?)
             ");
 
             $stmt->execute([
-                $flagImage,
-                $tourismWebsite,
-                $displayImage,
                 $name,
-                $description
+                $description,
+                $flagImage,
+                $displayImage,
+                $tourismWebsite
             ]);
 
             $_SESSION['status'] = 'Location added successfully.';

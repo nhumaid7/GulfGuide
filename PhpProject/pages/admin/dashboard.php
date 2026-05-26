@@ -37,6 +37,7 @@ if ($search !== '') {
 
     foreach ($words as $word) {
         $word = trim($word);
+
         if ($word !== '') {
             $fullTextSearch .= '+' . $word . '* ';
         }
@@ -91,6 +92,7 @@ if ($search !== '') {
         ]);
 
         $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
     } catch (Throwable $e) {
         $stmt = $pdo->prepare("
             SELECT 

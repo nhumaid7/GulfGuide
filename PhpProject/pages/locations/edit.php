@@ -23,28 +23,28 @@ $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
     $flagImage = trim($_POST['flag_image'] ?? '');
-    $tourismWebsite = trim($_POST['official_tourism_website'] ?? '');
     $displayImage = trim($_POST['display_image'] ?? '');
+    $tourismWebsite = trim($_POST['official_tourism_website'] ?? '');
     $description = trim($_POST['description'] ?? '');
 
     if ($name === '') {
         $errors[] = 'Location name is required.';
     }
 
-    if ($flagImage === '') {
-        $errors[] = 'Flag image path is required.';
+    if ($description === '') {
+        $errors[] = 'Description is required.';
     }
 
-    if ($tourismWebsite === '') {
-        $errors[] = 'Official tourism website is required.';
+    if ($flagImage === '') {
+        $errors[] = 'Flag image path is required.';
     }
 
     if ($displayImage === '') {
         $errors[] = 'Display image path is required.';
     }
 
-    if ($description === '') {
-        $errors[] = 'Description is required.';
+    if ($tourismWebsite === '') {
+        $errors[] = 'Official tourism website is required.';
     }
 
     if (!$errors) {
@@ -52,20 +52,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("
                 UPDATE dbProj_country
                 SET
-                    flag_image = ?,
-                    official_tourism_website = ?,
-                    display_image = ?,
                     name = ?,
-                    description = ?
+                    description = ?,
+                    flag_image = ?,
+                    display_image = ?,
+                    official_tourism_website = ?
                 WHERE country_id = ?
             ");
 
             $stmt->execute([
-                $flagImage,
-                $tourismWebsite,
-                $displayImage,
                 $name,
                 $description,
+                $flagImage,
+                $displayImage,
+                $tourismWebsite,
                 $id
             ]);
 
@@ -357,7 +357,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     Edit <?= htmlspecialchars($_POST['name'] ?? $location['name']) ?>
                 </h2>
                 <p class="gg-form-card-text">
-                    This page edits an existing location. Update only the fields you need, then save.
+                    Existing location loaded from the database. Update only the fields you need, then save.
                 </p>
             </div>
 
@@ -385,7 +385,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?= htmlspecialchars($_POST['name'] ?? $location['name']) ?>
                     </div>
                     <p class="gg-preview-text">
-                        Existing location loaded from the database. You are editing this record, not adding a new one.
+                        You are editing this existing location, not creating a new one.
                     </p>
                 </div>
             </div>
