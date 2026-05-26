@@ -1,98 +1,81 @@
 <?php
+$id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+
+if (!$id) {
+    echo "<script>window.location.href='" . APP_BASE . "/admin/location-list';</script>";
+    exit;
+}
+
+$stmt = $pdo->prepare("SELECT * FROM dbProj_country WHERE country_id = ?");
+$stmt->execute([$id]);
+$location = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$location) {
+    $_SESSION['status'] = 'Location not found.';
+    $_SESSION['status_code'] = 'error';
+
+    echo "<script>window.location.href='" . APP_BASE . "/admin/location-list';</script>";
+    exit;
+}
+
 $errors = [];
 
-$countries = [];
-$types = [];
-
-try {
-    $countriesStmt = $pdo->query("
-        SELECT country_id, name
-        FROM dbProj_country
-        ORDER BY name ASC
-    ");
-    $countries = $countriesStmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (Throwable $e) {
-    $countries = [];
-}
-
-try {
-    $typesStmt = $pdo->query("
-        SELECT type_id, name
-        FROM dbProj_attraction_type
-        ORDER BY name ASC
-    ");
-    $types = $typesStmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (Throwable $e) {
-    $types = [];
-}
-
-function ggAttractionColumnExists(PDO $pdo, string $column): bool
-{
-    try {
-        $stmt = $pdo->prepare("SHOW COLUMNS FROM dbProj_attraction LIKE ?");
-        $stmt->execute([$column]);
-        return (bool) $stmt->fetch(PDO::FETCH_ASSOC);
-    } catch (Throwable $e) {
-        return false;
-    }
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $countryId = filter_input(INPUT_POST, 'country_id', FILTER_VALIDATE_INT);
-    $typeId = filter_input(INPUT_POST, 'type_id', FILTER_VALIDATE_INT);
     $name = trim($_POST['name'] ?? '');
+    $flagImage = trim($_POST['flag_image'] ?? '');
+    $tourismWebsite = trim($_POST['official_tourism_website'] ?? '');
+    $displayImage = trim($_POST['display_image'] ?? '');
     $description = trim($_POST['description'] ?? '');
-    $coverImage = trim($_POST['cover_image'] ?? '');
-
-    if (!$countryId) {
-        $errors[] = 'Please select a location/country.';
-    }
-
-    if (!$typeId) {
-        $errors[] = 'Please select an attraction type.';
-    }
 
     if ($name === '') {
-        $errors[] = 'Attraction name is required.';
+        $errors[] = 'Location name is required.';
+    }
+
+    if ($flagImage === '') {
+        $errors[] = 'Flag image path is required.';
+    }
+
+    if ($tourismWebsite === '') {
+        $errors[] = 'Official tourism website is required.';
+    }
+
+    if ($displayImage === '') {
+        $errors[] = 'Display image path is required.';
     }
 
     if ($description === '') {
         $errors[] = 'Description is required.';
     }
 
-    if ($coverImage === '') {
-        $errors[] = 'Cover image path is required.';
-    }
-
     if (!$errors) {
         try {
-            $columns = ['country_id', 'type_id', 'name', 'description', 'cover_image', 'created_at'];
-            $placeholders = ['?', '?', '?', '?', '?', 'NOW()'];
-            $values = [$countryId, $typeId, $name, $description, $coverImage];
+            $stmt = $pdo->prepare("
+                UPDATE dbProj_country
+                SET
+                    flag_image = ?,
+                    official_tourism_website = ?,
+                    display_image = ?,
+                    name = ?,
+                    description = ?
+                WHERE country_id = ?
+            ");
 
-            if (ggAttractionColumnExists($pdo, 'view_count')) {
-                $columns[] = 'view_count';
-                $placeholders[] = '?';
-                $values[] = 0;
-            }
+            $stmt->execute([
+                $flagImage,
+                $tourismWebsite,
+                $displayImage,
+                $name,
+                $description,
+                $id
+            ]);
 
-            $sql = "
-                INSERT INTO dbProj_attraction
-                    (" . implode(', ', $columns) . ")
-                VALUES
-                    (" . implode(', ', $placeholders) . ")
-            ";
-
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute($values);
-
-            $_SESSION['status'] = 'Attraction added successfully.';
+            $_SESSION['status'] = 'Location updated successfully.';
             $_SESSION['status_code'] = 'success';
 
             echo "<script>window.location.href='" . APP_BASE . "/admin/location-list';</script>";
             exit;
         } catch (Throwable $e) {
-            $errors[] = 'Add failed: ' . $e->getMessage();
+            $errors[] = 'Update failed: ' . $e->getMessage();
         }
     }
 }
@@ -141,10 +124,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         font-weight: 900;
         margin-bottom: 8px;
         letter-spacing: -0.7px;
+        color: #ffffff;
     }
 
     .gg-form-subtitle {
-        color: rgba(255, 255, 255, 0.78);
+        color: rgba(255, 255, 255, 0.82);
         margin: 0;
         font-size: 15px;
     }
@@ -181,6 +165,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         padding: 24px 28px;
         border-bottom: 1px solid #e8eef6;
         background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 18px;
     }
 
     .gg-form-card-title {
@@ -196,6 +184,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         font-size: 13px;
     }
 
+    .gg-form-id {
+        background: #eaf3ff;
+        color: #2f55c8;
+        border: 1px solid #cfe1ff;
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
     .gg-form-card-body {
         padding: 28px;
     }
@@ -208,19 +207,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     .gg-input,
-    .gg-select,
     .gg-textarea {
         border: 1px solid #d9e2ef;
         border-radius: 12px;
         padding: 12px 14px;
         font-size: 14px;
-        color: #111827;
-        background: #ffffff;
         transition: 0.2s ease;
     }
 
     .gg-input:focus,
-    .gg-select:focus,
     .gg-textarea:focus {
         border-color: #4169e1;
         box-shadow: 0 0 0 4px rgba(65, 105, 225, 0.10);
@@ -243,9 +238,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         font-weight: 600;
     }
 
-    .gg-form-actions {
+    .gg-preview-box {
+        background: #f8fbff;
+        border: 1px solid #e3ecf8;
+        border-radius: 16px;
+        padding: 16px;
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .gg-preview-img {
+        width: 76px;
+        height: 76px;
+        border-radius: 18px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #4169e1, #75d5f4);
+        color: #ffffff;
         display: flex;
         align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+
+    .gg-preview-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .gg-preview-title {
+        font-weight: 900;
+        color: #101828;
+        margin-bottom: 4px;
+    }
+
+    .gg-preview-text {
+        color: #667085;
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .gg-form-actions {
+        display: flex;
         gap: 12px;
         margin-top: 26px;
         padding-top: 22px;
@@ -287,51 +325,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         color: #2446bb;
         border-color: #cfe1ff;
     }
-
-    @media (max-width: 768px) {
-        .gg-form-page {
-            padding: 28px 18px 50px;
-        }
-
-        .gg-form-hero {
-            flex-direction: column;
-            align-items: flex-start;
-            padding: 28px;
-        }
-
-        .gg-form-title {
-            font-size: 28px;
-        }
-
-        .gg-form-card-body {
-            padding: 22px;
-        }
-
-        .gg-form-actions {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .gg-save-btn,
-        .gg-cancel-btn {
-            width: 100%;
-            text-align: center;
-        }
-    }
 </style>
 
 <div class="gg-form-page">
 
     <section class="gg-form-hero">
         <div class="gg-form-hero-content">
-            <h1 class="gg-form-title">Add Attraction</h1>
+            <h1 class="gg-form-title">Edit Location</h1>
             <p class="gg-form-subtitle">
-                Create a new attraction and connect it to an existing location and attraction type.
+                Update the selected GulfGuide country or travel location.
             </p>
         </div>
 
         <a href="<?= APP_BASE ?>/admin/location-list" class="gg-back-btn">
-            ← Back to Manage Locations
+            ← Back to Locations
         </a>
     </section>
 
@@ -345,75 +352,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <section class="gg-form-card">
         <div class="gg-form-card-header">
-            <h2 class="gg-form-card-title">Attraction Details</h2>
-            <p class="gg-form-card-text">
-                Fill in the required information to add a new attraction.
-            </p>
+            <div>
+                <h2 class="gg-form-card-title">
+                    Edit <?= htmlspecialchars($_POST['name'] ?? $location['name']) ?>
+                </h2>
+                <p class="gg-form-card-text">
+                    This page edits an existing location. Update only the fields you need, then save.
+                </p>
+            </div>
+
+            <span class="gg-form-id">
+                Location ID: <?= htmlspecialchars($id) ?>
+            </span>
         </div>
 
         <div class="gg-form-card-body">
-            <form method="POST" action="<?= APP_BASE ?>/admin/add-location">
 
+            <div class="gg-preview-box">
+                <div class="gg-preview-img">
+                    <?php if (!empty($_POST['display_image'] ?? $location['display_image'])): ?>
+                        <img
+                            src="<?= htmlspecialchars($_POST['display_image'] ?? $location['display_image']) ?>"
+                            alt="<?= htmlspecialchars($_POST['name'] ?? $location['name']) ?>"
+                        >
+                    <?php else: ?>
+                        <?= htmlspecialchars(mb_strtoupper(mb_substr($_POST['name'] ?? $location['name'] ?? 'L', 0, 1))) ?>
+                    <?php endif; ?>
+                </div>
+
+                <div>
+                    <div class="gg-preview-title">
+                        <?= htmlspecialchars($_POST['name'] ?? $location['name']) ?>
+                    </div>
+                    <p class="gg-preview-text">
+                        Existing location loaded from the database. You are editing this record, not adding a new one.
+                    </p>
+                </div>
+            </div>
+
+            <form method="POST" action="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($id) ?>">
                 <div class="row g-4">
 
                     <div class="col-md-6">
-                        <label class="form-label gg-label">Location / Country</label>
-                        <select name="country_id" class="form-select gg-select" required>
-                            <option value="">Select location</option>
-
-                            <?php foreach ($countries as $country): ?>
-                                <option
-                                    value="<?= htmlspecialchars($country['country_id']) ?>"
-                                    <?= ((string)($_POST['country_id'] ?? '') === (string)$country['country_id']) ? 'selected' : '' ?>
-                                >
-                                    <?= htmlspecialchars($country['name']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <div class="gg-help">Choose the existing country/location for this attraction.</div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label gg-label">Attraction Type</label>
-                        <select name="type_id" class="form-select gg-select" required>
-                            <option value="">Select type</option>
-
-                            <?php foreach ($types as $type): ?>
-                                <option
-                                    value="<?= htmlspecialchars($type['type_id']) ?>"
-                                    <?= ((string)($_POST['type_id'] ?? '') === (string)$type['type_id']) ? 'selected' : '' ?>
-                                >
-                                    <?= htmlspecialchars($type['name']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <div class="gg-help">Choose the category/type for this attraction.</div>
-                    </div>
-
-                    <div class="col-12">
-                        <label class="form-label gg-label">Attraction Name</label>
+                        <label class="form-label gg-label">Location Name</label>
                         <input
                             type="text"
                             name="name"
                             class="form-control gg-input"
-                            value="<?= htmlspecialchars($_POST['name'] ?? '') ?>"
-                            placeholder="Example: Qal'at Al Bahrain"
+                            value="<?= htmlspecialchars($_POST['name'] ?? $location['name']) ?>"
                             required
                         >
-                        <div class="gg-help">Enter the attraction name shown to users.</div>
+                        <div class="gg-help">Edit the country or travel location name.</div>
                     </div>
 
-                    <div class="col-12">
-                        <label class="form-label gg-label">Cover Image Path</label>
+                    <div class="col-md-6">
+                        <label class="form-label gg-label">Official Tourism Website</label>
                         <input
                             type="text"
-                            name="cover_image"
+                            name="official_tourism_website"
                             class="form-control gg-input"
-                            value="<?= htmlspecialchars($_POST['cover_image'] ?? '') ?>"
-                            placeholder="assets/images/attractions/example.jpg"
+                            value="<?= htmlspecialchars($_POST['official_tourism_website'] ?? $location['official_tourism_website']) ?>"
                             required
                         >
-                        <div class="gg-help">Use a valid image path or URL for the attraction card.</div>
+                        <div class="gg-help">Edit the official tourism website link.</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label gg-label">Flag Image Path</label>
+                        <input
+                            type="text"
+                            name="flag_image"
+                            class="form-control gg-input"
+                            value="<?= htmlspecialchars($_POST['flag_image'] ?? $location['flag_image']) ?>"
+                            required
+                        >
+                        <div class="gg-help">Edit the flag image path or URL.</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label gg-label">Display Image Path</label>
+                        <input
+                            type="text"
+                            name="display_image"
+                            class="form-control gg-input"
+                            value="<?= htmlspecialchars($_POST['display_image'] ?? $location['display_image']) ?>"
+                            required
+                        >
+                        <div class="gg-help">Edit the image shown on the location page.</div>
                     </div>
 
                     <div class="col-12">
@@ -422,23 +447,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             name="description"
                             class="form-control gg-textarea"
                             rows="6"
-                            placeholder="Write a short description about this attraction..."
                             required
-                        ><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
+                        ><?= htmlspecialchars($_POST['description'] ?? $location['description']) ?></textarea>
+                        <div class="gg-help">Edit the description for this location.</div>
                     </div>
 
                 </div>
 
                 <div class="gg-form-actions">
                     <button type="submit" class="gg-save-btn">
-                        Save Attraction
+                        Update Location
                     </button>
 
                     <a href="<?= APP_BASE ?>/admin/location-list" class="gg-cancel-btn">
                         Cancel
                     </a>
                 </div>
-
             </form>
         </div>
     </section>

@@ -67,8 +67,8 @@ if ($search !== '') {
                 ON a.country_id = p.country_id
             WHERE 
                 MATCH(a.name, a.description) AGAINST(:ft_where IN BOOLEAN MODE)
-                OR c.name LIKE :like_search
-                OR t.name LIKE :like_search
+                OR c.name LIKE :country_search
+                OR t.name LIKE :type_search
             GROUP BY
                 a.attraction_id,
                 a.name,
@@ -86,7 +86,8 @@ if ($search !== '') {
         $stmt->execute([
             ':ft_select' => $fullTextSearch,
             ':ft_where' => $fullTextSearch,
-            ':like_search' => '%' . $search . '%'
+            ':country_search' => '%' . $search . '%',
+            ':type_search' => '%' . $search . '%'
         ]);
 
         $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -111,10 +112,10 @@ if ($search !== '') {
             LEFT JOIN dbProj_post p
                 ON a.country_id = p.country_id
             WHERE 
-                a.name LIKE :like_search
-                OR a.description LIKE :like_search
-                OR c.name LIKE :like_search
-                OR t.name LIKE :like_search
+                a.name LIKE :name_search
+                OR a.description LIKE :description_search
+                OR c.name LIKE :country_search
+                OR t.name LIKE :type_search
             GROUP BY
                 a.attraction_id,
                 a.name,
@@ -130,7 +131,10 @@ if ($search !== '') {
         ");
 
         $stmt->execute([
-            ':like_search' => '%' . $search . '%'
+            ':name_search' => '%' . $search . '%',
+            ':description_search' => '%' . $search . '%',
+            ':country_search' => '%' . $search . '%',
+            ':type_search' => '%' . $search . '%'
         ]);
 
         $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -202,17 +206,6 @@ if ($search !== '') {
         background: rgba(255, 255, 255, 0.08);
     }
 
-    .gg-dashboard-hero::before {
-        content: "";
-        position: absolute;
-        width: 170px;
-        height: 170px;
-        border-radius: 50%;
-        left: -70px;
-        bottom: -95px;
-        background: rgba(255, 255, 255, 0.05);
-    }
-
     .gg-dashboard-hero-content,
     .gg-stats-row {
         position: relative;
@@ -224,10 +217,11 @@ if ($search !== '') {
         font-weight: 900;
         margin-bottom: 8px;
         letter-spacing: -0.7px;
+        color: #ffffff;
     }
 
     .gg-dashboard-subtitle {
-        color: rgba(255, 255, 255, 0.80);
+        color: rgba(255, 255, 255, 0.82);
         margin: 0;
         font-size: 15px;
         max-width: 760px;
@@ -247,7 +241,6 @@ if ($search !== '') {
         align-items: center;
         justify-content: space-between;
         transition: 0.2s ease;
-        backdrop-filter: blur(8px);
     }
 
     .gg-stat-card:hover {
@@ -307,7 +300,6 @@ if ($search !== '') {
         font-size: 24px;
         font-weight: 900;
         color: #101828;
-        letter-spacing: -0.4px;
     }
 
     .gg-card-text {
@@ -382,13 +374,6 @@ if ($search !== '') {
         font-size: 14px;
         font-weight: 800;
         text-decoration: none;
-        transition: 0.2s ease;
-    }
-
-    .gg-clear-btn:hover {
-        background: #eaf3ff;
-        color: #2446bb;
-        border-color: #cfe1ff;
     }
 
     .gg-table {
@@ -404,7 +389,6 @@ if ($search !== '') {
         border-bottom: 1px solid #dde5ef;
         font-size: 13px;
         text-transform: uppercase;
-        letter-spacing: 0.3px;
         white-space: nowrap;
     }
 
@@ -452,7 +436,6 @@ if ($search !== '') {
         font-size: 18px;
         font-weight: 900;
         flex-shrink: 0;
-        box-shadow: 0 8px 16px rgba(65, 105, 225, 0.16);
     }
 
     .gg-attraction-image img {
@@ -507,7 +490,6 @@ if ($search !== '') {
         font-size: 13px;
         font-weight: 800;
         display: inline-block;
-        white-space: nowrap;
         min-width: 42px;
         text-align: center;
     }
@@ -528,60 +510,6 @@ if ($search !== '') {
     .gg-manage-row .gg-btn:hover {
         background: #ffffff;
         color: #2446bb !important;
-    }
-
-    .gg-actions {
-        padding: 28px;
-    }
-
-    .gg-action-card {
-        background: #f8f9fc;
-        border: 2px solid #e1e6ef;
-        border-radius: 16px;
-        min-height: 96px;
-        padding: 20px 22px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        color: #111827;
-        text-decoration: none;
-        transition: 0.2s ease;
-    }
-
-    .gg-action-card:hover {
-        background: #ffffff;
-        color: #111827;
-        border-color: #4169e1;
-        transform: translateY(-3px);
-        box-shadow: 0 10px 22px rgba(65, 105, 225, 0.14);
-    }
-
-    .gg-action-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 13px;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        color: #4169e1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 21px;
-        flex-shrink: 0;
-    }
-
-    .gg-action-title {
-        margin: 0 0 3px;
-        font-weight: 900;
-        font-size: 15px;
-        color: #101828;
-    }
-
-    .gg-action-text {
-        margin: 0;
-        font-size: 13px;
-        color: #667085;
-        line-height: 1.35;
     }
 
     .gg-dashboard-footer {
@@ -609,24 +537,6 @@ if ($search !== '') {
         font-size: 13px;
         opacity: 0.9;
     }
-
-    @media (max-width: 992px) {
-        .gg-admin-dashboard {
-            padding: 28px 18px 50px;
-        }
-
-        .gg-dashboard-title {
-            font-size: 28px;
-        }
-
-        .gg-card-header {
-            align-items: flex-start;
-        }
-
-        .gg-search-input {
-            width: 100%;
-        }
-    }
 </style>
 
 <div class="gg-admin-dashboard">
@@ -635,7 +545,7 @@ if ($search !== '') {
         <div class="gg-dashboard-hero-content">
             <h1 class="gg-dashboard-title">Admin Dashboard</h1>
             <p class="gg-dashboard-subtitle">
-                Manage GulfGuide attractions, locations, posts, creator requests, and users from one control panel.
+                Manage GulfGuide locations, attractions, posts, creator requests, and users from one control panel.
             </p>
         </div>
 
@@ -646,9 +556,7 @@ if ($search !== '') {
                         <div class="gg-stat-number"><?= htmlspecialchars($totalUsers) ?></div>
                         <p class="gg-stat-label">Users</p>
                     </div>
-                    <div class="gg-stat-icon">
-                        <i class="ph ph-users"></i>
-                    </div>
+                    <div class="gg-stat-icon"><i class="ph ph-users"></i></div>
                 </div>
             </div>
 
@@ -658,9 +566,7 @@ if ($search !== '') {
                         <div class="gg-stat-number"><?= htmlspecialchars($totalLocations) ?></div>
                         <p class="gg-stat-label">Locations</p>
                     </div>
-                    <div class="gg-stat-icon">
-                        <i class="ph ph-map-pin"></i>
-                    </div>
+                    <div class="gg-stat-icon"><i class="ph ph-map-pin"></i></div>
                 </div>
             </div>
 
@@ -670,9 +576,7 @@ if ($search !== '') {
                         <div class="gg-stat-number"><?= htmlspecialchars($totalAttractions) ?></div>
                         <p class="gg-stat-label">Attractions</p>
                     </div>
-                    <div class="gg-stat-icon">
-                        <i class="ph ph-compass"></i>
-                    </div>
+                    <div class="gg-stat-icon"><i class="ph ph-compass"></i></div>
                 </div>
             </div>
 
@@ -682,9 +586,7 @@ if ($search !== '') {
                         <div class="gg-stat-number"><?= htmlspecialchars($totalPosts) ?></div>
                         <p class="gg-stat-label">Posts</p>
                     </div>
-                    <div class="gg-stat-icon">
-                        <i class="ph ph-article"></i>
-                    </div>
+                    <div class="gg-stat-icon"><i class="ph ph-article"></i></div>
                 </div>
             </div>
         </div>
@@ -761,10 +663,7 @@ if ($search !== '') {
                                 <div class="gg-attraction-cell">
                                     <div class="gg-attraction-image">
                                         <?php if (!empty($attraction['cover_image'])): ?>
-                                            <img
-                                                src="<?= htmlspecialchars($attraction['cover_image']) ?>"
-                                                alt="<?= htmlspecialchars($attraction['attraction_name']) ?>"
-                                            >
+                                            <img src="<?= htmlspecialchars($attraction['cover_image']) ?>" alt="<?= htmlspecialchars($attraction['attraction_name']) ?>">
                                         <?php else: ?>
                                             <?= htmlspecialchars(mb_strtoupper(mb_substr($attraction['attraction_name'] ?? 'A', 0, 1))) ?>
                                         <?php endif; ?>
@@ -801,10 +700,14 @@ if ($search !== '') {
                             </td>
 
                             <td>
-                                <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($attraction['attraction_id']) ?>" class="gg-btn gg-btn-light">
-                                    <i class="ph ph-pencil-simple"></i>
-                                    Edit Attraction
-                                </a>
+                                <?php if (!empty($attraction['country_id'])): ?>
+                                    <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($attraction['country_id']) ?>" class="gg-btn gg-btn-light">
+                                        <i class="ph ph-pencil-simple"></i>
+                                        Edit Location
+                                    </a>
+                                <?php else: ?>
+                                    <span class="text-muted">No location</span>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -820,106 +723,9 @@ if ($search !== '') {
         </div>
     </section>
 
-    <section class="gg-card">
-        <div class="gg-card-header">
-            <div>
-                <h2 class="gg-card-title">Quick Actions</h2>
-                <p class="gg-card-text">
-                    Use these shortcuts to complete admin tasks faster.
-                </p>
-            </div>
-        </div>
-
-        <div class="gg-actions">
-            <div class="row g-3">
-                <div class="col-lg-4 col-md-6">
-                    <a href="<?= APP_BASE ?>/admin/add-location" class="gg-action-card">
-                        <div class="gg-action-icon">
-                            <i class="ph ph-plus"></i>
-                        </div>
-
-                        <div>
-                            <p class="gg-action-title">Add Attraction</p>
-                            <p class="gg-action-text">Create a new attraction.</p>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="col-lg-4 col-md-6">
-                    <a href="<?= APP_BASE ?>/admin/location-list" class="gg-action-card">
-                        <div class="gg-action-icon">
-                            <i class="ph ph-map-pin"></i>
-                        </div>
-
-                        <div>
-                            <p class="gg-action-title">Manage Locations</p>
-                            <p class="gg-action-text">View, edit, and delete attractions.</p>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="col-lg-4 col-md-6">
-                    <a href="<?= APP_BASE ?>/admin/creator-request" class="gg-action-card">
-                        <div class="gg-action-icon">
-                            <i class="ph ph-user-check"></i>
-                        </div>
-
-                        <div>
-                            <p class="gg-action-title">Creator Requests</p>
-                            <p class="gg-action-text">Approve or reject applications.</p>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="col-lg-4 col-md-6">
-                    <a href="<?= APP_BASE ?>/admin/moderate-posts" class="gg-action-card">
-                        <div class="gg-action-icon">
-                            <i class="ph ph-article"></i>
-                        </div>
-
-                        <div>
-                            <p class="gg-action-title">Moderate Posts</p>
-                            <p class="gg-action-text">Review user posts.</p>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="col-lg-4 col-md-6">
-                    <a href="<?= APP_BASE ?>/admin/manage-accounts" class="gg-action-card">
-                        <div class="gg-action-icon">
-                            <i class="ph ph-users-three"></i>
-                        </div>
-
-                        <div>
-                            <p class="gg-action-title">Manage Accounts</p>
-                            <p class="gg-action-text">View and manage users.</p>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="col-lg-4 col-md-6">
-                    <a href="<?= APP_BASE ?>/admin/analytics" class="gg-action-card">
-                        <div class="gg-action-icon">
-                            <i class="ph ph-chart-line-up"></i>
-                        </div>
-
-                        <div>
-                            <p class="gg-action-title">Analytics</p>
-                            <p class="gg-action-text">View reports and insights.</p>
-                        </div>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <footer class="gg-dashboard-footer">
-        <div class="gg-dashboard-footer-logo">
-            GulfGuide
-        </div>
-        <p class="gg-dashboard-footer-text">
-            © 2026 GulfGuide. All rights reserved.
-        </p>
+        <div class="gg-dashboard-footer-logo">GulfGuide</div>
+        <p class="gg-dashboard-footer-text">© 2026 GulfGuide. All rights reserved.</p>
     </footer>
 
 </div>
