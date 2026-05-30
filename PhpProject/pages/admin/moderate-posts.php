@@ -3,48 +3,14 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     abort(403);
 }
 
-$stmt = $pdo->query('SELECT * FROM dbProj_post p JOIN dbProj_user u ON p.user_id = u.user_id JOIN dbProj_country c ON p.country_id = c.country_id ORDER BY p.created_at DESC');
+$stmt = $pdo->query(
+    'SELECT * FROM dbProj_post p 
+     JOIN dbProj_user u ON p.user_id = u.user_id 
+     JOIN dbProj_country c ON p.country_id = c.country_id 
+     ORDER BY p.created_at DESC'
+);
 $postRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-$posts = array_map([Post::class, 'fromArray'], $postRows);
-
-if (isset($_POST['action']) && in_array($_POST['action'], ['approve', 'reject'])) {
-    $requestId = (int) $_POST['request_id'];
-    $action = $_POST['action'];
-    $userId = $_POST['user_id'];
-
-    if ($action === 'approve') {
-        try {
-            $stmt = $pdo->prepare("UPDATE dbProj_creator_request SET status = 'approved', reviewed_at = NOW() WHERE request_id = :requestId");
-            $stmt->execute([':requestId' => $requestId]);
-
-            $stmt = $pdo->prepare("UPDATE dbProj_user SET role = 'creator' WHERE user_id = :userId");
-            $stmt->execute([':userId' => $userId]);
-
-            $_SESSION['status'] = "User approved as creator successfully";
-            $_SESSION['status_code'] = "success";
-        } catch (PDOException $e) {
-            $_SESSION['status'] = "Delete failed: " . $e->getMessage();
-            $_SESSION['status_code'] = "error";
-        }
-    } elseif ($action === 'reject') {
-        try {
-            $stmt = $pdo->prepare("UPDATE dbProj_creator_request SET status = 'rejected', reviewed_at = NOW() WHERE request_id = :requestId");
-            $stmt->execute([':requestId' => $requestId]);
-
-            $stmt = $pdo->prepare("UPDATE dbProj_user SET role = 'user' WHERE user_id = :userId");
-            $stmt->execute([':userId' => $userId]);
-
-            $_SESSION['status'] = "User rejected as creator successfully";
-            $_SESSION['status_code'] = "success";
-        } catch (PDOException $e) {
-            $_SESSION['status'] = "Delete failed: " . $e->getMessage();
-            $_SESSION['status_code'] = "error";
-        }
-    }
-    header("Location: " . APP_BASE . "/admin/creator-request");
-    exit;
-}
-?>  
+?>
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pb-3">
     <h2>Moderate Posts</h2>
     <nav aria-label="breadcrumb">
@@ -86,9 +52,9 @@ if (isset($_POST['action']) && in_array($_POST['action'], ['approve', 'reject'])
 
 <div class="card-section">
     <div class="card-section--header">
-        <p class="h5-style">Content Creator Requests</p>
+        <p class="h5-style">Moderate Posts</p>
         <div class="d-flex gap-1">
-            <span class="gulfguide-badge">Total: <?= count($posts) ?> applications</span>
+            <span class="gulfguide-badge">Total: <?= count($postRows) ?> posts</span>
         </div>
     </div>
     <hr class="card-section--divider">
@@ -100,46 +66,55 @@ if (isset($_POST['action']) && in_array($_POST['action'], ['approve', 'reject'])
                         <tr>
                             <th>ID</th>
                             <th>Title</th>
-                            <th>Country</th>
                             <th>Author</th>
+                            <th>Country</th>
                             <th>Created At</th>
                             <th class="action-th text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($posts as $index => $post): ?>
+                        <?php if (!$postRows): ?>
                             <tr>
-                                <td><?= $post->getPostId() ?></td>
-                                <td><?= htmlspecialchars($post->getTitle()) ?></td>
-                                <td><?= htmlspecialchars($postRows[$index]['username']) ?></td>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    No posts found.
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+
+                        <?php foreach ($postRows as $post): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($post['post_id']) ?></td>
+
+                                <td><?= htmlspecialchars($post['title'] ?? '') ?></td>
+
+                                <td><?= htmlspecialchars($post['username'] ?? '') ?></td>
+
                                 <td>
-                                    <?php if (!empty($postRows[$index]['flag_image'])): ?>
-                                        <img src="?= htmlspecialchars($postRows[$index]['flag_image']) ?>" 
-                                             width="24" alt="flag">
-                                         <?php else: ?>
+                                    <?php if (!empty($post['flag_image'])): ?>
+                                        <img
+                                            src="<?= htmlspecialchars($post['flag_image']) ?>"
+                                            width="24"
+                                            alt="flag"
+                                        >
+                                    <?php else: ?>
                                         <i class="ph ph-flag"></i>
                                     <?php endif; ?>
-                                    <?= htmlspecialchars($postRows[$index]['name']) ?>
+                                    <?= htmlspecialchars($post['name'] ?? '') ?>
                                 </td>
-                                <td><?= htmlspecialchars(((new DateTime($post->getCreatedAt()))->format("F j, Y, g:i a"))) ?></td>
-                                <td class="text-center">
-                                    <a class="btn btn-sm btn-outline-success" href="<?= APP_BASE ?>/admin/moderate-posts/<?= $post->getPostId() ?>">
-                                                <i class="ph ph-eye"></i>
-                                                <span class="d-block d-md-none">View Post</span>
-                                    </a>
-                                    <?php if (false): ?>
-                                        <form method="POST" action="<?= APP_BASE ?>/admin/creator-request" class="rejected-record">
-                                            <input type="hidden" name="username"
-                                                   value="<?= htmlspecialchars($user->getUsername()) ?>">
-                                            <input type="hidden" name="user_id" value="<?= $user->getUserId() ?>">
-                                            <input type="hidden" name="request_id" value="<?= $application->getRequestId() ?>">
-                                            <input type="hidden" name="action" value="reject">
-                                            <button type="submit" name="delete_btn" class="btn btn-sm btn-outline-danger">
-                                                <i class="ph ph-x-circle"></i>
-                                                <span class="d-block d-md-none">Rejected</span>
-                                            </button>
-                                        </form>
+
+                                <td>
+                                    <?php if (!empty($post['created_at'])): ?>
+                                        <?= htmlspecialchars((new DateTime($post['created_at']))->format("F j, Y, g:i a")) ?>
+                                    <?php else: ?>
+                                        —
                                     <?php endif; ?>
+                                </td>
+
+                                <td class="text-center">
+                                    <a class="btn btn-sm btn-outline-success" href="<?= APP_BASE ?>/posts/<?= htmlspecialchars($post['post_id']) ?>">
+                                        <i class="ph ph-eye"></i>
+                                        <span class="d-block d-md-none">View Post</span>
+                                    </a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -159,7 +134,7 @@ if (isset($_POST['action']) && in_array($_POST['action'], ['approve', 'reject'])
 
         Swal.fire({
             title: 'Reject user',
-            text: `Are you sure you want to reject ${username}\'s creator request?`,
+            text: `Are you sure you want to reject ${username}'s creator request?`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#4169e1',
@@ -172,6 +147,7 @@ if (isset($_POST['action']) && in_array($_POST['action'], ['approve', 'reject'])
             }
         });
     });
+
     $(document).on('submit', '.approved-record', function (e) {
         e.preventDefault();
 
@@ -180,7 +156,7 @@ if (isset($_POST['action']) && in_array($_POST['action'], ['approve', 'reject'])
 
         Swal.fire({
             title: 'Approved user',
-            text: `Are you sure you want to approved ${username}\'s creator request?`,
+            text: `Are you sure you want to approved ${username}'s creator request?`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#4169e1',
