@@ -835,8 +835,8 @@ if ($search !== '') {
                             </td>
 
                             <td>
-                                <?php if (!empty($attraction['attraction_id'])): ?>
-                                    <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars((string) $attraction['attraction_id']) ?>" class="gg-btn gg-btn-light">
+                                <?php if (!empty($attraction['country_id'])): ?>
+                                    <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars((string) $attraction['country_id']) ?>" class="gg-btn gg-btn-light">
                                         <i class="ph ph-pencil-simple"></i>
                                         Edit Location
                                     </a>
