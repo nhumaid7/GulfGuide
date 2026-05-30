@@ -73,7 +73,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
 
             } catch (Throwable $e) {
-                $pdo->rollBack();
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
                 $errors[] = 'Action failed: ' . $e->getMessage();
             }
         }
