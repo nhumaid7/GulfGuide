@@ -144,11 +144,11 @@ if ($isAdminPage) {
 
     <!-- Custom CSS -->
  <?php if ($isAdminPage): ?>
-    <link rel="stylesheet" href="<?= $base_prefix ?>assets/css/adminStyle.css">
+    <link rel="stylesheet" href="<?= APP_BASE ?>/assets/css/adminStyle.css">
 <?php endif; ?>
- <link rel="stylesheet" href="<?= $base_prefix ?>assets/css/style.css">
-    <!-- Custom JS -->
-    <script src="<?= $base_prefix ?>assets/js/main.js" defer></script>
+<link rel="stylesheet" href="<?= APP_BASE ?>/assets/css/style.css">
+<script src="<?= APP_BASE ?>/assets/js/main.js" defer></script>
+
 </head>
 
 <body>
