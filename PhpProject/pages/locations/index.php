@@ -45,7 +45,7 @@ if ($isAdminLocationList) {
             $_SESSION['status_code'] = 'error';
         }
 
-        header('Location: ' . APP_BASE . '/admin/location-list');
+        echo "<script>window.location.href='" . APP_BASE . "/admin/location-list';</script>";
         exit;
     }
 
