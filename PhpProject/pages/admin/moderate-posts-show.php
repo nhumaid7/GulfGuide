@@ -7,22 +7,15 @@ $id = $params['id'] ?? null;
 if (!$id) {
     abort(404);
 }
-
-$post = null;
-
 if ($id != null) {
-    $stmt = $pdo->prepare(
-        'SELECT * FROM dbProj_post p
-         JOIN dbProj_user u ON p.user_id = u.user_id
-         JOIN dbProj_country c ON p.country_id = c.country_id
-         WHERE p.post_id = :postId'
-    );
+    $stmt = $pdo->prepare('SELECT * FROM dbProj_post p '
+            . 'JOIN dbProj_user u ON p.user_id = u.user_id '
+            . 'JOIN dbProj_country c ON p.country_id = c.country_id '
+            . 'WHERE p.post_id = :postId');
     $stmt->execute([':postId' => $id]);
-    $post = $stmt->fetch(PDO::FETCH_ASSOC);
-}
-
-if (!$post) {
-    abort(404);
+    $postRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $posts = array_map([Post::class, 'fromArray'], $postRows);
+    $post = $posts[0] ?? null;
 }
 ?>
 
@@ -67,10 +60,9 @@ if (!$post) {
 
 <div class="card-section">
     <div class="card-section--header">
-        <h3>Post ID: #<?= htmlspecialchars($id) ?></h3>
+        <h3>Post ID: #<?= $id ?></h3>
         <div class="d-flex gap-1">
-            <form method="POST" action="<?= APP_BASE ?>/admin/moderate-posts" class="rejected-record">
-                <input type="hidden" name="post_id" value="<?= htmlspecialchars($id) ?>">
+            <form method="POST" action="<?= APP_BASE ?>/admin/creator-request" class="rejected-record">
                 <input type="hidden" name="action" value="reject">
                 <button type="submit" name="delete_btn" class="btn btn-sm btn-danger">
                     <i class="ph ph-x-circle"></i>
@@ -99,7 +91,7 @@ if (!$post) {
                     <table>
                         <tr>
                             <th>Name:</th>
-                            <td><?= htmlspecialchars($post['username'] ?? '') ?></td>
+                            <td><?= htmlspecialchars($postRows[0]['name']) ?></td>
                         </tr>
                     </table>
                 </div>
