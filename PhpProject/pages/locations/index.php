@@ -45,7 +45,7 @@ if ($isAdminLocationList) {
             $_SESSION['status_code'] = 'error';
         }
 
-        echo "<script>window.location.href='" . APP_BASE . "/admin/location-list';</script>";
+        header('Location: ' . APP_BASE . '/admin/location-list');
         exit;
     }
 
@@ -84,11 +84,14 @@ if ($isAdminLocationList) {
                 OR c.name LIKE :country_search
                 OR t.name LIKE :type_search
         ";
-        $params[':id_search'] = '%' . $adminSearch . '%';
-        $params[':name_search'] = '%' . $adminSearch . '%';
-        $params[':description_search'] = '%' . $adminSearch . '%';
-        $params[':country_search'] = '%' . $adminSearch . '%';
-        $params[':type_search'] = '%' . $adminSearch . '%';
+
+        $params = [
+            ':id_search' => '%' . $adminSearch . '%',
+            ':name_search' => '%' . $adminSearch . '%',
+            ':description_search' => '%' . $adminSearch . '%',
+            ':country_search' => '%' . $adminSearch . '%',
+            ':type_search' => '%' . $adminSearch . '%',
+        ];
     }
 
     $sql .= "
@@ -115,6 +118,11 @@ if ($isAdminLocationList) {
             background: #f4f7fb;
             min-height: calc(100vh - 70px);
             padding: 38px 48px 70px;
+        }
+
+        .gg-admin-location-page,
+        .gg-admin-location-page * {
+            box-sizing: border-box;
         }
 
         .gg-location-hero {
@@ -344,6 +352,7 @@ if ($isAdminLocationList) {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            display: block;
         }
 
         .gg-location-name {
@@ -358,17 +367,7 @@ if ($isAdminLocationList) {
             color: #667085;
             margin: 0;
             line-height: 1.5;
-        }
-
-        .gg-site-link {
-            color: #2446bb;
-            text-decoration: none;
-            font-weight: 700;
             word-break: break-word;
-        }
-
-        .gg-site-link:hover {
-            text-decoration: underline;
         }
 
         .gg-count-pill {
@@ -531,104 +530,103 @@ if ($isAdminLocationList) {
             <div class="table-responsive">
                 <table class="table gg-table align-middle">
                     <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Location</th>
-                        <th>Country</th>
-                        <th>Type</th>
-                        <th>Posts</th>
-                        <th>Actions</th>
-                    </tr>
+                        <tr>
+                            <th>ID</th>
+                            <th>Location</th>
+                            <th>Country</th>
+                            <th>Type</th>
+                            <th>Posts</th>
+                            <th>Actions</th>
+                        </tr>
                     </thead>
 
                     <tbody>
-                    <?php if (!$locations): ?>
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
-                                <?= $adminSearch ? 'No locations matched your search.' : 'No locations found.' ?>
-                            </td>
-                        </tr>
-                    <?php endif; ?>
+                        <?php if (!$locations): ?>
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <?= $adminSearch ? 'No locations matched your search.' : 'No locations found.' ?>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
 
-                    <?php foreach ($locations as $location): ?>
-                        <tr>
-                            <td>
-                                <div class="gg-location-id">
-                                    <?= htmlspecialchars($location['attraction_id']) ?>
-                                </div>
-                            </td>
-
-                            <td>
-                                <div class="gg-location-cell">
-                                    <div class="gg-location-image">
-                                        <?php if (!empty($location['cover_image'])): ?>
-                                            <img
-                                                src="<?= htmlspecialchars($location['cover_image']) ?>"
-                                                alt="<?= htmlspecialchars($location['name']) ?>"
-                                            >
-                                        <?php else: ?>
-                                            <?= htmlspecialchars(mb_strtoupper(mb_substr($location['name'] ?? 'L', 0, 1))) ?>
-                                        <?php endif; ?>
+                        <?php foreach ($locations as $location): ?>
+                            <tr>
+                                <td>
+                                    <div class="gg-location-id">
+                                        <?= htmlspecialchars((string) $location['attraction_id']) ?>
                                     </div>
+                                </td>
 
-                                    <div>
-                                        <div class="gg-location-name">
-                                            <?= htmlspecialchars($location['name']) ?>
+                                <td>
+                                    <div class="gg-location-cell">
+                                        <div class="gg-location-image">
+                                            <?php if (!empty($location['cover_image'])): ?>
+                                                <img
+                                                    src="<?= htmlspecialchars($location['cover_image']) ?>"
+                                                    alt="<?= htmlspecialchars($location['name']) ?>"
+                                                >
+                                            <?php else: ?>
+                                                <?= htmlspecialchars(mb_strtoupper(mb_substr($location['name'] ?? 'L', 0, 1))) ?>
+                                            <?php endif; ?>
                                         </div>
 
-                                        <p class="gg-location-desc">
-                                            <?= htmlspecialchars(mb_strimwidth($location['description'] ?? '', 0, 95, '...')) ?>
-                                        </p>
+                                        <div>
+                                            <div class="gg-location-name">
+                                                <?= htmlspecialchars($location['name']) ?>
+                                            </div>
+
+                                            <p class="gg-location-desc">
+                                                <?= htmlspecialchars(mb_strimwidth($location['description'] ?? '', 0, 95, '...')) ?>
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                            </td>
+                                </td>
 
-                            <td>
-                                <span class="gg-count-pill">
-                                    <?= htmlspecialchars($location['country_name'] ?? 'No country') ?>
-                                </span>
-                            </td>
+                                <td>
+                                    <span class="gg-count-pill">
+                                        <?= htmlspecialchars($location['country_name'] ?? 'No country') ?>
+                                    </span>
+                                </td>
 
-                            <td>
-                                <span class="gg-post-pill">
-                                    <?= htmlspecialchars($location['type_name'] ?? 'No type') ?>
-                                </span>
-                            </td>
+                                <td>
+                                    <span class="gg-post-pill">
+                                        <?= htmlspecialchars($location['type_name'] ?? 'No type') ?>
+                                    </span>
+                                </td>
 
-                            <td>
-                                <span class="gg-post-pill">
-                                    <?= htmlspecialchars($location['posts_count']) ?>
-                                </span>
-                            </td>
+                                <td>
+                                    <span class="gg-post-pill">
+                                        <?= htmlspecialchars((string) $location['posts_count']) ?>
+                                    </span>
+                                </td>
 
-                            <td>
-                                <div class="gg-actions">
-                                    <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($location['attraction_id']) ?>" class="gg-edit-btn">
-                                        <i class="ph ph-pencil-simple"></i>
-                                        Edit
-                                    </a>
+                                <td>
+                                    <div class="gg-actions">
+                                        <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars((string) $location['attraction_id']) ?>" class="gg-edit-btn">
+                                            <i class="ph ph-pencil-simple"></i>
+                                            Edit
+                                        </a>
 
-                                    <form
-                                        method="POST"
-                                        action="<?= APP_BASE ?>/admin/location-list"
-                                        onsubmit="return confirm('Are you sure you want to delete this location? This will also delete its attraction media.');"
-                                    >
-                                        <input
-                                            type="hidden"
-                                            name="location_id"
-                                            value="<?= htmlspecialchars($location['attraction_id']) ?>"
+                                        <form
+                                            method="POST"
+                                            action="<?= APP_BASE ?>/admin/location-list"
+                                            onsubmit="return confirm('Are you sure you want to delete this location? This will also delete its attraction media.');"
                                         >
+                                            <input
+                                                type="hidden"
+                                                name="location_id"
+                                                value="<?= htmlspecialchars((string) $location['attraction_id']) ?>"
+                                            >
 
-                                        <button type="submit" name="delete_location" class="gg-delete-btn">
-                                            <i class="ph ph-trash"></i>
-                                            Delete
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-
+                                            <button type="submit" name="delete_location" class="gg-delete-btn">
+                                                <i class="ph ph-trash"></i>
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
