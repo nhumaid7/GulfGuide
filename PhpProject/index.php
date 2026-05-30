@@ -53,7 +53,7 @@ $routes = [
 
     
     '/admin/'                  => __DIR__ . '/pages/admin/dashboard.php',
-    '/admin/dashboard'         => __DIR__ . '/pages/admin/dashboard.php',
+  
     '/admin/location-list'     => __DIR__ . '/pages/locations/index.php',
     '/admin/add-location'      => __DIR__ . '/pages/locations/add.php',
     '/admin/edit-location'      => __DIR__ . '/pages/locations/edit.php',
