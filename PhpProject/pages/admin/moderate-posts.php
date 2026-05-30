@@ -35,7 +35,7 @@ $postRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     if ($part == 'admin') {
                         echo '<li class="breadcrumb-item"> Admin Portal </li>';
                         echo '<li class="breadcrumb-item">';
-                        echo '<a href="' . APP_BASE . '/admin/dashboard"> Dashboard </a>';
+                        echo '<a href="' . APP_BASE . '/admin/"> Dashboard </a>';
                         echo '</li>';
                     } else {
                         echo '<li class="breadcrumb-item">';
