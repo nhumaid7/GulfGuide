@@ -143,7 +143,7 @@ if ($isAdminPage) {
             crossorigin="anonymous"></script>
 
     <!-- Custom CSS -->
- <?php if ($isAdminPage): ?>
+<?php if ($isAdminPage): ?>
     <link rel="stylesheet" href="<?= APP_BASE ?>/assets/css/adminStyle.css">
 <?php endif; ?>
 <link rel="stylesheet" href="<?= APP_BASE ?>/assets/css/style.css">
