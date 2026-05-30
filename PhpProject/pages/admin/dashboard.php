@@ -5,25 +5,25 @@ $totalPosts = 0;
 $totalUsers = 0;
 
 try {
-    $totalLocations = $pdo->query("SELECT COUNT(*) FROM dbProj_country")->fetchColumn();
+    $totalLocations = (int) $pdo->query("SELECT COUNT(*) FROM dbProj_country")->fetchColumn();
 } catch (Throwable $e) {
     $totalLocations = 0;
 }
 
 try {
-    $totalAttractions = $pdo->query("SELECT COUNT(*) FROM dbProj_attraction")->fetchColumn();
+    $totalAttractions = (int) $pdo->query("SELECT COUNT(*) FROM dbProj_attraction")->fetchColumn();
 } catch (Throwable $e) {
     $totalAttractions = 0;
 }
 
 try {
-    $totalPosts = $pdo->query("SELECT COUNT(*) FROM dbProj_post")->fetchColumn();
+    $totalPosts = (int) $pdo->query("SELECT COUNT(*) FROM dbProj_post")->fetchColumn();
 } catch (Throwable $e) {
     $totalPosts = 0;
 }
 
 try {
-    $totalUsers = $pdo->query("SELECT COUNT(*) FROM dbProj_user")->fetchColumn();
+    $totalUsers = (int) $pdo->query("SELECT COUNT(*) FROM dbProj_user")->fetchColumn();
 } catch (Throwable $e) {
     $totalUsers = 0;
 }
@@ -117,10 +117,18 @@ if ($search !== '') {
 ?>
 
 <style>
+    .gg-admin-dashboard,
+    .gg-admin-dashboard *,
+    .gg-admin-dashboard *::before,
+    .gg-admin-dashboard *::after {
+        box-sizing: border-box;
+    }
+
     .gg-admin-dashboard {
         background: #f4f7fb;
         min-height: calc(100vh - 70px);
         padding: 38px 48px 70px;
+        overflow-x: hidden;
     }
 
     .gg-dashboard-hero {
@@ -143,6 +151,7 @@ if ($search !== '') {
         right: -90px;
         top: -130px;
         background: rgba(255, 255, 255, 0.08);
+        pointer-events: none;
     }
 
     .gg-dashboard-hero-content,
@@ -179,7 +188,9 @@ if ($search !== '') {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 16px;
         transition: 0.2s ease;
+        height: 100%;
     }
 
     .gg-stat-card:hover {
@@ -212,6 +223,7 @@ if ($search !== '') {
         justify-content: center;
         font-size: 21px;
         color: #ffffff;
+        flex-shrink: 0;
     }
 
     .gg-card {
@@ -260,6 +272,7 @@ if ($search !== '') {
         padding: 10px 14px;
         font-size: 14px;
         width: 270px;
+        max-width: 100%;
         background: #ffffff;
     }
 
@@ -280,15 +293,19 @@ if ($search !== '') {
         text-decoration: none;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 7px;
         box-shadow: 0 8px 18px rgba(65, 105, 225, 0.22);
         transition: 0.2s ease;
+        cursor: pointer;
+        white-space: nowrap;
     }
 
     .gg-btn:hover {
         background: #3155c9;
         color: #ffffff;
         transform: translateY(-1px);
+        text-decoration: none;
     }
 
     .gg-btn-light {
@@ -313,11 +330,22 @@ if ($search !== '') {
         font-size: 14px;
         font-weight: 800;
         text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+    }
+
+    .gg-clear-btn:hover {
+        text-decoration: none;
+        background: #eaf0f8;
+        color: #111827;
     }
 
     .gg-table {
         margin: 0;
         font-size: 14px;
+        width: 100%;
     }
 
     .gg-table thead th {
@@ -360,6 +388,7 @@ if ($search !== '') {
         display: flex;
         align-items: center;
         gap: 14px;
+        min-width: 220px;
     }
 
     .gg-attraction-image {
@@ -381,6 +410,7 @@ if ($search !== '') {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        display: block;
     }
 
     .gg-attraction-name {
@@ -394,6 +424,7 @@ if ($search !== '') {
         color: #667085;
         max-width: 560px;
         line-height: 1.35;
+        word-break: break-word;
     }
 
     .gg-pill {
@@ -462,6 +493,7 @@ if ($search !== '') {
         text-align: center;
         border-radius: 22px;
         margin-top: 34px;
+        padding: 24px;
     }
 
     .gg-dashboard-footer-logo {
@@ -476,101 +508,172 @@ if ($search !== '') {
         font-size: 13px;
         opacity: 0.9;
     }
+
     .gg-quick-access {
-    background: #ffffff;
-    border: 1px solid #e5ebf3;
-    border-radius: 22px;
-    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
-    margin-bottom: 34px;
-    overflow: hidden;
-}
-
-.gg-quick-access-header {
-    padding: 24px 26px;
-    border-bottom: 1px solid #e8eef6;
-    background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
-}
-
-.gg-quick-access-title {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 900;
-    color: #101828;
-}
-
-.gg-quick-access-text {
-    margin: 6px 0 0;
-    color: #667085;
-    font-size: 13px;
-}
-
-.gg-quick-access-body {
-    padding: 26px;
-}
-
-.gg-quick-access-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-}
-
-.gg-quick-card {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    text-decoration: none;
-    background: #f8fbff;
-    border: 1px solid #e4ecf7;
-    border-radius: 18px;
-    padding: 18px 18px;
-    transition: 0.2s ease;
-}
-
-.gg-quick-card:hover {
-    transform: translateY(-2px);
-    border-color: #cfe0ff;
-    box-shadow: 0 12px 24px rgba(36, 70, 187, 0.08);
-    background: #eef4ff;
-}
-
-.gg-quick-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 15px;
-    background: linear-gradient(135deg, #4169e1 0%, #6f8cff 100%);
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 21px;
-    flex-shrink: 0;
-    box-shadow: 0 10px 20px rgba(65, 105, 225, 0.18);
-}
-
-.gg-quick-label {
-    font-size: 15px;
-    font-weight: 900;
-    color: #101828;
-    margin-bottom: 3px;
-}
-
-.gg-quick-subtext {
-    font-size: 13px;
-    color: #667085;
-    margin: 0;
-}
-
-@media (max-width: 992px) {
-    .gg-quick-access-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        background: #ffffff;
+        border: 1px solid #e5ebf3;
+        border-radius: 22px;
+        box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
+        margin-bottom: 34px;
+        overflow: hidden;
     }
-}
 
-@media (max-width: 576px) {
-    .gg-quick-access-grid {
-        grid-template-columns: 1fr;
+    .gg-quick-access-header {
+        padding: 24px 26px;
+        border-bottom: 1px solid #e8eef6;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
     }
-}
+
+    .gg-quick-access-title {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 900;
+        color: #101828;
+    }
+
+    .gg-quick-access-text {
+        margin: 6px 0 0;
+        color: #667085;
+        font-size: 13px;
+    }
+
+    .gg-quick-access-body {
+        padding: 26px;
+    }
+
+    .gg-quick-access-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .gg-quick-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        text-decoration: none;
+        background: #f8fbff;
+        border: 1px solid #e4ecf7;
+        border-radius: 18px;
+        padding: 18px;
+        transition: 0.2s ease;
+        min-width: 0;
+    }
+
+    .gg-quick-card:hover {
+        transform: translateY(-2px);
+        border-color: #cfe0ff;
+        box-shadow: 0 12px 24px rgba(36, 70, 187, 0.08);
+        background: #eef4ff;
+        text-decoration: none;
+    }
+
+    .gg-quick-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 15px;
+        background: linear-gradient(135deg, #4169e1 0%, #6f8cff 100%);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 21px;
+        flex-shrink: 0;
+        box-shadow: 0 10px 20px rgba(65, 105, 225, 0.18);
+    }
+
+    .gg-quick-label {
+        font-size: 15px;
+        font-weight: 900;
+        color: #101828;
+        margin-bottom: 3px;
+    }
+
+    .gg-quick-subtext {
+        font-size: 13px;
+        color: #667085;
+        margin: 0;
+        word-break: break-word;
+    }
+
+    @media (max-width: 1200px) {
+        .gg-admin-dashboard {
+            padding: 30px 24px 50px;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .gg-dashboard-title {
+            font-size: 30px;
+        }
+
+        .gg-quick-access-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 768px) {
+        .gg-admin-dashboard {
+            padding: 20px 14px 35px;
+        }
+
+        .gg-dashboard-hero {
+            padding: 24px 18px;
+            border-radius: 18px;
+        }
+
+        .gg-dashboard-title {
+            font-size: 26px;
+        }
+
+        .gg-card-header,
+        .gg-quick-access-header,
+        .gg-quick-access-body,
+        .gg-manage-row {
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+
+        .gg-search-form {
+            width: 100%;
+        }
+
+        .gg-search-input {
+            width: 100%;
+        }
+
+        .gg-attraction-cell {
+            align-items: flex-start;
+        }
+
+        .gg-desc {
+            max-width: 100%;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .gg-quick-access-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .gg-dashboard-title {
+            font-size: 23px;
+        }
+
+        .gg-stat-number {
+            font-size: 28px;
+        }
+
+        .gg-stat-card {
+            padding: 18px;
+            min-height: auto;
+        }
+
+        .gg-btn,
+        .gg-clear-btn {
+            width: 100%;
+        }
+    }
 </style>
 
 <div class="gg-admin-dashboard">
@@ -587,7 +690,7 @@ if ($search !== '') {
             <div class="col-lg-3 col-md-6">
                 <div class="gg-stat-card">
                     <div>
-                        <div class="gg-stat-number"><?= htmlspecialchars($totalUsers) ?></div>
+                        <div class="gg-stat-number"><?= htmlspecialchars((string) $totalUsers) ?></div>
                         <p class="gg-stat-label">Users</p>
                     </div>
                     <div class="gg-stat-icon"><i class="ph ph-users"></i></div>
@@ -597,7 +700,7 @@ if ($search !== '') {
             <div class="col-lg-3 col-md-6">
                 <div class="gg-stat-card">
                     <div>
-                        <div class="gg-stat-number"><?= htmlspecialchars($totalLocations) ?></div>
+                        <div class="gg-stat-number"><?= htmlspecialchars((string) $totalLocations) ?></div>
                         <p class="gg-stat-label">Locations</p>
                     </div>
                     <div class="gg-stat-icon"><i class="ph ph-map-pin"></i></div>
@@ -607,7 +710,7 @@ if ($search !== '') {
             <div class="col-lg-3 col-md-6">
                 <div class="gg-stat-card">
                     <div>
-                        <div class="gg-stat-number"><?= htmlspecialchars($totalAttractions) ?></div>
+                        <div class="gg-stat-number"><?= htmlspecialchars((string) $totalAttractions) ?></div>
                         <p class="gg-stat-label">Attractions</p>
                     </div>
                     <div class="gg-stat-icon"><i class="ph ph-compass"></i></div>
@@ -617,7 +720,7 @@ if ($search !== '') {
             <div class="col-lg-3 col-md-6">
                 <div class="gg-stat-card">
                     <div>
-                        <div class="gg-stat-number"><?= htmlspecialchars($totalPosts) ?></div>
+                        <div class="gg-stat-number"><?= htmlspecialchars((string) $totalPosts) ?></div>
                         <p class="gg-stat-label">Posts</p>
                     </div>
                     <div class="gg-stat-icon"><i class="ph ph-article"></i></div>
@@ -656,9 +759,7 @@ if ($search !== '') {
                 </button>
 
                 <?php if ($search): ?>
-                    <a href="<?= APP_BASE ?>/admin/" class="gg-clear-btn">
-                        Clear
-                    </a>
+                    <a href="<?= APP_BASE ?>/admin/" class="gg-clear-btn">Clear</a>
                 <?php endif; ?>
             </form>
         </div>
@@ -689,7 +790,7 @@ if ($search !== '') {
                         <tr>
                             <td>
                                 <div class="gg-id">
-                                    <?= htmlspecialchars($attraction['attraction_id']) ?>
+                                    <?= htmlspecialchars((string) $attraction['attraction_id']) ?>
                                 </div>
                             </td>
 
@@ -729,13 +830,13 @@ if ($search !== '') {
 
                             <td>
                                 <span class="gg-post-pill">
-                                    <?= htmlspecialchars($attraction['posts_count']) ?>
+                                    <?= htmlspecialchars((string) $attraction['posts_count']) ?>
                                 </span>
                             </td>
 
                             <td>
                                 <?php if (!empty($attraction['country_id'])): ?>
-                                    <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($attraction['country_id']) ?>" class="gg-btn gg-btn-light">
+                                    <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars((string) $attraction['country_id']) ?>" class="gg-btn gg-btn-light">
                                         <i class="ph ph-pencil-simple"></i>
                                         Edit Location
                                     </a>
@@ -756,80 +857,82 @@ if ($search !== '') {
             </a>
         </div>
     </section>
-<section class="gg-quick-access">
-    <div class="gg-quick-access-header">
-        <h2 class="gg-quick-access-title">Quick Access</h2>
-        <p class="gg-quick-access-text">
-            Open the most used admin tools directly from the dashboard.
-        </p>
-    </div>
 
-    <div class="gg-quick-access-body">
-        <div class="gg-quick-access-grid">
-
-            <a href="<?= APP_BASE ?>/admin/location-list" class="gg-quick-card">
-                <div class="gg-quick-icon">
-                    <i class="ph ph-map-pin-line"></i>
-                </div>
-                <div>
-                    <div class="gg-quick-label">Manage Locations</div>
-                    <p class="gg-quick-subtext">View, edit, add, and delete locations.</p>
-                </div>
-            </a>
-
-            <a href="<?= APP_BASE ?>/admin/creator-request" class="gg-quick-card">
-                <div class="gg-quick-icon">
-                    <i class="ph ph-user-switch"></i>
-                </div>
-                <div>
-                    <div class="gg-quick-label">Creator Requests</div>
-                    <p class="gg-quick-subtext">Review and approve creator upgrade requests.</p>
-                </div>
-            </a>
-
-            <a href="<?= APP_BASE ?>/admin/moderate-posts" class="gg-quick-card">
-                <div class="gg-quick-icon">
-                    <i class="ph ph-note-pencil"></i>
-                </div>
-                <div>
-                    <div class="gg-quick-label">Moderate Posts</div>
-                    <p class="gg-quick-subtext">Check posts and moderate submitted content.</p>
-                </div>
-            </a>
-
-            <a href="<?= APP_BASE ?>/admin/manage-accounts" class="gg-quick-card">
-                <div class="gg-quick-icon">
-                    <i class="ph ph-users-three"></i>
-                </div>
-                <div>
-                    <div class="gg-quick-label">Manage Accounts</div>
-                    <p class="gg-quick-subtext">Open user account controls and permissions.</p>
-                </div>
-            </a>
-
-            <a href="<?= APP_BASE ?>/admin/analytics" class="gg-quick-card">
-                <div class="gg-quick-icon">
-                    <i class="ph ph-chart-line-up"></i>
-                </div>
-                <div>
-                    <div class="gg-quick-label">Analytics</div>
-                    <p class="gg-quick-subtext">See platform activity and admin insights.</p>
-                </div>
-            </a>
-
-            <a href="<?= APP_BASE ?>/admin/add-location" class="gg-quick-card">
-                <div class="gg-quick-icon">
-                    <i class="ph ph-plus-circle"></i>
-                </div>
-                <div>
-                    <div class="gg-quick-label">Add Location</div>
-                    <p class="gg-quick-subtext">Create a new destination quickly.</p>
-                </div>
-            </a>
-
+    <section class="gg-quick-access">
+        <div class="gg-quick-access-header">
+            <h2 class="gg-quick-access-title">Quick Access</h2>
+            <p class="gg-quick-access-text">
+                Open the most used admin tools directly from the dashboard.
+            </p>
         </div>
-    </div>
-</section>
+
+        <div class="gg-quick-access-body">
+            <div class="gg-quick-access-grid">
+
+                <a href="<?= APP_BASE ?>/admin/location-list" class="gg-quick-card">
+                    <div class="gg-quick-icon">
+                        <i class="ph ph-map-pin-line"></i>
+                    </div>
+                    <div>
+                        <div class="gg-quick-label">Manage Locations</div>
+                        <p class="gg-quick-subtext">View, edit, add, and delete locations.</p>
+                    </div>
+                </a>
+
+                <a href="<?= APP_BASE ?>/admin/creator-request" class="gg-quick-card">
+                    <div class="gg-quick-icon">
+                        <i class="ph ph-user-switch"></i>
+                    </div>
+                    <div>
+                        <div class="gg-quick-label">Creator Requests</div>
+                        <p class="gg-quick-subtext">Review and approve creator upgrade requests.</p>
+                    </div>
+                </a>
+
+                <a href="<?= APP_BASE ?>/admin/moderate-posts" class="gg-quick-card">
+                    <div class="gg-quick-icon">
+                        <i class="ph ph-note-pencil"></i>
+                    </div>
+                    <div>
+                        <div class="gg-quick-label">Moderate Posts</div>
+                        <p class="gg-quick-subtext">Check posts and moderate submitted content.</p>
+                    </div>
+                </a>
+
+                <a href="<?= APP_BASE ?>/admin/manage-accounts" class="gg-quick-card">
+                    <div class="gg-quick-icon">
+                        <i class="ph ph-users-three"></i>
+                    </div>
+                    <div>
+                        <div class="gg-quick-label">Manage Accounts</div>
+                        <p class="gg-quick-subtext">Open user account controls and permissions.</p>
+                    </div>
+                </a>
+
+                <a href="<?= APP_BASE ?>/admin/analytics" class="gg-quick-card">
+                    <div class="gg-quick-icon">
+                        <i class="ph ph-chart-line-up"></i>
+                    </div>
+                    <div>
+                        <div class="gg-quick-label">Analytics</div>
+                        <p class="gg-quick-subtext">See platform activity and admin insights.</p>
+                    </div>
+                </a>
+
+                <a href="<?= APP_BASE ?>/admin/add-location" class="gg-quick-card">
+                    <div class="gg-quick-icon">
+                        <i class="ph ph-plus-circle"></i>
+                    </div>
+                    <div>
+                        <div class="gg-quick-label">Add Location</div>
+                        <p class="gg-quick-subtext">Create a new destination quickly.</p>
+                    </div>
+                </a>
+
+            </div>
+        </div>
+    </section>
+
     <footer class="gg-dashboard-footer">
         <div class="gg-dashboard-footer-logo">GulfGuide</div>
         <p class="gg-dashboard-footer-text">© 2026 GulfGuide. All rights reserved.</p>
