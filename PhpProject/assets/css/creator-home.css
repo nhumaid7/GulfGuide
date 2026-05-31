@@ -1,39 +1,6 @@
 /* ── Page layout ─────────────────────────────────────────────────────────── */
 .creator-page { max-width: 1200px; margin: 0 auto; padding: 0 0.5rem 2rem; }
 
-/* ── Hero ────────────────────────────────────────────────────────────────── */
-.creator-hero {
-    position: relative;
-    min-height: 220px;
-    overflow: hidden;
-    background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
-    display: flex;
-    align-items: center;
-}
-.creator-hero__overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,.35);
-}
-.creator-hero__content {
-    position: relative;
-    z-index: 1;
-    padding: 2.5rem 2rem;
-    color: #fff;
-}
-.creator-hero__title {
-    font-size: clamp(1.4rem, 4vw, 2.2rem);
-    font-weight: 800;
-    margin-bottom: .4rem;
-    color:#fde8ea;
-}
-.creator-hero__sub {
-    opacity: .8;
-    margin-bottom: 1.2rem;
-    font-size: var(--font-size-p-m);
-    color:#fde8ea;
-
-}
 
 /* ── Blog card ───────────────────────────────────────────────────────────── */
 .blog-card {
