@@ -45,15 +45,14 @@ $routes = [
     '/country/all'             => __DIR__ . '/pages/countries/index.php',
     '/posts/all'               => __DIR__ . '/pages/posts/index.php',
     '/locations/all'           => __DIR__ . '/pages/locations/index.php',
-    '/locations'               => __DIR__ . '/pages/locations/index.php',
     '/creator-request'   => __DIR__ . '/pages/creator-request.php',
     '/upgrade-to-creator'   => __DIR__ . '/pages/upgrade-to-creator.php',
 
     '/creator/'                => __DIR__ . '/pages/creator/creator-home.php',
     '/creator/create-post'     => __DIR__ . '/pages/posts/add.php',
 
+    
     '/admin/'                  => __DIR__ . '/pages/admin/dashboard.php',
-    '/admin/dashboard'         => __DIR__ . '/pages/admin/dashboard.php',
     '/admin/location-list'     => __DIR__ . '/pages/locations/index.php',
     '/admin/add-location'      => __DIR__ . '/pages/locations/add.php',
     '/admin/edit-location'      => __DIR__ . '/pages/locations/edit.php',
@@ -115,9 +114,7 @@ if (!file_exists($page)) {
 $depth       = count(array_filter(explode('/', trim($uri, '/'))));
 $base_prefix = str_repeat('../', $depth);   // e.g. '../../' for /admin/foo
 
-$isAdminLocationsPage = $uri === '/locations' && isset($_GET['role']) && $_GET['role'] === 'admin';
-$isAdminPage = str_starts_with($uri, '/admin/') || $isAdminLocationsPage;
-
+$isAdminPage = str_starts_with($uri, '/admin/');
 if ($isAdminPage) {
     requireRole(ROLE_ADMIN);
 }
@@ -145,14 +142,14 @@ if ($isAdminPage) {
             crossorigin="anonymous"></script>
 
     <!-- Custom CSS -->
- <?php if ($isAdminPage): ?>
-    <link rel="stylesheet" href="<?= $base_prefix ?>assets/css/adminStyle.css">
-<?php endif; ?>
+<?php if ($isAdminPage): ?>
+<link rel="stylesheet" href="<?= $base_prefix ?>assets/css/adminStyle.css">
+    <?php endif; ?>
 
-<link rel="stylesheet" href="<?= $base_prefix ?>assets/css/style.css">
-<script src="<?= $base_prefix ?>assets/js/main.js" defer></script>
+ <link rel="stylesheet" href="<?= $base_prefix ?>assets/css/style.css">
     <!-- Custom JS -->
     <script src="<?= $base_prefix ?>assets/js/main.js" defer></script>
+
 </head>
 
 <body>

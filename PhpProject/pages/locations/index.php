@@ -8,7 +8,42 @@ if ($isAdminLocationList) {
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_location'])) {
         $locationId = filter_input(INPUT_POST, 'location_id', FILTER_VALIDATE_INT);
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_location'])) {
+        $locationId = filter_input(INPUT_POST, 'location_id', FILTER_VALIDATE_INT);
 
+        if ($locationId) {
+            try {
+                $pdo->beginTransaction();
+
+                $pdo->prepare("
+                    DELETE FROM dbProj_attraction_media
+                    WHERE attraction_id = ?
+                ")->execute([$locationId]);
+
+                $deleteStmt = $pdo->prepare("
+                    DELETE FROM dbProj_attraction
+                    WHERE attraction_id = ?
+                ");
+                $deleteStmt->execute([$locationId]);
+
+                if ($deleteStmt->rowCount() < 1) {
+                    throw new RuntimeException('Location not found or already deleted.');
+                }
+
+                $pdo->commit();
+
+                $_SESSION['status'] = 'Location deleted successfully.';
+                $_SESSION['status_code'] = 'success';
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+
+                $_SESSION['status'] = 'Delete failed: ' . $e->getMessage();
+                $_SESSION['status_code'] = 'error';
+            }
+        } else {
+            $_SESSION['status'] = 'Invalid location selected.';
         if ($locationId) {
             try {
                 $pdo->beginTransaction();
@@ -770,8 +805,7 @@ $baseUrl = rtrim(str_replace('/index.php', '', APP_BASE), '/');
                     </div>
                 </div>
             </div>
-        </div>
-        <?php endforeach; ?>
+        </section>
     </div>
 
     <?php if ($totalPages > 1): ?>
