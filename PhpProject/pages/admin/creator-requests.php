@@ -1,246 +1,311 @@
 <?php
-$errors = [];
-$success = '';
-
-$creatorRole = defined('ROLE_CREATOR') ? ROLE_CREATOR : 'creator';
-$pendingStatus = defined('REQUEST_PENDING') ? REQUEST_PENDING : 'pending';
-$approvedStatus = defined('REQUEST_APPROVED') ? REQUEST_APPROVED : 'approved';
-$rejectedStatus = defined('REQUEST_REJECTED') ? REQUEST_REJECTED : 'rejected';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $requestId = filter_input(INPUT_POST, 'request_id', FILTER_VALIDATE_INT);
-    $action = $_POST['action'] ?? '';
-
-    if (!$requestId) {
-        $errors[] = 'Invalid creator request.';
-    }
-
-    if (!in_array($action, ['approve', 'reject'], true)) {
-        $errors[] = 'Invalid action.';
-    }
-
-    if (!$errors) {
-        $stmt = $pdo->prepare("
-            SELECT cr.request_id, cr.user_id, cr.status, u.username
-            FROM dbProj_creator_request cr
-            INNER JOIN dbProj_user u ON cr.user_id = u.user_id
-            WHERE cr.request_id = ?
-            LIMIT 1
-        ");
-        $stmt->execute([$requestId]);
-        $request = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$request) {
-            $errors[] = 'Creator request not found.';
-        } elseif ($request['status'] !== $pendingStatus) {
-            $errors[] = 'This request has already been reviewed.';
-        } else {
-            try {
-                $pdo->beginTransaction();
-
-                if ($action === 'approve') {
-                    $stmt = $pdo->prepare("
-                        UPDATE dbProj_creator_request
-                        SET status = ?
-                        WHERE request_id = ?
-                    ");
-                    $stmt->execute([$approvedStatus, $requestId]);
-
-                    $stmt = $pdo->prepare("
-                        UPDATE dbProj_user
-                        SET role = ?
-                        WHERE user_id = ?
-                    ");
-                    $stmt->execute([$creatorRole, $request['user_id']]);
-
-                    $success = 'Creator request approved successfully.';
-                }
-
-                if ($action === 'reject') {
-                    $stmt = $pdo->prepare("
-                        UPDATE dbProj_creator_request
-                        SET status = ?
-                        WHERE request_id = ?
-                    ");
-                    $stmt->execute([$rejectedStatus, $requestId]);
-
-                    $success = 'Creator request rejected successfully.';
-                }
-
-                $pdo->commit();
-
-                echo "<script>window.location.href='" . APP_BASE . "/admin/creator-request';</script>";
-                exit;
-
-            } catch (Throwable $e) {
-                if ($pdo->inTransaction()) {
-                    $pdo->rollBack();
-                }
-                $errors[] = 'Action failed: ' . $e->getMessage();
-            }
-        }
-    }
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    abort(403);
 }
 
-$stmt = $pdo->query("
-    SELECT 
-        cr.request_id,
-        cr.user_id,
-        cr.reason,
-        cr.status,
-        cr.requested_at,
-        u.username,
-        u.email,
-        u.role
-    FROM dbProj_creator_request cr
-    INNER JOIN dbProj_user u ON cr.user_id = u.user_id
-    ORDER BY 
-        CASE WHEN cr.status = 'pending' THEN 0 ELSE 1 END,
-        cr.requested_at DESC
-");
+$search = trim($_GET['search'] ?? '');
+if (!empty($search)) {
+    $sql = "SELECT cr.* FROM dbProj_creator_request cr JOIN dbProj_user u ON cr.user_id = u.user_id 
+            WHERE MATCH(cr.status, cr.reason) AGAINST(:search1 IN BOOLEAN MODE) OR MATCH(u.username, u.email, u.role) AGAINST(:search2 IN BOOLEAN MODE)
+            ORDER BY cr.request_id DESC";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute(['search1' => $search, 'search2' => $search]);
+} else {
+    $stmt = $pdo->query("SELECT * FROM dbProj_creator_request ORDER BY request_id DESC");
+}
+$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$applications = array_map([CreatorRequest::class, 'fromArray'], $rows);
 
-$requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
-?>
+$usersstmt = $pdo->query('SELECT * FROM dbProj_user ORDER BY created_at DESC');
+$usersRows = $usersstmt->fetchAll(PDO::FETCH_ASSOC);
 
-<style>
-    .gg-request-page{padding:38px 48px 70px;background:#f4f7fb;min-height:calc(100vh - 70px)}
-    .gg-request-hero{background:linear-gradient(135deg,#223f72 0%,#31558f 100%);color:#fff;border-radius:24px;padding:34px 38px;margin-bottom:28px;box-shadow:0 18px 38px rgba(31,63,110,.22);position:relative;overflow:hidden}
-    .gg-request-title{font-size:34px;font-weight:900;margin-bottom:8px;letter-spacing:-.7px}
-    .gg-request-subtitle{color:rgba(255,255,255,.78);margin:0;font-size:15px}
-    .gg-request-card{background:#fff;border:1px solid #e5ebf3;border-radius:22px;box-shadow:0 14px 34px rgba(15,23,42,.07);overflow:hidden}
-    .gg-request-header{padding:22px 24px;border-bottom:1px solid #e8eef6;background:linear-gradient(135deg,#fff 0%,#f8fbff 100%);display:flex;justify-content:space-between;gap:18px;align-items:center}
-    .gg-request-card-title{margin:0;font-size:22px;font-weight:900;color:#101828}
-    .gg-request-card-text{margin:5px 0 0;color:#667085;font-size:13px}
-    .gg-table{margin:0;font-size:14px}
-    .gg-table thead th{background:#fbfdff;color:#344054;font-weight:900;padding:15px 20px;border-bottom:1px solid #dde5ef;font-size:13px;text-transform:uppercase;letter-spacing:.3px}
-    .gg-table tbody td{padding:16px 20px;vertical-align:middle;border-bottom:1px solid #eef2f6}
-    .gg-table tbody tr:hover{background:#f8fbff}
-    .gg-user-name{font-weight:900;color:#101828;margin-bottom:4px}
-    .gg-user-email{font-size:13px;color:#667085}
-    .gg-reason{max-width:520px;color:#344054;font-size:14px;line-height:1.45}
-    .gg-status{border-radius:999px;padding:7px 13px;font-size:13px;font-weight:900;display:inline-block;text-transform:capitalize}
-    .gg-status-pending{background:#fff8e6;color:#b7791f;border:1px solid #f6d98b}
-    .gg-status-approved{background:#ecfdf3;color:#027a48;border:1px solid #b7ebc6}
-    .gg-status-rejected{background:#fff5f5;color:#b42318;border:1px solid #ffd1d1}
-    .gg-approve-btn{background:#12b76a;color:#fff;border:0;border-radius:999px;padding:8px 15px;font-size:13px;font-weight:900}
-    .gg-approve-btn:hover{background:#039855}
-    .gg-reject-btn{background:#fff;color:#b42318;border:1px solid #f5b5b5;border-radius:999px;padding:8px 15px;font-size:13px;font-weight:900}
-    .gg-reject-btn:hover{background:#dc3545;color:#fff}
-    .gg-alert{border-radius:16px;padding:15px 18px;margin-bottom:20px;font-size:14px;font-weight:700}
-</style>
+$users = [];
+foreach ($usersRows as $row) {
+    $u = User::fromArray($row);
+    $users[$u->getUserId()] = $u;
+}
 
-<div class="gg-request-page">
+if (isset($_POST['action']) && in_array($_POST['action'], ['approve', 'reject'])) {
+    $requestId = (int) $_POST['request_id'];
+    $action = $_POST['action'];
+    $userId = $_POST['user_id'];
 
-    <section class="gg-request-hero">
-        <h1 class="gg-request-title">Creator Requests</h1>
-        <p class="gg-request-subtitle">
-            Review user applications and decide who can become a GulfGuide creator.
-        </p>
-    </section>
+    if ($action === 'approve') {
+        try {
+            $stmt = $pdo->prepare("UPDATE dbProj_creator_request SET status = 'approved', reviewed_at = NOW() WHERE request_id = :requestId");
+            $stmt->execute([':requestId' => $requestId]);
 
-    <?php if ($errors): ?>
-        <div class="gg-alert alert-danger">
-            <?php foreach ($errors as $error): ?>
-                <div><?= htmlspecialchars($error) ?></div>
-            <?php endforeach; ?>
+            $stmt = $pdo->prepare("UPDATE dbProj_user SET role = 'creator' WHERE user_id = :userId");
+            $stmt->execute([':userId' => $userId]);
+
+            $_SESSION['status'] = "User approved as creator successfully";
+            $_SESSION['status_code'] = "success";
+        } catch (PDOException $e) {
+            $_SESSION['status'] = "Delete failed: " . $e->getMessage();
+            $_SESSION['status_code'] = "error";
+        }
+    } elseif ($action === 'reject') {
+        try {
+            $stmt = $pdo->prepare("UPDATE dbProj_creator_request SET status = 'rejected', reviewed_at = NOW() WHERE request_id = :requestId");
+            $stmt->execute([':requestId' => $requestId]);
+            
+            $stmt = $pdo->prepare("UPDATE dbProj_user SET role = 'user' WHERE user_id = :userId");
+            $stmt->execute([':userId' => $userId]);
+            
+            $_SESSION['status'] = "User rejected as creator successfully";
+            $_SESSION['status_code'] = "success";
+        } catch (PDOException $e) {
+            $_SESSION['status'] = "Delete failed: " . $e->getMessage();
+            $_SESSION['status_code'] = "error";
+        }
+    }
+    header("Location: " . APP_BASE . "/admin/creator-request");
+    exit;
+}
+?>  
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pb-3">
+    <h2>Creator Requests</h2>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <?php
+            $parts = array_filter(explode('/', $uri));
+
+            echo '<li class="breadcrumb-item"><a href="' . APP_BASE . '/">GulfGuide</a></li>';
+
+            $currentPath = '';
+            $count = count($parts);
+            $i = 1;
+
+            foreach ($parts as $part) {
+                $currentPath .= '/' . $part;
+                $isLast = ($i === $count);
+                $label = ucwords(str_replace(['-', '_'], ' ', $part));
+
+                if ($isLast) {
+                    echo '<li class="breadcrumb-item active text-dark" aria-current="page">' . $label . '</li>';
+                } else {
+                    if ($part == 'admin') {
+                        echo '<li class="breadcrumb-item"> Admin Portal </li>';
+                        echo '<li class="breadcrumb-item">';
+                        echo '<a href="' . APP_BASE . '/admin/dashboard"> Dashboard </a>';
+                        echo '</li>';
+                    } else {
+                        echo '<li class="breadcrumb-item">';
+                        echo '<a href="' . APP_BASE . $currentPath . '">' . $label . '</a>';
+                        echo '</li>';
+                    }
+                }
+                $i++;
+            }
+            ?>
+        </ol>
+    </nav>
+</div>
+
+<div class="card-section">
+    <div class="card-section--header">
+        <p class="h5-style">Applications List</p>
+        <?php
+        $totalApplications = count($applications);
+
+        $pendingCount = 0;
+        $approvedCount = 0;
+        $rejectedCount = 0;
+
+        foreach ($applications as $app) {
+            $status = strtolower(trim($app->getStatus()));
+
+            if ($status === 'pending')
+                $pendingCount++;
+            elseif ($status === 'approved')
+                $approvedCount++;
+            elseif ($status === 'rejected')
+                $rejectedCount++;
+        }
+        ?>  
+        <div class="d-flex gap-1 flex-wrap">
+            <span class="gulfguide-badge">Total: <?= $totalApplications ?> applications</span>
+            <span class="gulfguide-badge gulfguide-badge--warning"><?= $pendingCount ?> pending</span>
+            <span class="gulfguide-badge gulfguide-badge--success"><?= $approvedCount ?> approved</span>
+            <span class="gulfguide-badge gulfguide-badge--danger"><?= $rejectedCount ?> rejected</span>
         </div>
-    <?php endif; ?>
+    </div>
+    <hr class="card-section--divider">
+    <div class="card-section--body">
+        <form method="GET" action="<?= APP_BASE ?>/admin/creator-request" class="mb-4">
+            <div class="row g-2">
+                <div class="col-md-10">
+                    <input type="text" name="search" class="form-control" placeholder="Search..." value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+                </div>
 
-    <?php if ($success): ?>
-        <div class="gg-alert alert-success">
-            <?= htmlspecialchars($success) ?>
-        </div>
-    <?php endif; ?>
+                <div class="col-md-2 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary w-100">
+                        Search
+                    </button>
+                    <?php if (!empty($search)) : ?>
 
-    <section class="gg-request-card">
-        <div class="gg-request-header">
-            <div>
-                <h2 class="gg-request-card-title">Applications</h2>
-                <p class="gg-request-card-text">Approve or reject creator access requests.</p>
+                        <a class="btn btn-secondary w-100" href="<?= APP_BASE ?>/admin/creator-request">
+                            Clear
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </form>
+        <div class="overflow-hidden">
+            <div class="table-responsive">
+                <table id="usersTable" class="table table-stripe datatable-gulfguide max-w-full overflow-x-auto custom-scrollbar">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Status</th>
+                            <th>Requested At</th>
+                            <th>Reason</th>
+                            <th>Email</th>
+                            <th>Reviewed At</th>
+                            <th class="action-th text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        foreach ($applications as $application):
+                            $filtered = array_filter($users, function ($u) use ($application) {
+                                return $u->getUserId() === $application->getUserId();
+                            });
+
+                            $user = reset($filtered);
+                            ?>
+                            <tr>
+                                <td><?= $application->getRequestId() ?></td>
+                                <td><?= htmlspecialchars($user->getUsername()) ?></td>
+                                <td>
+                                    <?php
+                                    $statusMap = [
+                                        'pending' => [
+                                            'class' => 'gulfguide-badge--warning',
+                                            'icon' => 'ph-clock'
+                                        ],
+                                        'approved' => [
+                                            'class' => 'gulfguide-badge--success',
+                                            'icon' => 'ph-check-circle'
+                                        ],
+                                        'rejected' => [
+                                            'class' => 'gulfguide-badge--danger',
+                                            'icon' => 'ph-x-circle'
+                                        ],
+                                    ];
+                                    ?>
+                                    <?php
+                                    $status = $statusMap[$application->getStatus()] ?? $roleMap['pending'];
+                                    $statusText = strtolower(trim($application->getStatus()));
+                                    ?>
+                                    <span class="gulfguide-badge <?= $status['class'] ?> gulfguide-badge--rounded">
+                                        <?= ucfirst($application->getStatus()) ?>
+                                    </span>
+                                </td>
+                                <td><?= htmlspecialchars(((new DateTime($application->getRequestedAt()))->format("F j, Y, g:i a"))) ?></td>
+                                <td><?= htmlspecialchars($application->getReason()) ?></td>
+                                <td><a href="mailto:<?= htmlspecialchars($user->getEmail()) ?>">
+                                        <?= htmlspecialchars($user->getEmail()) ?>
+                                    </a></td>
+                                <td><?=
+                                    $application->getReviewedAt() ?
+                                            htmlspecialchars(((new DateTime($application->getReviewedAt()))->format("F j, Y, g:i a"))) :
+                                            "have not reviewed"
+                                    ?></td>
+                                <td class="text-center">
+                                    <?php if ($statusText !== 'approved'): ?>
+                                        <form method="POST" action="<?= APP_BASE ?>/admin/creator-request" class="approved-record">
+                                            <input type="hidden" name="dusername"
+                                                   value="<?= htmlspecialchars($user->getUsername()) ?>">
+                                            <input type="hidden" name="request_id" value="<?= $application->getRequestId() ?>">
+                                            <input type="hidden" name="user_id" value="<?= $user->getUserId() ?>">
+                                            <input type="hidden" name="action" value="approve">
+                                            <button type="submit" name="delete_btn" class="btn btn-sm btn-outline-success">
+                                                <i class="ph ph-check-circle"></i>
+                                                <span class="d-block d-md-none">Approved</span>
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
+                                    <?php if ($statusText !== 'rejected'): ?>
+                                        <form method="POST" action="<?= APP_BASE ?>/admin/creator-request" class="rejected-record">
+                                            <input type="hidden" name="username"
+                                                   value="<?= htmlspecialchars($user->getUsername()) ?>">
+                                            <input type="hidden" name="user_id" value="<?= $user->getUserId() ?>">
+                                            <input type="hidden" name="request_id" value="<?= $application->getRequestId() ?>">
+                                            <input type="hidden" name="action" value="reject">
+                                            <button type="submit" name="delete_btn" class="btn btn-sm btn-outline-danger">
+                                                <i class="ph ph-x-circle"></i>
+                                                <span class="d-block d-md-none">Rejected</span>
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
-
-        <div class="table-responsive">
-            <table class="table gg-table align-middle">
-                <thead>
-                <tr>
-                    <th>User</th>
-                    <th>Reason</th>
-                    <th>Status</th>
-                    <th>Requested At</th>
-                    <th>Action</th>
-                </tr>
-                </thead>
-
-                <tbody>
-                <?php if (!$requests): ?>
-                    <tr>
-                        <td colspan="5" class="text-center text-muted py-4">
-                            No creator requests found.
-                        </td>
-                    </tr>
-                <?php endif; ?>
-
-                <?php foreach ($requests as $request): ?>
-                    <?php
-                    $statusClass = 'gg-status-pending';
-                    if ($request['status'] === $approvedStatus) {
-                        $statusClass = 'gg-status-approved';
-                    } elseif ($request['status'] === $rejectedStatus) {
-                        $statusClass = 'gg-status-rejected';
-                    }
-                    ?>
-
-                    <tr>
-                        <td>
-                            <div class="gg-user-name"><?= htmlspecialchars($request['username']) ?></div>
-                            <div class="gg-user-email"><?= htmlspecialchars($request['email'] ?? 'No email') ?></div>
-                        </td>
-
-                        <td>
-                            <div class="gg-reason">
-                                <?= htmlspecialchars(mb_strimwidth($request['reason'] ?? '', 0, 140, '...')) ?>
-                            </div>
-                        </td>
-
-                        <td>
-                            <span class="gg-status <?= $statusClass ?>">
-                                <?= htmlspecialchars($request['status']) ?>
-                            </span>
-                        </td>
-
-                        <td>
-                            <?= htmlspecialchars($request['requested_at']) ?>
-                        </td>
-
-                        <td>
-                            <?php if ($request['status'] === $pendingStatus): ?>
-                                <div class="d-flex gap-2 flex-wrap">
-                                    <form method="POST" action="<?= APP_BASE ?>/admin/creator-request">
-                                        <input type="hidden" name="request_id" value="<?= htmlspecialchars($request['request_id']) ?>">
-                                        <input type="hidden" name="action" value="approve">
-                                        <button type="submit" class="gg-approve-btn">
-                                            Approve
-                                        </button>
-                                    </form>
-
-                                    <form method="POST" action="<?= APP_BASE ?>/admin/creator-request">
-                                        <input type="hidden" name="request_id" value="<?= htmlspecialchars($request['request_id']) ?>">
-                                        <input type="hidden" name="action" value="reject">
-                                        <button type="submit" class="gg-reject-btn">
-                                            Reject
-                                        </button>
-                                    </form>
-                                </div>
-                            <?php else: ?>
-                                <span class="text-muted">Reviewed</span>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    </section>
-
+    </div>
 </div>
+
+<script>
+    $(document).on('submit', '.rejected-record', function (e) {
+        e.preventDefault();
+
+        let form = $(this);
+        let username = form.find('input[name="username"]').val();
+
+        Swal.fire({
+            title: 'Reject user',
+            text: `Are you sure you want to reject ${username}\'s creator request?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#4169e1',
+            cancelButtonColor: '#dc3545',
+            confirmButtonText: 'Yes, reject',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form[0].submit();
+            }
+        });
+    });
+    $(document).on('submit', '.approved-record', function (e) {
+        e.preventDefault();
+
+        let form = $(this);
+        let username = form.find('input[name="username"]').val();
+
+        Swal.fire({
+            title: 'Approved user',
+            text: `Are you sure you want to approved ${username}\'s creator request?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#4169e1',
+            cancelButtonColor: '#dc3545',
+            confirmButtonText: 'Yes, reject',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form[0].submit();
+            }
+        });
+    });
+</script>
+
+<?php if (isset($_SESSION['status']) && $_SESSION['status'] != ''): ?>
+    <script>
+        Swal.fire({
+            title: "<?= $_SESSION['status_code'] === 'success' ? 'Success!' : 'Status' ?>",
+            text: "<?= htmlspecialchars($_SESSION['status']) ?>",
+            icon: "<?= htmlspecialchars($_SESSION['status_code'] ?? 'info') ?>",
+            confirmButtonColor: '#4169e1'
+        });
+    </script>
+    <?php
+    unset($_SESSION['status']);
+    unset($_SESSION['status_code']);
+    ?>
+<?php endif; ?>

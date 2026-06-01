@@ -1,4 +1,7 @@
 <?php
+ob_start();
+// ─── Bootstrap ───────────────────────────────────────────────────────────────
+// session_start() MUST come before anything touches $_SESSION
 session_start();
 
 ini_set('display_errors', 1);
@@ -10,6 +13,9 @@ require_once __DIR__ . '/config/constants.php';
 require_once __DIR__ . '/config/helpers.php';
 require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/classes/user.php';
+require_once __DIR__ . "/classes/creatorRequest.php";
+require_once __DIR__ . '/classes/post.php';
+require_once __DIR__ . '/classes/comment.php';
 
 
 $script = $_SERVER['SCRIPT_NAME']; 
@@ -17,7 +23,7 @@ $base   = dirname($script);
 
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$uri = str_replace($base,       '', $uri);
+$uri = str_replace($base, '', $uri);
 $uri = str_replace('/index.php', '', $uri);
 $uri = ($uri === '' || $uri === null) ? '/' : $uri;
 
@@ -71,10 +77,11 @@ function resolve(string $uri, array $routes): array
     }
 
     $patterns = [
-        '#^/country/(\d+)$#'      => __DIR__ . '/pages/countries/show.php',
-        '#^/posts/(\d+)$#'        => __DIR__ . '/pages/posts/show.php',
-        '#^/locations/(\d+)$#'    => __DIR__ . '/pages/locations/show.php',
-        '#^/posts/(\d+)/edit$#'   => __DIR__ . '/pages/posts/edit.php',
+        '#^/country/(\d+)$#' => __DIR__ . '/pages/countries/show.php',
+        '#^/posts/(\d+)$#' => __DIR__ . '/pages/posts/show.php',
+        '#^/locations/(\d+)$#' => __DIR__ . '/pages/locations/show.php',
+        '#^/posts/(\d+)/edit$#' => __DIR__ . '/pages/posts/edit.php',
+        '#^/admin/moderate-posts/(\d+)$#' => __DIR__ . '/pages/admin/moderate-posts-show.php',
     ];
 
     foreach ($patterns as $pattern => $page) {
@@ -87,8 +94,8 @@ function resolve(string $uri, array $routes): array
     abort(404);
 }
 
-$route  = resolve($uri, $routes);
-$page   = $route['page'];
+$route = resolve($uri, $routes);
+$page = $route['page'];
 $params = $route['params'];
 
 if (!file_exists($page)) {
@@ -106,25 +113,36 @@ if ($isAdminPage) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>GulfGuide</title>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>GulfGuide</title>
 
-    <!-- Phosphor Icons -->
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
+        <!-- Phosphor Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css">
 
-    <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-          rel="stylesheet"
-          integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
-          crossorigin="anonymous">
+        <!-- Bootstrap 5 -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+              rel="stylesheet"
+              integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+              crossorigin="anonymous">
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
-            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
-            crossorigin="anonymous"></script>
+        <!-- jQuery -->
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+                integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+        crossorigin="anonymous"></script>
+
+        <!-- Sweetalert -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <link rel="stylesheet" href="assets/plugins/sweetalert2/sweetalert2.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+        <!-- tinymce -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.1.0/tinymce.min.js" referrerpolicy="origin"></script>
+        
+         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <!-- Custom CSS -->
 
     <!-- Custom CSS -->
 <?php if ($isAdminPage): ?>
@@ -142,14 +160,24 @@ if ($isAdminPage) {
         <?php if (file_exists(__DIR__ . '/partials/admin/sidebar.phtml')): ?>
             <?php require __DIR__ . '/partials/admin/sidebar.phtml'; ?>
         <?php endif; ?>
-        <?php if (file_exists(__DIR__ . '/partials/admin/topbar.phtml')): ?>
-            <?php require __DIR__ . '/partials/admin/topbar.phtml'; ?>
-        <?php endif; ?>
-    <?php endif; ?>
+        <link rel="stylesheet" href="<?= $base_prefix ?>assets/css/style.css">
+        <!-- Custom JS -->
+        <script src="<?= $base_prefix ?>assets/js/main.js" defer></script>
+    </head>
 
-    <main class="main">
-        <?php require $page; ?>
-    </main>
+    <body>
+        <?php if ($isAdminPage): ?>
+            <?php if (file_exists(__DIR__ . '/partials/admin/sidebar.phtml')): ?>
+                <?php require __DIR__ . '/partials/admin/sidebar.phtml'; ?>
+            <?php endif; ?>
+            <?php if (file_exists(__DIR__ . '/partials/admin/topbar.phtml')): ?>
+                <?php require __DIR__ . '/partials/admin/topbar.phtml'; ?>
+            <?php endif; ?>
+        <?php endif; ?>
+
+        <main class="main">
+            <?php require $page; ?>
+        </main>
 
     <!-- Bootstrap JS bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
