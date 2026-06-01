@@ -12,17 +12,12 @@
         applyFilters();
     });
 
-    // ── 2. Live search ────────────────────────────────────────────────────────
-    $('#postSearch').on('input', applyFilters);
-
     function applyFilters() {
         const filter = $('#statusFilter .btn.active').data('filter');
-        const search = $('#postSearch').val().toLowerCase().trim();
         let visible  = 0;
 
         $('#postsBody .blog-card').each(function () {
-            const ok = ((filter === 'all') || ($(this).data('status') === filter))
-                    && ((search === '')     || ($(this).data('title') || '').includes(search));
+            const ok = (filter === 'all') || ($(this).data('status') === filter);
             $(this).toggle(ok);
             if (ok) visible++;
         });

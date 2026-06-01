@@ -710,9 +710,7 @@ $baseUrl = rtrim(str_replace('/index.php', '', APP_BASE), '/');
         </p>
     </div>
     <form method="GET" action="<?= APP_BASE ?>/locations/all" class="d-flex gap-2">
-        <input type="text" name="search" class="form-control form-control-sm"
-               placeholder="Search attractions…" value="<?= htmlspecialchars($search) ?>"
-               style="width:220px">
+        <input type="text" name="search" class="form-control" placeholder="Search..." value="<?= htmlspecialchars($search) ?>">
         <button type="submit" class="btn btn-sm btn-primary">
             <i class="ph ph-magnifying-glass me-1"></i>Search
         </button>

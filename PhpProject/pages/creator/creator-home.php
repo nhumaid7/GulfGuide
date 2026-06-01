@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../classes/post.php';
 requireRole(ROLE_CREATOR);
 
 $userId = currentUserId();
+$search  = trim($_GET['search'] ?? '');
 
 // ── Handle delete POST ────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_post') {
@@ -31,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
 }
 
 // ── Fetch creator's posts ─────────────────────────────────────────────────────
-$stmt = $pdo->prepare("
+$sql = "
     SELECT p.*,
            c.name AS country_name,
            (SELECT COUNT(*) FROM dbProj_reaction r
@@ -46,9 +47,16 @@ $stmt = $pdo->prepare("
     FROM   dbProj_post p
     LEFT JOIN dbProj_country c ON p.country_id = c.country_id
     WHERE  p.user_id = :uid
-    ORDER  BY p.created_at DESC
-");
-$stmt->execute([':uid' => $userId, ':uid2' => $userId]);
+";
+$params = [':uid' => $userId, ':uid2' => $userId];
+if ($search !== '') {
+    $sql .= " AND (p.title LIKE :search1 OR p.content LIKE :search2)";
+    $params[':search1'] = '%' . $search . '%';
+    $params[':search2'] = '%' . $search . '%';
+}
+$sql .= " ORDER BY p.created_at DESC";
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
 $postRows = $stmt->fetchAll();
 $posts    = array_map([Post::class, 'fromArray'], $postRows);
 
@@ -108,8 +116,13 @@ if (typeof Swal === 'undefined') {
                 Draft <span class="badge bg-warning text-dark ms-1"><?= $drafts ?></span>
             </button>
         </div>
-        <input type="text" id="postSearch" class="form-control form-control-sm"
-               placeholder="Search…" style="width:150px">
+        <form method="GET" action="<?= APP_BASE ?>/creator/" class="d-flex gap-2 align-items-center">
+            <input type="text" name="search" class="form-control" placeholder="Search..." value="<?= htmlspecialchars($search) ?>">
+            <button type="submit" class="btn btn-sm btn-primary">Search</button>
+            <?php if ($search !== ''): ?>
+                <a href="<?= APP_BASE ?>/creator/" class="btn btn-sm btn-secondary">Clear</a>
+            <?php endif; ?>
+        </form>
         <a href="<?= APP_BASE ?>/creator/create-post" class="btn btn-sm btn-outline-primary fw-semibold">
             <i class="ph ph-pencil-simple me-1"></i>Write New Review
         </a>
