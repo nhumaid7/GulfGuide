@@ -1,5 +1,4 @@
 <?php
-// init.php is already loaded by index.php router — do NOT require it again
 
 if (isLoggedIn()) {
     redirectByRole();
@@ -77,7 +76,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 }
 ?>
-
+<a href="<?php echo APP_BASE; ?>/" class="btn btn-primary z-3 mt-4">Go to Home</a>
 <div class="container my-5">
     <h2 class="text-center mb-4">Create Account</h2>
     <div class="row justify-content-center">

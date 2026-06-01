@@ -86,11 +86,11 @@ if ($isAdminLocationList) {
         ";
 
         $params = [
-            ':id_search' => '%' . $adminSearch . '%',
-            ':name_search' => '%' . $adminSearch . '%',
+            ':id_search'          => '%' . $adminSearch . '%',
+            ':name_search'        => '%' . $adminSearch . '%',
             ':description_search' => '%' . $adminSearch . '%',
-            ':country_search' => '%' . $adminSearch . '%',
-            ':type_search' => '%' . $adminSearch . '%',
+            ':country_search'     => '%' . $adminSearch . '%',
+            ':type_search'        => '%' . $adminSearch . '%',
         ];
     }
 
@@ -639,19 +639,19 @@ if ($isAdminLocationList) {
 // ── Public: /locations/all ────────────────────────────────────────────────
 $search      = trim($_GET['search'] ?? '');
 $perPage     = 9;
-$currentPage = max(1, (int)($_GET['page'] ?? 1));
+$currentPage = max(1, (int) ($_GET['page'] ?? 1));
 $offset      = ($currentPage - 1) * $perPage;
 
 if ($search !== '') {
-    $countStmt = $pdo->prepare(
-        "SELECT COUNT(*) FROM dbProj_attraction a WHERE a.name LIKE :s OR a.description LIKE :s2"
-    );
-    $countStmt->execute([':s' => '%'.$search.'%', ':s2' => '%'.$search.'%']);
+    $countStmt = $pdo->prepare("
+        SELECT COUNT(*) FROM dbProj_attraction a WHERE a.name LIKE :s OR a.description LIKE :s2
+    ");
+    $countStmt->execute([':s' => '%' . $search . '%', ':s2' => '%' . $search . '%']);
 } else {
     $countStmt = $pdo->query("SELECT COUNT(*) FROM dbProj_attraction");
 }
-$totalRows  = (int)$countStmt->fetchColumn();
-$totalPages = (int)ceil($totalRows / $perPage);
+$totalRows  = (int) $countStmt->fetchColumn();
+$totalPages = (int) ceil($totalRows / $perPage);
 
 if ($search !== '') {
     $stmt = $pdo->prepare("
@@ -663,8 +663,8 @@ if ($search !== '') {
         ORDER  BY a.created_at DESC
         LIMIT  :limit OFFSET :offset
     ");
-    $stmt->bindValue(':s',      '%'.$search.'%');
-    $stmt->bindValue(':s2',     '%'.$search.'%');
+    $stmt->bindValue(':s',      '%' . $search . '%');
+    $stmt->bindValue(':s2',     '%' . $search . '%');
     $stmt->bindValue(':limit',  $perPage, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset,  PDO::PARAM_INT);
     $stmt->execute();
@@ -722,70 +722,72 @@ $baseUrl = rtrim(str_replace('/index.php', '', APP_BASE), '/');
     </form>
 </div>
 
-<?php if (empty($attractions)): ?>
-<div class="text-center py-5 text-muted">
-    <i class="ph ph-map-pin-slash" style="font-size:3rem;opacity:.35;"></i>
-    <p class="mt-2 fw-semibold">No attractions found.</p>
-</div>
-<?php else: ?>
-<div class="row g-4">
-    <?php foreach ($attractions as $a): ?>
-    <div class="col-sm-6 col-lg-4">
-        <div class="attraction-card">
-            <div class="attraction-card__img">
-                <?php if (!empty($a['cover_image'])): ?>
+    <?php if (empty($attractions)): ?>
+    <div class="text-center py-5 text-muted">
+        <i class="ph ph-map-pin-slash" style="font-size:3rem;opacity:.35;"></i>
+        <p class="mt-2 fw-semibold">No attractions found.</p>
+    </div>
+
+    <?php else: ?>
+    <div class="row g-4">
+        <?php foreach ($attractions as $a): ?>
+        <div class="col-sm-6 col-lg-4">
+            <div class="attraction-card">
+                <div class="attraction-card__img">
+                    <?php if (!empty($a['cover_image'])): ?>
                     <img src="<?= htmlspecialchars($a['cover_image']) ?>"
                          alt="<?= htmlspecialchars($a['name']) ?>">
-                <?php else: ?>
-                    <div class="attraction-card__img--placeholder"><i class="ph ph-image"></i></div>
-                <?php endif; ?>
-                <?php if (!empty($a['type_name'])): ?>
-                <span class="attraction-card__type"><?= htmlspecialchars($a['type_name']) ?></span>
-                <?php endif; ?>
-            </div>
-            <div class="attraction-card__body">
-                <div class="attraction-card__country">
-                    <i class="ph ph-map-pin"></i>
-                    <?= htmlspecialchars($a['country_name'] ?? '—') ?>
+                    <?php else: ?>
+                    <div class="attraction-card__img--placeholder">
+                        <i class="ph ph-image"></i>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($a['type_name'])): ?>
+                    <span class="attraction-card__type"><?= htmlspecialchars($a['type_name']) ?></span>
+                    <?php endif; ?>
                 </div>
-                <h5 class="attraction-card__name"><?= htmlspecialchars($a['name']) ?></h5>
-                <p class="attraction-card__desc">
-                    <?= htmlspecialchars(mb_strimwidth($a['description'] ?? '', 0, 100, '…')) ?>
-                </p>
-                <div class="attraction-card__footer">
-                    <a href="<?= APP_BASE ?>/locations/<?= $a['attraction_id'] ?>"
-                       class="btn btn-sm btn-primary attraction-card__btn">
-                        View More <i class="ph ph-arrow-right ms-1"></i>
-                    </a>
+                <div class="attraction-card__body">
+                    <div class="attraction-card__country">
+                        <i class="ph ph-map-pin"></i>
+                        <?= htmlspecialchars($a['country_name'] ?? '—') ?>
+                    </div>
+                    <h5 class="attraction-card__name"><?= htmlspecialchars($a['name']) ?></h5>
+                    <p class="attraction-card__desc">
+                        <?= htmlspecialchars(mb_strimwidth($a['description'] ?? '', 0, 100, '…')) ?>
+                    </p>
+                    <div class="attraction-card__footer">
+                        <a href="<?= APP_BASE ?>/locations/<?= $a['attraction_id'] ?>"
+                           class="btn btn-sm btn-primary attraction-card__btn">
+                            View More <i class="ph ph-arrow-right ms-1"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
+        <?php endforeach; ?>
     </div>
-    <?php endforeach; ?>
-</div>
 
-<?php if ($totalPages > 1): ?>
-<nav class="mt-4 d-flex justify-content-center">
-    <ul class="pagination">
-        <li class="page-item <?= $currentPage <= 1 ? 'disabled' : '' ?>">
-            <a class="page-link" href="?page=<?= $currentPage - 1 ?><?= $search ? '&search='.urlencode($search) : '' ?>">
-                <i class="ph ph-caret-left"></i>
-            </a>
-        </li>
-        <?php for ($p = 1; $p <= $totalPages; $p++): ?>
-        <li class="page-item <?= $p === $currentPage ? 'active' : '' ?>">
-            <a class="page-link" href="?page=<?= $p ?><?= $search ? '&search='.urlencode($search) : '' ?>"><?= $p ?></a>
-        </li>
-        <?php endfor; ?>
-        <li class="page-item <?= $currentPage >= $totalPages ? 'disabled' : '' ?>">
-            <a class="page-link" href="?page=<?= $currentPage + 1 ?><?= $search ? '&search='.urlencode($search) : '' ?>">
-                <i class="ph ph-caret-right"></i>
-            </a>
-        </li>
-    </ul>
-</nav>
-<?php endif; ?>
-<?php endif; ?>
+    <?php if ($totalPages > 1): ?>
+    <nav class="mt-4 d-flex justify-content-center">
+        <ul class="pagination">
+            <li class="page-item <?= $currentPage <= 1 ? 'disabled' : '' ?>">
+                <a class="page-link" href="?page=<?= $currentPage - 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?>">
+                    <i class="ph ph-caret-left"></i>
+                </a>
+            </li>
+            <?php for ($p = 1; $p <= $totalPages; $p++): ?>
+            <li class="page-item <?= $p === $currentPage ? 'active' : '' ?>">
+                <a class="page-link" href="?page=<?= $p ?><?= $search ? '&search=' . urlencode($search) : '' ?>"><?= $p ?></a>
+            </li>
+            <?php endfor; ?>
+            <li class="page-item <?= $currentPage >= $totalPages ? 'disabled' : '' ?>">
+                <a class="page-link" href="?page=<?= $currentPage + 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?>">
+                    <i class="ph ph-caret-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <?php endif; ?>
 
+    <?php endif; ?>
 </div>
-?>

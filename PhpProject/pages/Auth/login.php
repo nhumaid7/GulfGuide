@@ -5,7 +5,7 @@ if (isLoggedIn()) {
 }
 
 $email_err = $password_err = $login_err = "";
-$email = "";
+$email = "";   
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
@@ -62,7 +62,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 }
 ?>
-
+<a href="<?php echo APP_BASE; ?>/" class="btn btn-primary z-3 mt-4">Go to Home</a>
 <div class="container my-5">
     <h2 class="text-center mb-4">Login</h2>
     <div class="row justify-content-center">
