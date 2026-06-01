@@ -153,6 +153,9 @@ if (typeof Swal === 'undefined') {
 }
 </script>
 
+<link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/style.css">
+<?php require_once __DIR__ . '/../../partials/user/navbar.php'; ?>
+
 <div style="max-width:1200px; margin:0 auto; padding:0 0.5rem 2rem;">
 
 <!-- ── DB error ────────────────────────────────────────────────────────────── -->
@@ -165,13 +168,7 @@ if (typeof Swal === 'undefined') {
 
 <!-- ── Page heading ────────────────────────────────────────────────────────── -->
 <div class="mb-4">
-    <nav aria-label="breadcrumb" class="mb-2">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="<?= APP_BASE ?>/">GulfGuide</a></li>
-            <li class="breadcrumb-item"><a href="<?= APP_BASE ?>/creator/">Dashboard</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Edit Post</li>
-        </ol>
-    </nav>
+
     <h2 class="fw-bold mb-1" style="font-size:clamp(1.4rem,4vw,2rem);">Edit Your Post</h2>
     <p class="text-muted mb-0">Update your travel story</p>
 </div>
