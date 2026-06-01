@@ -12,8 +12,5 @@ require_once __DIR__ . "/classes/creatorRequest.php";
 require_once __DIR__ . "/classes/post.php";
 require_once __DIR__ . '/classes/comment.php';
 
-require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/../../autoload.php';
-
 define("APP_NAME", "GulfGuide");
 ?>

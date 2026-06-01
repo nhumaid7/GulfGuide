@@ -58,18 +58,13 @@ if ($countryId !== '') {
 $countries = [];
 
 try {
-    $countryStmt = $mysqli->prepare("SELECT country_id, name FROM dbProj_country ORDER BY name ASC");
+    // FIX 1: Replaced MySQLi binding/fetching loop with clean PDO query strategy
+    $countryStmt = $pdo->query("SELECT country_id, name FROM dbProj_country ORDER BY name ASC");
     if ($countryStmt) {
-        $countryStmt->execute();
-        $countryStmt->store_result();
-        $countryStmt->bind_result($cId, $cName);
-        while ($countryStmt->fetch()) {
-            $countries[] = ['country_id' => $cId, 'name' => $cName];
-        }
-        $countryStmt->close();
+        $countries = $countryStmt->fetchAll(PDO::FETCH_ASSOC);
     }
 } catch (Throwable $e) {
-    
+    // Silently continue or handle application log
 }
 
 if ($selectedReport === 'selet_user_report' && $filterUserId !== '') {
@@ -81,18 +76,13 @@ if ($selectedReport === 'selet_user_report' && $filterUserId !== '') {
 
 $filterUsersList = [];
 try {
-    $userListStmt = $mysqli->prepare("SELECT user_id, username, role FROM dbProj_user WHERE role = 'creator' ORDER BY username ASC");
+    // FIX 2: Replaced MySQLi store_result and bind_result with PDO fetchAll
+    $userListStmt = $pdo->query("SELECT user_id, username, role FROM dbProj_user WHERE role = 'creator' ORDER BY username ASC");
     if ($userListStmt) {
-        $userListStmt->execute();
-        $userListStmt->store_result();
-        $userListStmt->bind_result($uId, $uName, $uRole);
-        while ($userListStmt->fetch()) {
-            $filterUsersList[] = ['user_id' => $uId, 'username' => $uName, 'role' => $uRole];
-        }
-        $userListStmt->close();
+        $filterUsersList = $userListStmt->fetchAll(PDO::FETCH_ASSOC);
     }
 } catch (Throwable $e) {
-    
+    // Silently continue or handle application log
 }
 
 $report1Data = [];
@@ -122,24 +112,20 @@ if ($selectedReport === 'popular_posts' && empty($validationErrors)) {
             LEFT JOIN dbProj_attraction_type at ON a.type_id = at.type_id
             WHERE 1=1";
 
-        $bindTypes = "";
         $bindParams = [];
 
         if ($dateFrom !== '') {
             $sql .= " AND DATE(p.created_at) >= ?";
-            $bindTypes .= "s";
             $bindParams[] = $dateFrom;
         }
 
         if ($dateTo !== '') {
             $sql .= " AND DATE(p.created_at) <= ?";
-            $bindTypes .= "s";
             $bindParams[] = $dateTo;
         }
 
         if ($countryId !== '') {
             $sql .= " AND p.country_id = ?";
-            $bindTypes .= "i";
             $bindParams[] = (int) $countryId;
         }
 
@@ -154,49 +140,26 @@ if ($selectedReport === 'popular_posts' && empty($validationErrors)) {
                 break;
         }
 
-        $stmt = $mysqli->prepare($sql);
+        $stmt = $pdo->prepare($sql);
+        
+        // FIX 3: Executed array straight into parameters mapping, eliminating $bindTypes
+        if ($stmt->execute($bindParams)) {
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        if (!empty($bindParams)) {
-            $stmt->bind_param($bindTypes, ...$bindParams);
-        }
-
-        if ($stmt->execute()) {
-            $stmt->store_result();
-            $stmt->bind_result(
-                    $r_post_id, $r_title, $r_status, $r_created_at,
-                    $r_username, $r_country_name, $r_flag_image,
-                    $r_attraction_name, $r_attraction_type,
-                    $r_reaction_count, $r_comment_count
-            );
-
-            while ($stmt->fetch()) {
-                $row = [
-                    'post_id' => $r_post_id,
-                    'title' => $r_title,
-                    'status' => $r_status,
-                    'created_at' => $r_created_at,
-                    'username' => $r_username,
-                    'country_name' => $r_country_name,
-                    'flag_image' => $r_flag_image,
-                    'attraction_name' => $r_attraction_name,
-                    'attraction_type' => $r_attraction_type,
-                    'reaction_count' => $r_reaction_count,
-                    'comment_count' => $r_comment_count
-                ];
+            foreach ($rows as $row) {
                 $report1Data[] = $row;
 
-                $totalLikes += (int) $r_reaction_count;
-                $totalComments += (int) $r_comment_count;
+                $totalLikes += (int) $row['reaction_count'];
+                $totalComments += (int) $row['comment_count'];
 
-                $type = $r_attraction_type ?: 'Unknown';
-                $attrName = $r_attraction_name ?: 'No Attraction';
-                $usr = $r_username;
+                $type = $row['attraction_type'] ?: 'Unknown';
+                $attrName = $row['attraction_name'] ?: 'No Attraction';
+                $usr = $row['username'];
 
                 $attractionTypeStats[$type] = ($attractionTypeStats[$type] ?? 0) + 1;
                 $attractionStats[$attrName] = ($attractionStats[$attrName] ?? 0) + 1;
                 $userStats[$usr] = ($userStats[$usr] ?? 0) + 1;
             }
-            $stmt->close();
         }
     } catch (Throwable $e) {
         $report1Data = [];
@@ -253,54 +216,30 @@ if ($selectedReport === 'user_report' && empty($validationErrors)) {
             ) lp ON u.user_id = lp.user_id
             WHERE 1=1";
 
-        $bindTypes = "";
         $bindParams = [];
 
         if ($dateFrom !== '') {
             $sql .= " AND DATE(u.created_at) >= ?";
-            $bindTypes .= "s";
             $bindParams[] = $dateFrom;
         }
 
         if ($dateTo !== '') {
             $sql .= " AND DATE(u.created_at) <= ?";
-            $bindTypes .= "s";
             $bindParams[] = $dateTo;
         }
 
         $sql .= " GROUP BY u.user_id, cr.status, cr.reason ORDER BY total_posts DESC, total_likes DESC";
 
-        $stmt = $mysqli->prepare($sql);
+        $stmt = $pdo->prepare($sql);
 
-        if (!empty($bindParams)) {
-            $stmt->bind_param($bindTypes, ...$bindParams);
-        }
+        // FIX 4: Converted the user metrics report execution loop to native PDO fetchAll
+        if ($stmt->execute($bindParams)) {
+            $uRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        if ($stmt->execute()) {
-            $stmt->store_result();
-            $stmt->bind_result(
-                    $u_user_id, $u_username, $u_email, $u_role, $u_created_at,
-                    $u_request_status, $u_request_reason, $u_total_posts,
-                    $u_total_likes, $u_distinct_attractions_count, $u_top_attraction_name
-            );
-
-            while ($stmt->fetch()) {
-                $uRow = [
-                    'user_id' => $u_user_id,
-                    'username' => $u_username,
-                    'email' => $u_email,
-                    'role' => $u_role,
-                    'created_at' => $u_created_at,
-                    'request_status' => $u_request_status,
-                    'request_reason' => $u_request_reason,
-                    'total_posts' => $u_total_posts,
-                    'total_likes' => $u_total_likes,
-                    'distinct_attractions_count' => $u_distinct_attractions_count,
-                    'top_attraction_name' => $u_top_attraction_name
-                ];
+            foreach ($uRows as $uRow) {
                 $report2Data[] = $uRow;
 
-                $role = strtolower($u_role);
+                $role = strtolower($uRow['role']);
 
                 if ($role === 'admin')
                     $countAdmins++;
@@ -312,11 +251,10 @@ if ($selectedReport === 'user_report' && empty($validationErrors)) {
                 $roleTitle = ucfirst($role);
                 $roleDistributionStats[$roleTitle] = ($roleDistributionStats[$roleTitle] ?? 0) + 1;
 
-                if ((int) $u_total_posts > 0) {
-                    $topCreatorsStats[$u_username] = (int) $u_total_posts;
+                if ((int) $uRow['total_posts'] > 0) {
+                    $topCreatorsStats[$uRow['username']] = (int) $uRow['total_posts'];
                 }
             }
-            $stmt->close();
         }
     } catch (Throwable $e) {
         $report2Data = [];
@@ -347,29 +285,27 @@ if ($selectedReport === 'selet_user_report' && !empty($filterUserId) && empty($v
             WHERE u.user_id = ? 
             LIMIT 1";
 
-        $metaStmt = $mysqli->prepare($uMetaSql);
+        $metaStmt = $pdo->prepare($uMetaSql);
         if ($metaStmt) {
             $userIdInt = (int) $filterUserId;
-            $metaStmt->bind_param("i", $userIdInt);
-            if ($metaStmt->execute()) {
-                $metaStmt->store_result();
-                $metaStmt->bind_result($su_id, $su_name, $su_email, $su_role, $su_created, $su_req_status, $su_req_reason);
-                if ($metaStmt->fetch()) {
+            // FIX 5: Standardized targeted user lookup query parameters execution
+            if ($metaStmt->execute([$userIdInt])) {
+                $suData = $metaStmt->fetch(PDO::FETCH_ASSOC);
+                if ($suData) {
                     $singleUserData = [
-                        'user_id' => $su_id,
-                        'username' => $su_name,
-                        'email' => $su_email,
-                        'role' => $su_role,
-                        'created_at' => $su_created,
-                        'request_status' => $su_req_status,
-                        'request_reason' => $su_req_reason,
+                        'user_id' => $suData['user_id'],
+                        'username' => $suData['username'],
+                        'email' => $suData['email'],
+                        'role' => $suData['role'],
+                        'created_at' => $suData['created_at'],
+                        'request_status' => $suData['request_status'],
+                        'request_reason' => $suData['request_reason'],
                         'total_posts' => 0,
                         'total_likes' => 0,
                         'total_comments' => 0
                     ];
                 }
             }
-            $metaStmt->close();
         }
 
         if ($singleUserData) {
@@ -384,55 +320,39 @@ if ($selectedReport === 'selet_user_report' && !empty($filterUserId) && empty($v
                 LEFT JOIN dbProj_attraction a ON p.attraction_id = a.attraction_id
                 WHERE p.user_id = ?";
 
-            $pBindTypes = "i";
             $pBindParams = [(int) $filterUserId];
 
             if ($dateFrom !== '') {
                 $pSql .= " AND DATE(p.created_at) >= ?";
-                $pBindTypes .= "s";
                 $pBindParams[] = $dateFrom;
             }
             if ($dateTo !== '') {
                 $pSql .= " AND DATE(p.created_at) <= ?";
-                $pBindTypes .= "s";
                 $pBindParams[] = $dateTo;
             }
 
             $pSql .= " ORDER BY p.created_at DESC";
 
-            $pStmt = $mysqli->prepare($pSql);
+            $pStmt = $pdo->prepare($pSql);
             if ($pStmt) {
-                $pStmt->bind_param($pBindTypes, ...$pBindParams);
-                if ($pStmt->execute()) {
-                    $pStmt->store_result();
-                    $pStmt->bind_result($sp_id, $sp_title, $sp_status, $sp_created, $sp_cname, $sp_aname, $sp_reactions, $sp_comments);
-
+                // FIX 6: Standardized single creator logs metrics lookup queries
+                if ($pStmt->execute($pBindParams)) {
+                    $pRows = $pStmt->fetchAll(PDO::FETCH_ASSOC);
                     $timelineRaw = [];
 
-                    while ($pStmt->fetch()) {
-                        $pRow = [
-                            'post_id' => $sp_id,
-                            'title' => $sp_title,
-                            'status' => $sp_status,
-                            'created_at' => $sp_created,
-                            'country_name' => $sp_cname,
-                            'attraction_name' => $sp_aname,
-                            'reaction_count' => $sp_reactions,
-                            'comment_count' => $sp_comments
-                        ];
+                    foreach ($pRows as $pRow) {
                         $singleUserPosts[] = $pRow;
 
                         $singleUserData['total_posts']++;
-                        $singleUserData['total_likes'] += (int) $sp_reactions;
-                        $singleUserData['total_comments'] += (int) $sp_comments;
+                        $singleUserData['total_likes'] += (int) $pRow['reaction_count'];
+                        $singleUserData['total_comments'] += (int) $pRow['comment_count'];
 
-                        $statusTitle = ucfirst(strtolower($sp_status ?: 'Draft'));
+                        $statusTitle = ucfirst(strtolower($pRow['status'] ?: 'Draft'));
                         $singleUserStatusStats[$statusTitle] = ($singleUserStatusStats[$statusTitle] ?? 0) + 1;
 
-                        $monthKey = date('Y-m', strtotime($sp_created));
+                        $monthKey = date('Y-m', strtotime($pRow['created_at']));
                         $timelineRaw[$monthKey] = ($timelineRaw[$monthKey] ?? 0) + 1;
                     }
-                    $pStmt->close();
 
                     ksort($timelineRaw);
                     foreach ($timelineRaw as $month => $count) {
@@ -443,7 +363,7 @@ if ($selectedReport === 'selet_user_report' && !empty($filterUserId) && empty($v
             }
         }
     } catch (Throwable $e) {
-        
+        // Silently continue or handle application log
     }
 }
 $path_parts = explode('/', trim($uri, '/'));

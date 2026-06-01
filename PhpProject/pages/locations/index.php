@@ -8,42 +8,7 @@ if ($isAdminLocationList) {
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_location'])) {
         $locationId = filter_input(INPUT_POST, 'location_id', FILTER_VALIDATE_INT);
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_location'])) {
-        $locationId = filter_input(INPUT_POST, 'location_id', FILTER_VALIDATE_INT);
 
-        if ($locationId) {
-            try {
-                $pdo->beginTransaction();
-
-                $pdo->prepare("
-                    DELETE FROM dbProj_attraction_media
-                    WHERE attraction_id = ?
-                ")->execute([$locationId]);
-
-                $deleteStmt = $pdo->prepare("
-                    DELETE FROM dbProj_attraction
-                    WHERE attraction_id = ?
-                ");
-                $deleteStmt->execute([$locationId]);
-
-                if ($deleteStmt->rowCount() < 1) {
-                    throw new RuntimeException('Location not found or already deleted.');
-                }
-
-                $pdo->commit();
-
-                $_SESSION['status'] = 'Location deleted successfully.';
-                $_SESSION['status_code'] = 'success';
-            } catch (Throwable $e) {
-                if ($pdo->inTransaction()) {
-                    $pdo->rollBack();
-                }
-
-                $_SESSION['status'] = 'Delete failed: ' . $e->getMessage();
-                $_SESSION['status_code'] = 'error';
-            }
-        } else {
-            $_SESSION['status'] = 'Invalid location selected.';
         if ($locationId) {
             try {
                 $pdo->beginTransaction();
@@ -121,11 +86,11 @@ if ($isAdminLocationList) {
         ";
 
         $params = [
-            ':id_search' => '%' . $adminSearch . '%',
-            ':name_search' => '%' . $adminSearch . '%',
+            ':id_search'          => '%' . $adminSearch . '%',
+            ':name_search'        => '%' . $adminSearch . '%',
             ':description_search' => '%' . $adminSearch . '%',
-            ':country_search' => '%' . $adminSearch . '%',
-            ':type_search' => '%' . $adminSearch . '%',
+            ':country_search'     => '%' . $adminSearch . '%',
+            ':type_search'        => '%' . $adminSearch . '%',
         ];
     }
 
@@ -675,19 +640,19 @@ if ($isAdminLocationList) {
 $search = trim($_GET['search'] ?? '');
 
 $perPage     = 9;
-$currentPage = max(1, (int)($_GET['page'] ?? 1));
+$currentPage = max(1, (int) ($_GET['page'] ?? 1));
 $offset      = ($currentPage - 1) * $perPage;
 
 if ($search !== '') {
     $countStmt = $pdo->prepare("
         SELECT COUNT(*) FROM dbProj_attraction a WHERE a.name LIKE :s OR a.description LIKE :s2
     ");
-    $countStmt->execute([':s' => '%'.$search.'%', ':s2' => '%'.$search.'%']);
+    $countStmt->execute([':s' => '%' . $search . '%', ':s2' => '%' . $search . '%']);
 } else {
     $countStmt = $pdo->query("SELECT COUNT(*) FROM dbProj_attraction");
 }
-$totalRows  = (int)$countStmt->fetchColumn();
-$totalPages = (int)ceil($totalRows / $perPage);
+$totalRows  = (int) $countStmt->fetchColumn();
+$totalPages = (int) ceil($totalRows / $perPage);
 
 if ($search !== '') {
     $stmt = $pdo->prepare("
@@ -695,14 +660,14 @@ if ($search !== '') {
                c.name AS country_name,
                t.name AS type_name
         FROM   dbProj_attraction a
-        LEFT JOIN dbProj_country        c ON a.country_id = c.country_id
-        LEFT JOIN dbProj_attraction_type t ON a.type_id   = t.type_id
+        LEFT JOIN dbProj_country         c ON a.country_id = c.country_id
+        LEFT JOIN dbProj_attraction_type t ON a.type_id    = t.type_id
         WHERE  a.name LIKE :s OR a.description LIKE :s2
         ORDER  BY a.created_at DESC
         LIMIT  :limit OFFSET :offset
     ");
-    $stmt->bindValue(':s',      '%'.$search.'%');
-    $stmt->bindValue(':s2',     '%'.$search.'%');
+    $stmt->bindValue(':s',      '%' . $search . '%');
+    $stmt->bindValue(':s2',     '%' . $search . '%');
     $stmt->bindValue(':limit',  $perPage, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset,  PDO::PARAM_INT);
     $stmt->execute();
@@ -712,8 +677,8 @@ if ($search !== '') {
                c.name AS country_name,
                t.name AS type_name
         FROM   dbProj_attraction a
-        LEFT JOIN dbProj_country        c ON a.country_id = c.country_id
-        LEFT JOIN dbProj_attraction_type t ON a.type_id   = t.type_id
+        LEFT JOIN dbProj_country         c ON a.country_id = c.country_id
+        LEFT JOIN dbProj_attraction_type t ON a.type_id    = t.type_id
         ORDER  BY a.created_at DESC
         LIMIT  :limit OFFSET :offset
     ");
@@ -771,18 +736,18 @@ $baseUrl = rtrim(str_replace('/index.php', '', APP_BASE), '/');
     </div>
 
     <?php else: ?>
-    <div class="row g-4" id="attractionsGrid">
+    <div class="row g-4">
         <?php foreach ($attractions as $a): ?>
         <div class="col-sm-6 col-lg-4">
             <div class="attraction-card">
                 <div class="attraction-card__img">
                     <?php if (!empty($a['cover_image'])): ?>
-                        <img src="<?= htmlspecialchars($a['cover_image']) ?>"
-                             alt="<?= htmlspecialchars($a['name']) ?>">
+                    <img src="<?= htmlspecialchars($a['cover_image']) ?>"
+                         alt="<?= htmlspecialchars($a['name']) ?>">
                     <?php else: ?>
-                        <div class="attraction-card__img--placeholder">
-                            <i class="ph ph-image"></i>
-                        </div>
+                    <div class="attraction-card__img--placeholder">
+                        <i class="ph ph-image"></i>
+                    </div>
                     <?php endif; ?>
                     <?php if (!empty($a['type_name'])): ?>
                     <span class="attraction-card__type"><?= htmlspecialchars($a['type_name']) ?></span>
@@ -805,30 +770,31 @@ $baseUrl = rtrim(str_replace('/index.php', '', APP_BASE), '/');
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
+        <?php endforeach; ?>
     </div>
 
     <?php if ($totalPages > 1): ?>
     <nav class="mt-4 d-flex justify-content-center">
         <ul class="pagination">
             <li class="page-item <?= $currentPage <= 1 ? 'disabled' : '' ?>">
-                <a class="page-link" href="?page=<?= $currentPage - 1 ?><?= $search ? '&search='.urlencode($search) : '' ?>">
+                <a class="page-link" href="?page=<?= $currentPage - 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?>">
                     <i class="ph ph-caret-left"></i>
                 </a>
             </li>
             <?php for ($p = 1; $p <= $totalPages; $p++): ?>
             <li class="page-item <?= $p === $currentPage ? 'active' : '' ?>">
-                <a class="page-link" href="?page=<?= $p ?><?= $search ? '&search='.urlencode($search) : '' ?>"><?= $p ?></a>
+                <a class="page-link" href="?page=<?= $p ?><?= $search ? '&search=' . urlencode($search) : '' ?>"><?= $p ?></a>
             </li>
             <?php endfor; ?>
             <li class="page-item <?= $currentPage >= $totalPages ? 'disabled' : '' ?>">
-                <a class="page-link" href="?page=<?= $currentPage + 1 ?><?= $search ? '&search='.urlencode($search) : '' ?>">
+                <a class="page-link" href="?page=<?= $currentPage + 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?>">
                     <i class="ph ph-caret-right"></i>
                 </a>
             </li>
         </ul>
     </nav>
     <?php endif; ?>
-    <?php endif; ?>
 
+    <?php endif; ?>
 </div>

@@ -9,7 +9,7 @@ if ($postId <= 0) {
     abort(404);
 }
 
-$stmt = $mysqli->prepare("SELECT p.*, 
+$stmt = $pdo->prepare("SELECT p.*, 
     u.*, 
     c.name AS country_name,
     c.display_image,
@@ -21,14 +21,14 @@ $stmt = $mysqli->prepare("SELECT p.*,
     a.cover_image AS attraction_cover,
     at.name AS attraction_type
     FROM dbProj_post p 
-    JOIN dbProj_user u ON p.user_id = u.user_id JOIN dbProj_country c ON p.country_id = c.country_id LEFT JOIN dbProj_attraction a 
-    ON p.attraction_id = a.attraction_id LEFT JOIN dbProj_attraction_type at ON a.type_id = at.type_id
+    JOIN dbProj_user u ON p.user_id = u.user_id 
+    JOIN dbProj_country c ON p.country_id = c.country_id 
+    LEFT JOIN dbProj_attraction a ON p.attraction_id = a.attraction_id 
+    LEFT JOIN dbProj_attraction_type at ON a.type_id = at.type_id
     WHERE p.post_id = ?
 ");
-$stmt->bind_param("i", $postId);
-$stmt->execute();
-$result = $stmt->get_result();
-$postRow = $result->fetch_assoc();
+$stmt->execute([$postId]);
+$postRow = $stmt->fetch(PDO::FETCH_ASSOC); // Replaced MySQLi fetch_assoc()
 
 if (!$postRow) {
     abort(404);
@@ -41,9 +41,8 @@ $userId = $_SESSION['user_id'] ?? 1;
 if (isset($_POST['action']) && $_POST['action']) {
     if ($_POST['action'] === 'reject_post') {
         try {
-            $stmt = $mysqli->prepare("UPDATE dbProj_post  SET status = 'rejected' WHERE post_id = ?");
-            $stmt->bind_param("i", $postId);
-            $stmt->execute();
+            $stmt = $pdo->prepare("UPDATE dbProj_post SET status = 'rejected' WHERE post_id = ?");
+            $stmt->execute([$postId]);
 
             $_SESSION['status'] = "Post rejected successfully!";
             $_SESSION['status_code'] = "success";
@@ -55,9 +54,9 @@ if (isset($_POST['action']) && $_POST['action']) {
     if ($_POST['action'] === 'delete_comment') {
         $commentId = (int) $_POST['comment_id'];
         try {
-            $delStmt = $mysqli->prepare("DELETE FROM dbProj_comment WHERE comment_id = ?");
-            $delStmt->bind_param("i", $commentId);
-            $delStmt->execute();
+            $delStmt = $pdo->prepare("DELETE FROM dbProj_comment WHERE comment_id = ?");
+            $delStmt->execute([$commentId]);
+            
             $_SESSION['status'] = "Comment deleted successfully";
             $_SESSION['status_code'] = "success";
         } catch (Exception $e) {
@@ -69,13 +68,12 @@ if (isset($_POST['action']) && $_POST['action']) {
         $commentId = (int) $_POST['comment_id'];
 
         try {
-            $stmt = $mysqli->prepare("
-            UPDATE dbProj_comment 
-            SET is_visible = NOT is_visible 
-            WHERE comment_id = ?
-        ");
-            $stmt->bind_param("i", $commentId);
-            $stmt->execute();
+            $stmt = $pdo->prepare("
+                UPDATE dbProj_comment 
+                SET is_visible = NOT is_visible 
+                WHERE comment_id = ?
+            ");
+            $stmt->execute([$commentId]);
 
             $_SESSION['status'] = "Comment visibility updated!";
             $_SESSION['status_code'] = "success";
@@ -92,9 +90,8 @@ if (isset($_POST['action']) && $_POST['action']) {
             $_SESSION['status_code'] = "error";
         } else {
             try {
-                $addStmt = $mysqli->prepare("INSERT INTO dbProj_comment (post_id, user_id, content, is_visible, created_at) VALUES (?, ?, ?, 1, NOW())");
-                $addStmt->bind_param("iis", $postId, $userId, $commentContent);
-                $addStmt->execute();
+                $addStmt = $pdo->prepare("INSERT INTO dbProj_comment (post_id, user_id, content, is_visible, created_at) VALUES (?, ?, ?, 1, NOW())");
+                $addStmt->execute([$postId, $userId, $commentContent]);
 
                 $_SESSION['status'] = "Comment added successfully!";
                 $_SESSION['status_code'] = "success";
@@ -108,15 +105,16 @@ if (isset($_POST['action']) && $_POST['action']) {
     exit;
 }
 
-$commentsStmt = $mysqli->prepare("
-    SELECT cm.*, u.username FROM dbProj_comment cm JOIN dbProj_user u ON cm.user_id = u.user_id WHERE cm.post_id = ? 
-    ORDER BY cm.created_at DESC");
-$commentsStmt->bind_param("i", $postId);
-$commentsStmt->execute();
-$commentsResult = $commentsStmt->get_result();
-$comments = $commentsResult->fetch_all(MYSQLI_ASSOC);
+$commentsStmt = $pdo->prepare("
+    SELECT cm.*, u.username 
+    FROM dbProj_comment cm 
+    JOIN dbProj_user u ON cm.user_id = u.user_id 
+    WHERE cm.post_id = ? 
+    ORDER BY cm.created_at DESC
+");
+$commentsStmt->execute([$postId]);
+$comments = $commentsStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
 
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pb-3">
     <h2>Posts Details</h2>

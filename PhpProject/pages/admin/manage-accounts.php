@@ -5,15 +5,13 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 
 $search = trim($_GET['search'] ?? '');
 if (!empty($search)) {
-    $sql = "SELECT * FROM dbProj_user WHERE MATCH(username, email, role)AGAINST(? IN BOOLEAN MODE)ORDER BY created_at DESC";
-    $stmt = $mysqli->prepare($sql);
-    $stmt->bind_param("s", $search);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $rows = $result->fetch_all(MYSQLI_ASSOC);
+    $sql = "SELECT * FROM dbProj_user WHERE MATCH(username, email, role) AGAINST(? IN BOOLEAN MODE) ORDER BY created_at DESC";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$search]);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } else {
-    $result = $mysqli->query("SELECT *FROM dbProj_user ORDER BY created_at DESC");
-    $rows = $result->fetch_all(MYSQLI_ASSOC);
+    $result = $pdo->query("SELECT * FROM dbProj_user ORDER BY created_at DESC");
+    $rows = $result->fetchAll(PDO::FETCH_ASSOC);
 }
 $users = array_map([User::class, 'fromArray'], $rows);
 
@@ -26,9 +24,9 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete_user') {
         $_SESSION['status_code'] = "error";
     } else {
         try {
-            $stmt = $mysqli->prepare("DELETE FROM dbProj_user WHERE user_id = ?");
-            $stmt->bind_param("i", $id);
-            $stmt->execute();
+            $stmt = $pdo->prepare("DELETE FROM dbProj_user WHERE user_id = ?");
+            
+            $stmt->execute([$id]);
 
             $_SESSION['status'] = "User deleted successfully";
             $_SESSION['status_code'] = "success";
@@ -40,7 +38,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete_user') {
     header("Location: " . APP_BASE . "/admin/manage-accounts");
     exit;
 }
-?>  
+?>
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pb-3">
     <h2>Manage Accounts</h2>
     <nav aria-label="breadcrumb">

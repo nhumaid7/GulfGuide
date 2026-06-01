@@ -160,11 +160,7 @@ if ($isAdminPage) {
         <?php if (file_exists(__DIR__ . '/partials/admin/sidebar.phtml')): ?>
             <?php require __DIR__ . '/partials/admin/sidebar.phtml'; ?>
         <?php endif; ?>
-        <link rel="stylesheet" href="<?= $base_prefix ?>assets/css/style.css">
-        <!-- Custom JS -->
-        <script src="<?= $base_prefix ?>assets/js/main.js" defer></script>
-    </head>
-
+    <?php endif; ?>
     <body>
         <?php if ($isAdminPage): ?>
             <?php if (file_exists(__DIR__ . '/partials/admin/sidebar.phtml')): ?>

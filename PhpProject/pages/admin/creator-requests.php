@@ -8,19 +8,19 @@ if (!empty($search)) {
     $sql = "SELECT cr.* FROM dbProj_creator_request cr JOIN dbProj_user u ON cr.user_id = u.user_id 
             WHERE MATCH(cr.status, cr.reason) AGAINST(? IN BOOLEAN MODE) OR MATCH(u.username, u.email, u.role) AGAINST(? IN BOOLEAN MODE)
             ORDER BY cr.request_id DESC";
-    $stmt = $mysqli->prepare($sql);
-    $stmt->bind_param("ss", $search, $search);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $rows = $result->fetch_all(MYSQLI_ASSOC);
+    $stmt = $pdo->prepare($sql);
+    
+    $stmt->execute([$search, $search]);
+    
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } else {
-    $result = $mysqli->query("SELECT * FROM dbProj_creator_request ORDER BY request_id DESC");
-    $rows = $result->fetch_all(MYSQLI_ASSOC);
+    $result = $pdo->query("SELECT * FROM dbProj_creator_request ORDER BY request_id DESC");
+    $rows = $result->fetchAll(PDO::FETCH_ASSOC);
 }
 $applications = array_map([CreatorRequest::class, 'fromArray'], $rows);
 
-$usersResult = $mysqli->query('SELECT * FROM dbProj_user ORDER BY created_at DESC');
-$usersRows = $usersResult->fetch_all(MYSQLI_ASSOC);
+$usersResult = $pdo->query('SELECT * FROM dbProj_user ORDER BY created_at DESC');
+$usersRows = $usersResult->fetchAll(PDO::FETCH_ASSOC);
 
 $users = [];
 foreach ($usersRows as $row) {
@@ -31,45 +31,41 @@ foreach ($usersRows as $row) {
 if (isset($_POST['action']) && in_array($_POST['action'], ['approve', 'reject'])) {
     $requestId = (int) $_POST['request_id'];
     $action = $_POST['action'];
-    $userId = $_POST['user_id'];
+    $userId = (int) $_POST['user_id'];
 
     if ($action === 'approve') {
         try {
-            $stmt = $mysqli->prepare("UPDATE dbProj_creator_request SET status = 'approved', reviewed_at = NOW() WHERE request_id = ?");
-            $stmt->bind_param("i", $requestId);
-            $stmt->execute();
+            $stmt = $pdo->prepare("UPDATE dbProj_creator_request SET status = 'approved', reviewed_at = NOW() WHERE request_id = ?");
+            $stmt->execute([$requestId]);
 
-            $stmt2 = $mysqli->prepare("UPDATE dbProj_user SET role = 'creator' WHERE user_id = ?");
-            $stmt2->bind_param("i", $userId);
-            $stmt2->execute();
+            $stmt2 = $pdo->prepare("UPDATE dbProj_user SET role = 'creator' WHERE user_id = ?");
+            $stmt2->execute([$userId]);
 
             $_SESSION['status'] = "User approved as creator successfully";
             $_SESSION['status_code'] = "success";
         } catch (Exception $e) {
-            $_SESSION['status'] = "Delete failed: " . $e->getMessage();
+            $_SESSION['status'] = "Approval failed: " . $e->getMessage();
             $_SESSION['status_code'] = "error";
         }
     } elseif ($action === 'reject') {
         try {
-            $stmt = $mysqli->prepare("UPDATE dbProj_creator_request SET status = 'rejected', reviewed_at = NOW() WHERE request_id = ?");
-            $stmt->bind_param("i", $requestId);
-            $stmt->execute();
+            $stmt = $pdo->prepare("UPDATE dbProj_creator_request SET status = 'rejected', reviewed_at = NOW() WHERE request_id = ?");
+            $stmt->execute([$requestId]);
             
-            $stmt2 = $mysqli->prepare("UPDATE dbProj_user SET role = 'user' WHERE user_id = ?");
-            $stmt2->bind_param("i", $userId);
-            $stmt2->execute();
+            $stmt2 = $pdo->prepare("UPDATE dbProj_user SET role = 'user' WHERE user_id = ?");
+            $stmt2->execute([$userId]);
             
             $_SESSION['status'] = "User rejected as creator successfully";
             $_SESSION['status_code'] = "success";
         } catch (Exception $e) {
-            $_SESSION['status'] = "Delete failed: " . $e->getMessage();
+            $_SESSION['status'] = "Rejection failed: " . $e->getMessage();
             $_SESSION['status_code'] = "error";
         }
     }
     header("Location: " . APP_BASE . "/admin/creator-request");
     exit;
 }
-?>  
+?>
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pb-3">
     <h2>Creator Requests</h2>
     <nav aria-label="breadcrumb">

@@ -4,16 +4,22 @@
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
             <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/pages/locations/add.php</file>
-            <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/partials/admin/sidebar.phtml</file>
-            <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/pages/admin/manage-accounts.php</file>
             <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/classes/user.php</file>
-            <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/index.php</file>
             <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/pages/admin/analytics.php</file>
             <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/partials/admin/topbar.phtml</file>
             <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/assets/css/adminStyle.css</file>
+            <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/init.php</file>
             <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/assets/css/style.css</file>
             <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/pages/locations/index.php</file>
             <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/pages/locations/show.php</file>
+            <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/partials/admin/sidebar.phtml</file>
+            <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/pages/admin/creator-requests.php</file>
+            <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/pages/admin/manage-accounts.php</file>
+            <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/pages/admin/moderate-posts.php</file>
+            <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/index.php</file>
+            <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/pages/admin/moderate-posts-show.php</file>
+            <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/test.php</file>
+            <file>file:/C:/Users/ASUS/Documents/game%20project/GulfGuide/PhpProject/pages/creator-request.php</file>
         </group>
     </open-files>
 </project-private>

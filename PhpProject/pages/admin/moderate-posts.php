@@ -3,8 +3,8 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     abort(403);
 }
 
-$countriesResult = $mysqli->query("SELECT country_id, name FROM dbProj_country ORDER BY name ASC");
-$countries = $countriesResult->fetch_all(MYSQLI_ASSOC);
+$countriesResult = $pdo->query("SELECT country_id, name FROM dbProj_country ORDER BY name ASC");
+$countries = $countriesResult->fetchAll(PDO::FETCH_ASSOC);
 
 $search = trim($_GET['search'] ?? '');
 $advanced = isset($_GET['advanced']) && $_GET['advanced'] === '1';
@@ -13,32 +13,28 @@ $dateFrom = trim($_GET['date_from'] ?? '');
 $dateTo = trim($_GET['date_to'] ?? '');
 
 $sql = "SELECT p.*, u.username, c.name, c.flag_image FROM dbProj_post p JOIN dbProj_user u ON p.user_id = u.user_id JOIN dbProj_country c ON p.country_id = c.country_id";
+$sql = "SELECT p.*, u.username, c.name, c.flag_image FROM dbProj_post p JOIN dbProj_user u ON p.user_id = u.user_id JOIN dbProj_country c ON p.country_id = c.country_id";
 
 $where = [];
 $params = [];
-$types = "";
 
 if ($search !== '') {
     $where[] = "(MATCH(p.title, p.content, p.status) AGAINST(? IN BOOLEAN MODE))";
     $params[] = $search;
-    $types .= "s";
 }
 
 if ($advanced) {
     if ($countryId > 0) {
         $where[] = "p.country_id = ?";
         $params[] = $countryId;
-        $types .= "i";
     }
     if ($dateFrom !== '') {
         $where[] = "p.created_at >= ?";
         $params[] = $dateFrom . ' 00:00:00';
-        $types .= "s";
     }
     if ($dateTo !== '') {
         $where[] = "p.created_at <= ?";
         $params[] = $dateTo . ' 23:59:59';
-        $types .= "s";
     }
 }
 
@@ -48,15 +44,12 @@ if (!empty($where)) {
 
 $sql .= " ORDER BY p.created_at DESC";
 
-$stmt = $mysqli->prepare($sql);
-if (!empty($params)) {
-    $stmt->bind_param($types, ...$params);
-}
-$stmt->execute();
-$result = $stmt->get_result();
-$postRows = $result->fetch_all(MYSQLI_ASSOC);
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params); 
+
+$postRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $posts = array_map([Post::class, 'fromArray'], $postRows);
-?>  
+?>
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pb-3">
     <h2>Moderate Posts</h2>
     <nav aria-label="breadcrumb">
