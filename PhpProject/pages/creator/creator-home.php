@@ -14,6 +14,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
 
     if ($check->rowCount() > 0) {
         try {
+            // Remove dependent rows first (FK constraints use ON DELETE NO ACTION)
+            $pdo->prepare("DELETE FROM dbProj_comment    WHERE post_id = :id")->execute([':id' => $postId]);
+            $pdo->prepare("DELETE FROM dbProj_reaction   WHERE post_id = :id")->execute([':id' => $postId]);
+            $pdo->prepare("DELETE FROM dbProj_post_media WHERE post_id = :id")->execute([':id' => $postId]);
+
             $del = $pdo->prepare("DELETE FROM dbProj_post WHERE post_id = :id AND user_id = :uid");
             $del->execute([':id' => $postId, ':uid' => $userId]);
             $_SESSION['status']      = 'Post deleted successfully.';
