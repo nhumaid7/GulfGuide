@@ -3,8 +3,16 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     abort(403);
 }
 
-$stmt = $pdo->query('SELECT * FROM dbProj_user ORDER BY created_at DESC');
-$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$search = trim($_GET['search'] ?? '');
+if (!empty($search)) {
+    $sql = "SELECT * FROM dbProj_user WHERE MATCH(username, email, role) AGAINST(? IN BOOLEAN MODE) ORDER BY created_at DESC";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$search]);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} else {
+    $result = $pdo->query("SELECT * FROM dbProj_user ORDER BY created_at DESC");
+    $rows = $result->fetchAll(PDO::FETCH_ASSOC);
+}
 $users = array_map([User::class, 'fromArray'], $rows);
 
 if (isset($_POST['action']) && $_POST['action'] === 'delete_user') {
@@ -16,12 +24,13 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete_user') {
         $_SESSION['status_code'] = "error";
     } else {
         try {
-             $stmt = $pdo->prepare("DELETE FROM dbProj_user WHERE user_id = :id");
-             $stmt->execute([':id' => $id]);
+            $stmt = $pdo->prepare("DELETE FROM dbProj_user WHERE user_id = ?");
+            
+            $stmt->execute([$id]);
 
             $_SESSION['status'] = "User deleted successfully";
             $_SESSION['status_code'] = "success";
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             $_SESSION['status'] = "Delete failed: " . $e->getMessage();
             $_SESSION['status_code'] = "error";
         }
@@ -29,7 +38,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete_user') {
     header("Location: " . APP_BASE . "/admin/manage-accounts");
     exit;
 }
-?>  
+?>
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pb-3">
     <h2>Manage Accounts</h2>
     <nav aria-label="breadcrumb">
@@ -72,13 +81,31 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete_user') {
 <div class="card-section">
     <div class="card-section--header">
         <p class="h5-style">All users</p>
-        <span class="gulfguide-badge"><?= count($users) ?> users</span>
+        <span class="gulfguide-badge"><?= count($users) ?> results</span>
     </div>
     <hr class="card-section--divider">
     <div class="card-section--body">
+        <form method="GET" action="<?= APP_BASE ?>/admin/manage-accounts" class="mb-4">
+            <div class="row g-2">
+                <div class="col-md-10">
+                    <input type="text" name="search" class="form-control" placeholder="Search..." value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+                </div>
+
+                <div class="col-md-2 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary w-100">
+                        Search
+                    </button>
+                    <?php if (!empty($search)) : ?>
+                        <a class="btn btn-secondary w-100" href="<?= APP_BASE ?>/admin/manage-accounts">
+                            Clear
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </form>
         <div class="overflow-hidden">
-            <div class="">
-                <table id="usersTable" class="table datatable-gulfguide max-w-full overflow-x-auto custom-scrollbar">
+            <div class="table-responsive">
+                <table id="usersTable" class="table table-stripe datatable-gulfguide max-w-full overflow-x-auto custom-scrollbar">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -90,51 +117,57 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete_user') {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($users as $user): ?>
+                        <?php if (count($users) > 0): ?>
+                            <?php foreach ($users as $user): ?>
+                                <tr>
+                                    <td><?= $user->getUserId() ?></td>
+                                    <td><?= htmlspecialchars($user->getUsername()) ?></td>
+                                    <td><a href="mailto:<?= htmlspecialchars($user->getEmail()) ?>">
+                                            <?= htmlspecialchars($user->getEmail()) ?></a></td>
+                                    <td>
+                                        <?php
+                                        $roleMap = [
+                                            'admin' => [
+                                                'class' => 'gulfguide-badge--danger',
+                                                'icon' => 'ph-shield-star'
+                                            ],
+                                            'creator' => [
+                                                'class' => 'gulfguide-badge--warning',
+                                                'icon' => 'ph-pencil'
+                                            ],
+                                            'visitor' => [
+                                                'class' => 'gulfguide-badge--secondary',
+                                                'icon' => 'ph-user'
+                                            ],
+                                        ];
+                                        ?>
+                                        <?php $role = $roleMap[$user->getRole()] ?? $roleMap['visitor']; ?>
+                                        <span class="gulfguide-badge <?= $role['class'] ?> gulfguide-badge--rounded">
+                                            <i class="ph-fill <?= $role['icon'] ?>"></i>
+                                            <?= ucfirst($user->getRole()) ?>
+                                        </span>
+                                    </td>
+                                    <td><?= htmlspecialchars(((new DateTime($user->getCreatedAt()))->format("F j, Y, g:i a"))) ?>
+                                    </td>
+                                    <td class="text-center">
+                                        <form method="POST" action="<?= APP_BASE ?>/admin/manage-accounts" class="delete-record">
+                                            <input type="hidden" name="delete_user_id" value="<?= $user->getUserId() ?>">
+                                            <input type="hidden" name="delete_username"
+                                                   value="<?= htmlspecialchars($user->getUsername()) ?>">
+                                            <input type="hidden" name="action" value="delete_user">
+                                            <button type="submit" name="delete_btn" class="btn btn-sm btn-outline-danger">
+                                                <i class="ph ph-trash"></i>
+                                                <span class="d-block d-md-none">Delete User</span>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
                             <tr>
-                                <td><?= $user->getUserId() ?></td>
-                                <td><?= htmlspecialchars($user->getUsername()) ?></td>
-                                <td><a href="mailto:<?= htmlspecialchars($user->getEmail()) ?>">
-                                <?= htmlspecialchars($user->getEmail()) ?></a></td>
-                                <td>
-                                    <?php
-                                    $roleMap = [
-                                        'admin' => [
-                                            'class' => 'gulfguide-badge--danger',
-                                            'icon' => 'ph-shield-star'
-                                        ],
-                                        'creator' => [
-                                            'class' => 'gulfguide-badge--warning',
-                                            'icon' => 'ph-pencil'
-                                        ],
-                                        'visitor' => [
-                                            'class' => 'gulfguide-badge--secondary',
-                                            'icon' => 'ph-user'
-                                        ],
-                                    ];
-                                    ?>
-                                    <?php $role = $roleMap[$user->getRole()] ?? $roleMap['visitor']; ?>
-                                    <span class="gulfguide-badge <?= $role['class'] ?> gulfguide-badge--rounded">
-                                        <i class="ph-fill <?= $role['icon'] ?>"></i>
-                                        <?= ucfirst($user->getRole()) ?>
-                                    </span>
-                                </td>
-                                <td><?= htmlspecialchars(((new DateTime($user->getCreatedAt()))->format("F j, Y, g:i a"))) ?>
-                                </td>
-                                <td class="text-center">
-                                    <form method="POST" action="<?= APP_BASE ?>/admin/manage-accounts" class="delete-record">
-                                        <input type="hidden" name="delete_user_id" value="<?= $user->getUserId() ?>">
-                                        <input type="hidden" name="delete_username"
-                                               value="<?= htmlspecialchars($user->getUsername()) ?>">
-                                        <input type="hidden" name="action" value="delete_user">
-                                        <button type="submit" name="delete_btn" class="btn btn-sm btn-outline-danger">
-                                            <i class="ph ph-trash"></i>
-                                            <span class="d-block d-md-none">Delete User</span>
-                                        </button>
-                                    </form>
-                                </td>
+                                <td colspan="6" class="text-center text-muted py-4">No results found.</td>
                             </tr>
-                        <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -167,10 +200,16 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete_user') {
 </script>
 
 <?php if (isset($_SESSION['status']) && $_SESSION['status'] != ''): ?>
-    <?php 
-        $swal_status = $_SESSION['status'];
-        $swal_code = $_SESSION['status_code'];
-        unset($_SESSION['status']); 
-        unset($_SESSION['status_code']); 
+    <script>
+        Swal.fire({
+            title: "<?= $_SESSION['status_code'] === 'success' ? 'Success!' : 'Status' ?>",
+            text: "<?= htmlspecialchars($_SESSION['status']) ?>",
+            icon: "<?= htmlspecialchars($_SESSION['status_code'] ?? 'info') ?>",
+            confirmButtonColor: '#4169e1'
+        });
+    </script>
+    <?php
+    unset($_SESSION['status']);
+    unset($_SESSION['status_code']);
     ?>
 <?php endif; ?>

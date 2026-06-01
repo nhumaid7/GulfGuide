@@ -10,6 +10,7 @@ require_once __DIR__ . "/config/helpers.php";
 require_once __DIR__ . "/classes/user.php";
 require_once __DIR__ . "/classes/creatorRequest.php";
 require_once __DIR__ . "/classes/post.php";
+require_once __DIR__ . '/classes/comment.php';
 
 define("APP_NAME", "GulfGuide");
 ?>

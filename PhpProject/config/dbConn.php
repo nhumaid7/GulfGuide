@@ -17,6 +17,12 @@ try {
     die("Database connection failed: " . $e->getMessage());
 }
 
+$mysqli = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
+if ($mysqli->connect_error) {
+    die("MySQLi connection failed: " . $mysqli->connect_error);
+}
+$mysqli->set_charset("utf8mb4");
+
 
 
 ?>
