@@ -10,20 +10,25 @@ $userId = currentUserId();
 $cStmt     = $pdo->query("SELECT country_id, name FROM dbProj_country ORDER BY name ASC");
 $countries = $cStmt->fetchAll();
 
+// ── Fetch attractions for dropdown ────────────────────────────────────────────
+$aStmt      = $pdo->query("SELECT attraction_id, country_id, name FROM dbProj_attraction ORDER BY name ASC");
+$attractions = $aStmt->fetchAll();
+
 // ── Validation helpers ────────────────────────────────────────────────────────
 $errors  = [];
 $old     = [];
 
 // ── Handle POST submission ────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action    = $_POST['action']     ?? 'draft';
-    $title     = trim($_POST['title']     ?? '');
-    $content   = trim($_POST['content']   ?? '');
-    $countryId = (int)($_POST['country_id'] ?? 0);
-    $travelYear = trim($_POST['travel_year'] ?? '');
+    $action       = $_POST['action']       ?? 'draft';
+    $title        = trim($_POST['title']       ?? '');
+    $content      = trim($_POST['content']     ?? '');
+    $countryId    = (int)($_POST['country_id']  ?? 0);
+    $travelYear   = trim($_POST['travel_year']  ?? '');
+    $attractionId = ($_POST['attraction_id'] ?? '') !== '' ? (int)$_POST['attraction_id'] : null;
 
     // Keep old values to refill form on error
-    $old = compact('title', 'content', 'countryId', 'travelYear');
+    $old = compact('title', 'content', 'countryId', 'travelYear', 'attractionId');
 
     // Server-side validation
     if (strlen($title) < 5)   $errors['title']      = 'Title must be at least 5 characters.';
@@ -75,16 +80,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         try {
             $stmt = $pdo->prepare("
-                INSERT INTO dbProj_post (user_id, country_id, title, content, thumbnail, status, created_at)
-                VALUES (:user_id, :country_id, :title, :content, :thumbnail, :status, NOW())
+                INSERT INTO dbProj_post (user_id, country_id, attraction_id, title, content, thumbnail, status, created_at)
+                VALUES (:user_id, :country_id, :attraction_id, :title, :content, :thumbnail, :status, NOW())
             ");
             $stmt->execute([
-                ':user_id'    => $userId,
-                ':country_id' => $countryId,
-                ':title'      => $title,
-                ':content'    => $finalContent,
-                ':thumbnail'  => $thumbnailPath,
-                ':status'     => $status,
+                ':user_id'       => $userId,
+                ':country_id'    => $countryId,
+                ':attraction_id' => $attractionId,
+                ':title'         => $title,
+                ':content'       => $finalContent,
+                ':thumbnail'     => $thumbnailPath,
+                ':status'        => $status,
             ]);
 
             $newPostId = (int)$pdo->lastInsertId();
@@ -251,6 +257,15 @@ if (typeof Swal === 'undefined') {
                                 <?php endforeach; ?>
                             </select>
                         </div>
+                    </div>
+
+                    <!-- Attraction -->
+                    <div class="mb-3">
+                        <label for="attraction_id" class="form-label fw-semibold">Attraction <span class="text-muted fw-normal">(optional)</span></label>
+                        <select id="attraction_id" name="attraction_id" class="form-select">
+                            <option value="">Select attraction…</option>
+                        </select>
+                        <div class="form-text">Select a country first to see its attractions.</div>
                     </div>
 
                     <!-- Certification checkbox -->
@@ -450,6 +465,26 @@ if (typeof Swal === 'undefined') {
 
         return valid;
     }
+
+    // ── Attraction dropdown (filtered by country) ─────────────────────────────
+    const attractionsData = <?= json_encode(array_values($attractions)) ?>;
+
+    function filterAttractions(countryId, selectedId) {
+        const $sel = $('#attraction_id');
+        $sel.find('option[data-country]').remove();
+        const filtered = attractionsData.filter(function(a) {
+            return !countryId || String(a.country_id) === String(countryId);
+        });
+        filtered.forEach(function(a) {
+            $sel.append(
+                $('<option>', { value: a.attraction_id, text: a.name, 'data-country': a.country_id,
+                                selected: selectedId && String(a.attraction_id) === String(selectedId) })
+            );
+        });
+    }
+
+    $('#country_id').on('change', function() { filterAttractions($(this).val(), null); });
+    filterAttractions($('#country_id').val(), '<?= (int)($old['attractionId'] ?? 0) ?: '' ?>');
 
     function showFieldError(id, msg) {
         const $el = $('#' + id);

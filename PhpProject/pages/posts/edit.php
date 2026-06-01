@@ -27,16 +27,21 @@ $post = Post::fromArray($postRow);
 $cStmt     = $pdo->query("SELECT country_id, name FROM dbProj_country ORDER BY name ASC");
 $countries = $cStmt->fetchAll();
 
+// ── Fetch attractions for dropdown ────────────────────────────────────────────
+$aStmt      = $pdo->query("SELECT attraction_id, country_id, name FROM dbProj_attraction ORDER BY name ASC");
+$attractions = $aStmt->fetchAll();
+
 // ── Validation helpers ────────────────────────────────────────────────────────
 $errors = [];
 
 // ── Handle POST submission ────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action     = $_POST['action']      ?? 'draft';
-    $title      = trim($_POST['title']      ?? '');
-    $content    = trim($_POST['content']    ?? '');
-    $countryId  = (int)($_POST['country_id'] ?? 0);
-    $travelYear = trim($_POST['travel_year'] ?? '');
+    $action       = $_POST['action']       ?? 'draft';
+    $title        = trim($_POST['title']       ?? '');
+    $content      = trim($_POST['content']     ?? '');
+    $countryId    = (int)($_POST['country_id']  ?? 0);
+    $travelYear   = trim($_POST['travel_year']  ?? '');
+    $attractionId = ($_POST['attraction_id'] ?? '') !== '' ? (int)$_POST['attraction_id'] : null;
 
     // Server-side validation
     if (strlen($title) < 5)    $errors['title']      = 'Title must be at least 5 characters.';
@@ -95,17 +100,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                        content = :content,
                        thumbnail = :thumbnail,
                        country_id = :country_id,
+                       attraction_id = :attraction_id,
                        status = :status
                 WHERE  post_id = :post_id AND user_id = :user_id
             ");
             $upd->execute([
-                ':title'      => $title,
-                ':content'    => $finalContent,
-                ':thumbnail'  => $thumbnailPath,
-                ':country_id' => $countryId,
-                ':status'     => $status,
-                ':post_id'    => $postId,
-                ':user_id'    => $userId,
+                ':title'         => $title,
+                ':content'       => $finalContent,
+                ':thumbnail'     => $thumbnailPath,
+                ':country_id'    => $countryId,
+                ':attraction_id' => $attractionId,
+                ':status'        => $status,
+                ':post_id'       => $postId,
+                ':user_id'       => $userId,
             ]);
 
             $_SESSION['status']      = 'Post updated successfully!';
@@ -122,6 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $post->setTitle($title);
     $post->setContent($content);
     $post->setStatus($status ?? $post->getStatus());
+    $post->setAttractionId($attractionId);
 }
 
 // Strip travel-year prefix from content for display in textarea
@@ -293,6 +301,15 @@ if (typeof Swal === 'undefined') {
                         </div>
                     </div>
 
+                    <!-- Attraction -->
+                    <div class="mb-3">
+                        <label for="attraction_id" class="form-label fw-semibold">Attraction <span class="text-muted fw-normal">(optional)</span></label>
+                        <select id="attraction_id" name="attraction_id" class="form-select">
+                            <option value="">Select attraction…</option>
+                        </select>
+                        <div class="form-text">Only attractions for the selected country are shown.</div>
+                    </div>
+
                     <!-- Current status info -->
                     <div class="mb-3">
                         <span class="text-muted" style="font-size:var(--font-size-p-xs);">
@@ -422,6 +439,26 @@ if (typeof Swal === 'undefined') {
         if (!valid) $('html, body').animate({ scrollTop: 0 }, 300);
         return valid;
     }
+
+    // ── Attraction dropdown (filtered by country) ─────────────────────────────
+    const attractionsData = <?= json_encode(array_values($attractions)) ?>;
+
+    function filterAttractions(countryId, selectedId) {
+        const $sel = $('#attraction_id');
+        $sel.find('option[data-country]').remove();
+        const filtered = attractionsData.filter(function(a) {
+            return !countryId || String(a.country_id) === String(countryId);
+        });
+        filtered.forEach(function(a) {
+            $sel.append(
+                $('<option>', { value: a.attraction_id, text: a.name, 'data-country': a.country_id,
+                                selected: selectedId && String(a.attraction_id) === String(selectedId) })
+            );
+        });
+    }
+
+    $('#country_id').on('change', function() { filterAttractions($(this).val(), null); });
+    filterAttractions($('#country_id').val(), '<?= (int)($post->getAttractionId() ?? 0) ?: '' ?>');
 
 })(jQuery);
 </script>
