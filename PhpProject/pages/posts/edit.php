@@ -253,7 +253,7 @@ if (typeof Swal === 'undefined') {
                         <label for="content" class="form-label fw-semibold">Your review</label>
                         <textarea id="richtext-editor" name="content" rows="5"
                                   class="form-control <?= !empty($errors['content']) ? 'is-invalid' : '' ?>"
-                                  placeholder="A detailed review of your Travel Journey…"><?= htmlspecialchars($displayContent) ?></textarea>
+                                  placeholder="A detailed review of your Travel Journey…"><?= htmlspecialchars_decode($displayContent) ?></textarea>
                         <div class="invalid-feedback">
                             <?= htmlspecialchars($errors['content'] ?? 'Review must be at least 20 characters.') ?>
                         </div>
@@ -392,6 +392,7 @@ if (typeof Swal === 'undefined') {
     $('#editPostForm').on('submit', function (e) {
         e.preventDefault();
         if (!validateForm()) return;
+        tinymce.triggerSave();
         this.submit();
     });
 
@@ -404,10 +405,12 @@ if (typeof Swal === 'undefined') {
             $('#title').removeClass('is-invalid').addClass('is-valid');
         }
 
-        if ($('#content').val().trim().length < 20) {
-            $('#content').addClass('is-invalid'); valid = false;
+        const _tinyEd = tinymce.get('richtext-editor');
+        const _content = (_tinyEd ? _tinyEd.getContent({format: 'text'}) : $('#richtext-editor').val()).trim();
+        if (_content.length < 20) {
+            $('#richtext-editor').addClass('is-invalid'); valid = false;
         } else {
-            $('#content').removeClass('is-invalid').addClass('is-valid');
+            $('#richtext-editor').removeClass('is-invalid').addClass('is-valid');
         }
 
         if (!$('#country_id').val()) {

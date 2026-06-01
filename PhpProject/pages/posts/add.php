@@ -322,11 +322,13 @@ if (typeof Swal === 'undefined') {
                 cancelButtonText:   'Not yet'
             }).then(function (result) {
                 if (result.isConfirmed) {
+                    tinymce.triggerSave();
                     document.getElementById('createPostForm').submit();
                 }
             });
         } else {
             if (!validateForm(val)) return;
+            tinymce.triggerSave();
             document.getElementById('createPostForm').submit();
         }
     };
@@ -413,13 +415,14 @@ if (typeof Swal === 'undefined') {
             $('#title').removeClass('is-invalid').addClass('is-valid');
         }
 
-        // Content
-        const content = $('#content').val().trim();
+        // Content — read from TinyMCE if available, else fall back to raw textarea
+        const _tinyEd = tinymce.get('richtext-editor');
+        const content = (_tinyEd ? _tinyEd.getContent({format: 'text'}) : $('#richtext-editor').val()).trim();
         if (content.length < 20) {
-            $('#content').addClass('is-invalid');
+            $('#richtext-editor').addClass('is-invalid');
             valid = false;
         } else {
-            $('#content').removeClass('is-invalid').addClass('is-valid');
+            $('#richtext-editor').removeClass('is-invalid').addClass('is-valid');
         }
 
         // Country

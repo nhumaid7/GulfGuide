@@ -153,7 +153,7 @@ if (typeof Swal === 'undefined') {
     $thumbSrc    = !empty($post->getThumbnail()) ? $baseUrl . '/' . $post->getThumbnail() : null;
     $countryName = htmlspecialchars($postRows[$i]['country_name'] ?? '');
     $postDate    = (new DateTime($post->getCreatedAt()))->format('M j, Y');
-    $excerpt     = htmlspecialchars(excerptContent($post->getContent()));
+    $excerpt     = excerptContent(strip_tags(htmlspecialchars_decode($postRows[$i]['content'])));
 ?>
 <div class="blog-card mb-3"
      data-status="<?= $post->getStatus() ?>"
@@ -183,7 +183,7 @@ if (typeof Swal === 'undefined') {
         </div>
 
         <h5 class="blog-card__title"><?= htmlspecialchars($post->getTitle()) ?></h5>
-        <p class="blog-card__excerpt"><?= $excerpt ?></p>
+        <p class="blog-card__excerpt"><?= htmlspecialchars($excerpt) ?></p>
 
         <!-- Likes / dislikes / comments row -->
         <?php
