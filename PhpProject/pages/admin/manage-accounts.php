@@ -5,13 +5,16 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 
 $search = trim($_GET['search'] ?? '');
 if (!empty($search)) {
-    $sql = "SELECT * FROM dbProj_user WHERE MATCH(username, email, role)AGAINST(:search IN BOOLEAN MODE)ORDER BY created_at DESC";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([':search' => $search]);
+    $sql = "SELECT * FROM dbProj_user WHERE MATCH(username, email, role)AGAINST(? IN BOOLEAN MODE)ORDER BY created_at DESC";
+    $stmt = $mysqli->prepare($sql);
+    $stmt->bind_param("s", $search);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = $result->fetch_all(MYSQLI_ASSOC);
 } else {
-    $stmt = $pdo->query("SELECT *FROM dbProj_user ORDER BY created_at DESC");
+    $result = $mysqli->query("SELECT *FROM dbProj_user ORDER BY created_at DESC");
+    $rows = $result->fetch_all(MYSQLI_ASSOC);
 }
-$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $users = array_map([User::class, 'fromArray'], $rows);
 
 if (isset($_POST['action']) && $_POST['action'] === 'delete_user') {
@@ -23,12 +26,13 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete_user') {
         $_SESSION['status_code'] = "error";
     } else {
         try {
-            $stmt = $pdo->prepare("DELETE FROM dbProj_user WHERE user_id = :id");
-            $stmt->execute([':id' => $id]);
+            $stmt = $mysqli->prepare("DELETE FROM dbProj_user WHERE user_id = ?");
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
 
             $_SESSION['status'] = "User deleted successfully";
             $_SESSION['status_code'] = "success";
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             $_SESSION['status'] = "Delete failed: " . $e->getMessage();
             $_SESSION['status_code'] = "error";
         }

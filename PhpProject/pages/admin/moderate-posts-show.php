@@ -9,7 +9,7 @@ if ($postId <= 0) {
     abort(404);
 }
 
-$stmt = $pdo->prepare("SELECT p.*, 
+$stmt = $mysqli->prepare("SELECT p.*, 
     u.*, 
     c.name AS country_name,
     c.display_image,
@@ -23,10 +23,12 @@ $stmt = $pdo->prepare("SELECT p.*,
     FROM dbProj_post p 
     JOIN dbProj_user u ON p.user_id = u.user_id JOIN dbProj_country c ON p.country_id = c.country_id LEFT JOIN dbProj_attraction a 
     ON p.attraction_id = a.attraction_id LEFT JOIN dbProj_attraction_type at ON a.type_id = at.type_id
-    WHERE p.post_id = :id
+    WHERE p.post_id = ?
 ");
-$stmt->execute([':id' => $postId]);
-$postRow = $stmt->fetch(PDO::FETCH_ASSOC);
+$stmt->bind_param("i", $postId);
+$stmt->execute();
+$result = $stmt->get_result();
+$postRow = $result->fetch_assoc();
 
 if (!$postRow) {
     abort(404);
@@ -39,12 +41,13 @@ $userId = $_SESSION['user_id'] ?? 1;
 if (isset($_POST['action']) && $_POST['action']) {
     if ($_POST['action'] === 'reject_post') {
         try {
-            $stmt = $pdo->prepare("UPDATE dbProj_post  SET status = 'rejected' WHERE post_id = :id");
-            $stmt->execute([':id' => $postId]);
+            $stmt = $mysqli->prepare("UPDATE dbProj_post  SET status = 'rejected' WHERE post_id = ?");
+            $stmt->bind_param("i", $postId);
+            $stmt->execute();
 
             $_SESSION['status'] = "Post rejected successfully!";
             $_SESSION['status_code'] = "success";
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             $_SESSION['status'] = "Failed to reject post: " . $e->getMessage();
             $_SESSION['status_code'] = "error";
         }
@@ -52,11 +55,12 @@ if (isset($_POST['action']) && $_POST['action']) {
     if ($_POST['action'] === 'delete_comment') {
         $commentId = (int) $_POST['comment_id'];
         try {
-            $delStmt = $pdo->prepare("DELETE FROM dbProj_comment WHERE comment_id = :id");
-            $delStmt->execute([':id' => $commentId]);
+            $delStmt = $mysqli->prepare("DELETE FROM dbProj_comment WHERE comment_id = ?");
+            $delStmt->bind_param("i", $commentId);
+            $delStmt->execute();
             $_SESSION['status'] = "Comment deleted successfully";
             $_SESSION['status_code'] = "success";
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             $_SESSION['status'] = "Failed to delete comment: " . $e->getMessage();
             $_SESSION['status_code'] = "error";
         }
@@ -65,16 +69,17 @@ if (isset($_POST['action']) && $_POST['action']) {
         $commentId = (int) $_POST['comment_id'];
 
         try {
-            $stmt = $pdo->prepare("
+            $stmt = $mysqli->prepare("
             UPDATE dbProj_comment 
             SET is_visible = NOT is_visible 
-            WHERE comment_id = :id
+            WHERE comment_id = ?
         ");
-            $stmt->execute([':id' => $commentId]);
+            $stmt->bind_param("i", $commentId);
+            $stmt->execute();
 
             $_SESSION['status'] = "Comment visibility updated!";
             $_SESSION['status_code'] = "success";
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             $_SESSION['status'] = "Failed to update comment: " . $e->getMessage();
             $_SESSION['status_code'] = "error";
         }
@@ -87,16 +92,13 @@ if (isset($_POST['action']) && $_POST['action']) {
             $_SESSION['status_code'] = "error";
         } else {
             try {
-                $addStmt = $pdo->prepare("INSERT INTO dbProj_comment (post_id, user_id, content, is_visible, created_at) VALUES (:post_id, :user_id, :content, 1, NOW())");
-                $addStmt->execute([
-                    ':post_id' => $postId,
-                    ':user_id' => $userId,
-                    ':content' => $commentContent
-                ]);
+                $addStmt = $mysqli->prepare("INSERT INTO dbProj_comment (post_id, user_id, content, is_visible, created_at) VALUES (?, ?, ?, 1, NOW())");
+                $addStmt->bind_param("iis", $postId, $userId, $commentContent);
+                $addStmt->execute();
 
                 $_SESSION['status'] = "Comment added successfully!";
                 $_SESSION['status_code'] = "success";
-            } catch (PDOException $e) {
+            } catch (Exception $e) {
                 $_SESSION['status'] = "Failed to add comment: " . $e->getMessage();
                 $_SESSION['status_code'] = "error";
             }
@@ -106,11 +108,13 @@ if (isset($_POST['action']) && $_POST['action']) {
     exit;
 }
 
-$commentsStmt = $pdo->prepare("
-    SELECT cm.*, u.username FROM dbProj_comment cm JOIN dbProj_user u ON cm.user_id = u.user_id WHERE cm.post_id = :post_id 
+$commentsStmt = $mysqli->prepare("
+    SELECT cm.*, u.username FROM dbProj_comment cm JOIN dbProj_user u ON cm.user_id = u.user_id WHERE cm.post_id = ? 
     ORDER BY cm.created_at DESC");
-$commentsStmt->execute([':post_id' => $postId]);
-$comments = $commentsStmt->fetchAll(PDO::FETCH_ASSOC);
+$commentsStmt->bind_param("i", $postId);
+$commentsStmt->execute();
+$commentsResult = $commentsStmt->get_result();
+$comments = $commentsResult->fetch_all(MYSQLI_ASSOC);
 ?>
 
 

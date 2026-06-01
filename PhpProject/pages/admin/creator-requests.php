@@ -6,18 +6,21 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 $search = trim($_GET['search'] ?? '');
 if (!empty($search)) {
     $sql = "SELECT cr.* FROM dbProj_creator_request cr JOIN dbProj_user u ON cr.user_id = u.user_id 
-            WHERE MATCH(cr.status, cr.reason) AGAINST(:search1 IN BOOLEAN MODE) OR MATCH(u.username, u.email, u.role) AGAINST(:search2 IN BOOLEAN MODE)
+            WHERE MATCH(cr.status, cr.reason) AGAINST(? IN BOOLEAN MODE) OR MATCH(u.username, u.email, u.role) AGAINST(? IN BOOLEAN MODE)
             ORDER BY cr.request_id DESC";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute(['search1' => $search, 'search2' => $search]);
+    $stmt = $mysqli->prepare($sql);
+    $stmt->bind_param("ss", $search, $search);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = $result->fetch_all(MYSQLI_ASSOC);
 } else {
-    $stmt = $pdo->query("SELECT * FROM dbProj_creator_request ORDER BY request_id DESC");
+    $result = $mysqli->query("SELECT * FROM dbProj_creator_request ORDER BY request_id DESC");
+    $rows = $result->fetch_all(MYSQLI_ASSOC);
 }
-$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $applications = array_map([CreatorRequest::class, 'fromArray'], $rows);
 
-$usersstmt = $pdo->query('SELECT * FROM dbProj_user ORDER BY created_at DESC');
-$usersRows = $usersstmt->fetchAll(PDO::FETCH_ASSOC);
+$usersResult = $mysqli->query('SELECT * FROM dbProj_user ORDER BY created_at DESC');
+$usersRows = $usersResult->fetch_all(MYSQLI_ASSOC);
 
 $users = [];
 foreach ($usersRows as $row) {
@@ -32,29 +35,33 @@ if (isset($_POST['action']) && in_array($_POST['action'], ['approve', 'reject'])
 
     if ($action === 'approve') {
         try {
-            $stmt = $pdo->prepare("UPDATE dbProj_creator_request SET status = 'approved', reviewed_at = NOW() WHERE request_id = :requestId");
-            $stmt->execute([':requestId' => $requestId]);
+            $stmt = $mysqli->prepare("UPDATE dbProj_creator_request SET status = 'approved', reviewed_at = NOW() WHERE request_id = ?");
+            $stmt->bind_param("i", $requestId);
+            $stmt->execute();
 
-            $stmt = $pdo->prepare("UPDATE dbProj_user SET role = 'creator' WHERE user_id = :userId");
-            $stmt->execute([':userId' => $userId]);
+            $stmt2 = $mysqli->prepare("UPDATE dbProj_user SET role = 'creator' WHERE user_id = ?");
+            $stmt2->bind_param("i", $userId);
+            $stmt2->execute();
 
             $_SESSION['status'] = "User approved as creator successfully";
             $_SESSION['status_code'] = "success";
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             $_SESSION['status'] = "Delete failed: " . $e->getMessage();
             $_SESSION['status_code'] = "error";
         }
     } elseif ($action === 'reject') {
         try {
-            $stmt = $pdo->prepare("UPDATE dbProj_creator_request SET status = 'rejected', reviewed_at = NOW() WHERE request_id = :requestId");
-            $stmt->execute([':requestId' => $requestId]);
+            $stmt = $mysqli->prepare("UPDATE dbProj_creator_request SET status = 'rejected', reviewed_at = NOW() WHERE request_id = ?");
+            $stmt->bind_param("i", $requestId);
+            $stmt->execute();
             
-            $stmt = $pdo->prepare("UPDATE dbProj_user SET role = 'user' WHERE user_id = :userId");
-            $stmt->execute([':userId' => $userId]);
+            $stmt2 = $mysqli->prepare("UPDATE dbProj_user SET role = 'user' WHERE user_id = ?");
+            $stmt2->bind_param("i", $userId);
+            $stmt2->execute();
             
             $_SESSION['status'] = "User rejected as creator successfully";
             $_SESSION['status_code'] = "success";
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             $_SESSION['status'] = "Delete failed: " . $e->getMessage();
             $_SESSION['status_code'] = "error";
         }
