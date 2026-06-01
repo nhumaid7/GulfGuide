@@ -72,7 +72,7 @@ $posts = array_map([Post::class, 'fromArray'], $postRows);
                     if ($part == 'admin') {
                         echo '<li class="breadcrumb-item"> Admin Portal </li>';
                         echo '<li class="breadcrumb-item">';
-                        echo '<a href="' . APP_BASE . '/admin/dashboard"> Dashboard </a>';
+                        echo '<a href="' . APP_BASE . '/admin/"> Dashboard </a>';
                         echo '</li>';
                     } else {
                         echo '<li class="breadcrumb-item">';
@@ -149,8 +149,8 @@ $posts = array_map([Post::class, 'fromArray'], $postRows);
                         <tr>
                             <th>ID</th>
                             <th>Title</th>
-                            <th>Country</th>
                             <th>Author</th>
+                            <th>Country</th>
                             <th>Created At</th>
                             <th class="action-th text-center">Actions</th>
                         </tr>
@@ -201,7 +201,7 @@ $posts = array_map([Post::class, 'fromArray'], $postRows);
 
         Swal.fire({
             title: 'Reject user',
-            text: `Are you sure you want to reject ${username}\'s creator request?`,
+            text: `Are you sure you want to reject ${username}'s creator request?`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#4169e1',
@@ -214,6 +214,7 @@ $posts = array_map([Post::class, 'fromArray'], $postRows);
             }
         });
     });
+
     $(document).on('submit', '.approved-record', function (e) {
         e.preventDefault();
 
@@ -222,7 +223,7 @@ $posts = array_map([Post::class, 'fromArray'], $postRows);
 
         Swal.fire({
             title: 'Approved user',
-            text: `Are you sure you want to approved ${username}\'s creator request?`,
+            text: `Are you sure you want to approved ${username}'s creator request?`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#4169e1',

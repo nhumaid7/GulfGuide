@@ -6,6 +6,7 @@ class Attraction {
     private string $name;
     private string $description;
     private string $cover_image;
+    private int    $view_count;
     private string $created_at;
 
     public function __construct(
@@ -15,7 +16,8 @@ class Attraction {
         string $description,
         string $cover_image,
         int    $attraction_id = 0,
-        string $created_at = ''
+        int    $view_count    = 0,
+        string $created_at    = ''
     ) {
         $this->attraction_id = $attraction_id;
         $this->country_id    = $country_id;

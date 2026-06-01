@@ -120,6 +120,8 @@ if (typeof Swal === 'undefined') {
 <link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/style.css">
 <link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/create-post.css">
 
+<?php require_once __DIR__ . '/../../partials/user/navbar.php'; ?>
+
 <div class="create-post-page">
 
 <!-- ── DB error banner ─────────────────────────────────────────────────────── -->
@@ -132,13 +134,7 @@ if (typeof Swal === 'undefined') {
 
 <!-- ── Page heading ─────────────────────────────────────────────────────── -->
 <div class="mb-4 pt-3">
-    <nav aria-label="breadcrumb" class="mb-2">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="<?= APP_BASE ?>/">GulfGuide</a></li>
-            <li class="breadcrumb-item"><a href="<?= APP_BASE ?>/creator/">Dashboard</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Write Review</li>
-        </ol>
-    </nav>
+    
     <h2>Let's Share Your Experience!</h2>
     <p class="text-muted mb-0">Write Reviews</p>
 </div>

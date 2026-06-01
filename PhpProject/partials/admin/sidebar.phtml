@@ -1,7 +1,7 @@
 <aside class="sidebar" id="sidebar">
 
     <div class="sidebar-header">
-        <a href="<?php echo APP_BASE ?>/admin/" class="sidebar-brand">
+        <a href="<?php echo APP_BASE; ?>/admin/" class="sidebar-brand">
             <span class="brand-icon">
                 <i class="ph ph-compass"></i>
             </span>
@@ -14,48 +14,47 @@
     </div>
 
     <nav class="flex-grow-1 py-3">
-
         <h6 class="sidebar-section-label">Menu</h6>
 
         <ul class="sidebar-nav list-unstyled">
 
             <li class="sidebar-nav-item">
-               <a href="<?php echo APP_BASE ?>/admin/dashboard">
-    <i class="ph ph-house"></i>
-    <span>Dashboard</span>
-</a>
+                <a href="<?php echo APP_BASE; ?>/admin/" class="<?php echo ($uri === '/admin/') ? 'active' : ''; ?>">
+                    <i class="ph ph-house"></i>
+                    <span>Dashboard</span>
+                </a>
             </li>
 
             <li class="sidebar-nav-item">
-                <a href="<?php echo APP_BASE ?>/admin/location-list">
+                <a href="<?php echo APP_BASE; ?>/admin/location-list" class="<?php echo ($uri === '/admin/location-list') ? 'active' : ''; ?>">
                     <i class="ph ph-map-pin"></i>
                     <span>Locations</span>
                 </a>
             </li>
 
             <li class="sidebar-nav-item">
-                <a href="<?php echo APP_BASE ?>/admin/creator-request">
+                <a href="<?php echo APP_BASE; ?>/admin/creator-request" class="<?php echo ($uri === '/admin/creator-request') ? 'active' : ''; ?>">
                     <i class="ph ph-user-check"></i>
                     <span>Creator Requests</span>
                 </a>
             </li>
 
             <li class="sidebar-nav-item">
-                <a href="<?php echo APP_BASE ?>/admin/moderate-posts">
+                <a href="<?php echo APP_BASE; ?>/admin/moderate-posts" class="<?php echo ($uri === '/admin/moderate-posts') ? 'active' : ''; ?>">
                     <i class="ph ph-article"></i>
                     <span>Moderate Posts</span>
                 </a>
             </li>
 
             <li class="sidebar-nav-item">
-                <a href="<?php echo APP_BASE ?>/admin/manage-accounts">
+                <a href="<?php echo APP_BASE; ?>/admin/manage-accounts" class="<?php echo ($uri === '/admin/manage-accounts') ? 'active' : ''; ?>">
                     <i class="ph ph-users"></i>
                     <span>Manage Accounts</span>
                 </a>
             </li>
 
             <li class="sidebar-nav-item">
-                <a href="<?php echo APP_BASE ?>/admin/analytics">
+                <a href="<?php echo APP_BASE; ?>/admin/analytics" class="<?php echo ($uri === '/admin/analytics') ? 'active' : ''; ?>">
                     <i class="ph ph-chart-line-up"></i>
                     <span>Analytics</span>
                 </a>
@@ -67,7 +66,7 @@
     <div class="sidebar-promo">
         <h6>Need Help?</h6>
         <p>Check our docs or contact support</p>
-        <a href="<?php echo APP_BASE ?>/">Get Support</a>
+        <a href="<?php echo APP_BASE; ?>/">Get Support</a>
     </div>
 
 </aside>
