@@ -26,7 +26,7 @@ $base   = dirname($script);          // /~u202304056/PhpProject
 define('APP_BASE', $script);
 
 // for redirection purposes only 
-define('REDIRECT_ADMIN',   APP_BASE .'/admin/');
+define('REDIRECT_ADMIN',   APP_BASE .'/admin/dashboard');
 define('REDIRECT_CREATOR', APP_BASE .'/creator/');
 define('REDIRECT_VISITOR', APP_BASE .'/');
 define('REDIRECT_LOGIN',   APP_BASE .'/login')
