@@ -6,7 +6,29 @@ if (!$id) {
     exit;
 }
 
-$stmt = $pdo->prepare("SELECT * FROM dbProj_country WHERE country_id = ?");
+try {
+    $countriesStmt = $pdo->query("
+        SELECT country_id, name
+        FROM dbProj_country
+        ORDER BY name ASC
+    ");
+    $countries = $countriesStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    $countries = [];
+}
+
+try {
+    $typesStmt = $pdo->query("
+        SELECT type_id, name
+        FROM dbProj_attraction_type
+        ORDER BY name ASC
+    ");
+    $types = $typesStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    $types = [];
+}
+
+$stmt = $pdo->prepare("SELECT * FROM dbProj_attraction WHERE attraction_id = ?");
 $stmt->execute([$id]);
 $location = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -22,10 +44,10 @@ $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
-    $flagImage = trim($_POST['flag_image'] ?? '');
-    $displayImage = trim($_POST['display_image'] ?? '');
-    $tourismWebsite = trim($_POST['official_tourism_website'] ?? '');
     $description = trim($_POST['description'] ?? '');
+    $coverImage = trim($_POST['cover_image'] ?? '');
+    $countryId = filter_input(INPUT_POST, 'country_id', FILTER_VALIDATE_INT);
+    $typeId = filter_input(INPUT_POST, 'type_id', FILTER_VALIDATE_INT);
 
     if ($name === '') {
         $errors[] = 'Location name is required.';
@@ -35,48 +57,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Description is required.';
     }
 
-    if ($flagImage === '') {
-        $errors[] = 'Flag image path is required.';
+    if ($coverImage === '') {
+        $errors[] = 'Cover image path is required.';
     }
 
-    if ($displayImage === '') {
-        $errors[] = 'Display image path is required.';
+    if (!$countryId) {
+        $errors[] = 'Country is required.';
     }
 
-    if ($tourismWebsite === '') {
-        $errors[] = 'Official tourism website is required.';
+    if (!$typeId) {
+        $errors[] = 'Location type is required.';
     }
 
     if (!$errors) {
         try {
             $checkStmt = $pdo->prepare("
                 SELECT COUNT(*)
-                FROM dbProj_country
+                FROM dbProj_attraction
                 WHERE name = ?
-                  AND country_id != ?
+                  AND country_id = ?
+                  AND attraction_id != ?
             ");
-            $checkStmt->execute([$name, $id]);
+            $checkStmt->execute([$name, $countryId, $id]);
 
             if ((int) $checkStmt->fetchColumn() > 0) {
-                $errors[] = 'Another location with this name already exists.';
+                $errors[] = 'Another location with this name already exists in the selected country.';
             } else {
                 $stmt = $pdo->prepare("
-                    UPDATE dbProj_country
+                    UPDATE dbProj_attraction
                     SET
                         name = ?,
                         description = ?,
-                        flag_image = ?,
-                        display_image = ?,
-                        official_tourism_website = ?
-                    WHERE country_id = ?
+                        cover_image = ?,
+                        country_id = ?,
+                        type_id = ?
+                    WHERE attraction_id = ?
                 ");
 
                 $stmt->execute([
                     $name,
                     $description,
-                    $flagImage,
-                    $displayImage,
-                    $tourismWebsite,
+                    $coverImage,
+                    $countryId,
+                    $typeId,
                     $id
                 ]);
 
@@ -274,6 +297,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     .gg-input,
+    .gg-select,
     .gg-textarea {
         border: 1px solid #d6deea;
         border-radius: 12px;
@@ -283,6 +307,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     .gg-input:focus,
+    .gg-select:focus,
     .gg-textarea:focus {
         border-color: #4169e1;
         box-shadow: 0 0 0 4px rgba(65, 105, 225, 0.10) !important;
@@ -350,7 +375,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="gg-form-hero-content">
             <h1 class="gg-form-title">Edit Location</h1>
             <p class="gg-form-subtitle">
-                Update the selected GulfGuide country or travel location.
+                Update the selected GulfGuide location.
             </p>
         </div>
 
@@ -387,9 +412,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <div class="gg-preview-box">
                 <div class="gg-preview-img">
-                    <?php if (!empty($_POST['display_image'] ?? $location['display_image'])): ?>
+                    <?php if (!empty($_POST['cover_image'] ?? $location['cover_image'])): ?>
                         <img
-                            src="<?= htmlspecialchars($_POST['display_image'] ?? $location['display_image']) ?>"
+                            src="<?= htmlspecialchars($_POST['cover_image'] ?? $location['cover_image']) ?>"
                             alt="<?= htmlspecialchars($_POST['name'] ?? $location['name']) ?>"
                         >
                     <?php else: ?>
@@ -419,43 +444,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             value="<?= htmlspecialchars($_POST['name'] ?? $location['name']) ?>"
                             required
                         >
-                        <div class="gg-help">Edit the country or travel location name.</div>
+                        <div class="gg-help">Edit the location name.</div>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label gg-label">Official Tourism Website</label>
+                        <label class="form-label gg-label">Cover Image Path</label>
                         <input
                             type="text"
-                            name="official_tourism_website"
+                            name="cover_image"
                             class="form-control gg-input"
-                            value="<?= htmlspecialchars($_POST['official_tourism_website'] ?? $location['official_tourism_website']) ?>"
+                            value="<?= htmlspecialchars($_POST['cover_image'] ?? $location['cover_image']) ?>"
                             required
                         >
-                        <div class="gg-help">Edit the official tourism website link.</div>
+                        <div class="gg-help">Edit the location cover image path or URL.</div>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label gg-label">Flag Image Path</label>
-                        <input
-                            type="text"
-                            name="flag_image"
-                            class="form-control gg-input"
-                            value="<?= htmlspecialchars($_POST['flag_image'] ?? $location['flag_image']) ?>"
-                            required
-                        >
-                        <div class="gg-help">Edit the flag image path or URL.</div>
+                        <label class="form-label gg-label">Country</label>
+                        <select name="country_id" class="form-select gg-select" required>
+                            <option value="">Select country</option>
+                            <?php foreach ($countries as $country): ?>
+                                <option
+                                    value="<?= htmlspecialchars($country['country_id']) ?>"
+                                    <?= (string)($country['country_id']) === (string)($_POST['country_id'] ?? $location['country_id']) ? 'selected' : '' ?>
+                                >
+                                    <?= htmlspecialchars($country['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="gg-help">Edit the country linked to this location.</div>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label gg-label">Display Image Path</label>
-                        <input
-                            type="text"
-                            name="display_image"
-                            class="form-control gg-input"
-                            value="<?= htmlspecialchars($_POST['display_image'] ?? $location['display_image']) ?>"
-                            required
-                        >
-                        <div class="gg-help">Edit the main display image path or URL.</div>
+                        <label class="form-label gg-label">Location Type</label>
+                        <select name="type_id" class="form-select gg-select" required>
+                            <option value="">Select type</option>
+                            <?php foreach ($types as $type): ?>
+                                <option
+                                    value="<?= htmlspecialchars($type['type_id']) ?>"
+                                    <?= (string)($type['type_id']) === (string)($_POST['type_id'] ?? $location['type_id']) ? 'selected' : '' ?>
+                                >
+                                    <?= htmlspecialchars($type['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="gg-help">Edit the location category/type.</div>
                     </div>
 
                     <div class="col-12">
@@ -465,7 +498,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             class="form-control gg-textarea"
                             required
                         ><?= htmlspecialchars($_POST['description'] ?? $location['description']) ?></textarea>
-                        <div class="gg-help">Update the destination description.</div>
+                        <div class="gg-help">Update the location description.</div>
                     </div>
                 </div>
 

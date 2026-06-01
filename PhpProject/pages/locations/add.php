@@ -1,12 +1,36 @@
 <?php
 $errors = [];
 
+try {
+    $countriesStmt = $pdo->query("
+        SELECT country_id, name
+        FROM dbProj_country
+        ORDER BY name ASC
+    ");
+    $countries = $countriesStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    $countries = [];
+    $errors[] = 'Failed to load countries: ' . $e->getMessage();
+}
+
+try {
+    $typesStmt = $pdo->query("
+        SELECT type_id, name
+        FROM dbProj_attraction_type
+        ORDER BY name ASC
+    ");
+    $types = $typesStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    $types = [];
+    $errors[] = 'Failed to load location types: ' . $e->getMessage();
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
-    $flagImage = trim($_POST['flag_image'] ?? '');
-    $displayImage = trim($_POST['display_image'] ?? '');
-    $tourismWebsite = trim($_POST['official_tourism_website'] ?? '');
     $description = trim($_POST['description'] ?? '');
+    $coverImage = trim($_POST['cover_image'] ?? '');
+    $countryId = filter_input(INPUT_POST, 'country_id', FILTER_VALIDATE_INT);
+    $typeId = filter_input(INPUT_POST, 'type_id', FILTER_VALIDATE_INT);
 
     if ($name === '') {
         $errors[] = 'Location name is required.';
@@ -16,33 +40,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Description is required.';
     }
 
-    if ($flagImage === '') {
-        $errors[] = 'Flag image path is required.';
+    if ($coverImage === '') {
+        $errors[] = 'Cover image path is required.';
     }
 
-    if ($displayImage === '') {
-        $errors[] = 'Display image path is required.';
+    if (!$countryId) {
+        $errors[] = 'Country is required.';
     }
 
-    if ($tourismWebsite === '') {
-        $errors[] = 'Official tourism website is required.';
+    if (!$typeId) {
+        $errors[] = 'Location type is required.';
     }
 
     if (!$errors) {
         try {
             $checkStmt = $pdo->prepare("
                 SELECT COUNT(*)
-                FROM dbProj_country
+                FROM dbProj_attraction
                 WHERE name = ?
+                  AND country_id = ?
             ");
-            $checkStmt->execute([$name]);
+            $checkStmt->execute([$name, $countryId]);
 
             if ((int) $checkStmt->fetchColumn() > 0) {
-                $errors[] = 'A location with this name already exists.';
+                $errors[] = 'A location with this name already exists in the selected country.';
             } else {
                 $stmt = $pdo->prepare("
-                    INSERT INTO dbProj_country
-                        (name, description, flag_image, display_image, official_tourism_website)
+                    INSERT INTO dbProj_attraction
+                        (name, description, cover_image, country_id, type_id)
                     VALUES
                         (?, ?, ?, ?, ?)
                 ");
@@ -50,9 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([
                     $name,
                     $description,
-                    $flagImage,
-                    $displayImage,
-                    $tourismWebsite
+                    $coverImage,
+                    $countryId,
+                    $typeId
                 ]);
 
                 $_SESSION['status'] = 'Location added successfully.';
@@ -190,6 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     .gg-input,
+    .gg-select,
     .gg-textarea {
         border: 1px solid #d6deea;
         border-radius: 12px;
@@ -199,6 +225,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     .gg-input:focus,
+    .gg-select:focus,
     .gg-textarea:focus {
         border-color: #4169e1;
         box-shadow: 0 0 0 4px rgba(65, 105, 225, 0.10) !important;
@@ -266,7 +293,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="gg-form-hero-content">
             <h1 class="gg-form-title">Add Location</h1>
             <p class="gg-form-subtitle">
-                Add a new GulfGuide country or travel location.
+                Add a new GulfGuide location.
             </p>
         </div>
 
@@ -302,49 +329,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             name="name"
                             class="form-control gg-input"
                             value="<?= htmlspecialchars($_POST['name'] ?? '') ?>"
-                            placeholder="Example: Kingdom of Bahrain"
+                            placeholder="Example: Bahrain National Museum"
                             required
                         >
-                        <div class="gg-help">Enter the country or travel location name.</div>
+                        <div class="gg-help">Enter the location name.</div>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label gg-label">Official Tourism Website</label>
+                        <label class="form-label gg-label">Cover Image Path</label>
                         <input
                             type="text"
-                            name="official_tourism_website"
+                            name="cover_image"
                             class="form-control gg-input"
-                            value="<?= htmlspecialchars($_POST['official_tourism_website'] ?? '') ?>"
-                            placeholder="https://example.com"
+                            value="<?= htmlspecialchars($_POST['cover_image'] ?? '') ?>"
+                            placeholder="/assets/images/locations/museum.jpg"
                             required
                         >
-                        <div class="gg-help">Add the official tourism website link.</div>
+                        <div class="gg-help">Provide the location cover image path or URL.</div>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label gg-label">Flag Image Path</label>
-                        <input
-                            type="text"
-                            name="flag_image"
-                            class="form-control gg-input"
-                            value="<?= htmlspecialchars($_POST['flag_image'] ?? '') ?>"
-                            placeholder="/assets/images/flags/bahrain.png"
-                            required
-                        >
-                        <div class="gg-help">Provide the flag image path or URL.</div>
+                        <label class="form-label gg-label">Country</label>
+                        <select name="country_id" class="form-select gg-select" required>
+                            <option value="">Select country</option>
+                            <?php foreach ($countries as $country): ?>
+                                <option
+                                    value="<?= htmlspecialchars($country['country_id']) ?>"
+                                    <?= (string)($country['country_id']) === (string)($_POST['country_id'] ?? '') ? 'selected' : '' ?>
+                                >
+                                    <?= htmlspecialchars($country['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="gg-help">Choose the country linked to this location.</div>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label gg-label">Display Image Path</label>
-                        <input
-                            type="text"
-                            name="display_image"
-                            class="form-control gg-input"
-                            value="<?= htmlspecialchars($_POST['display_image'] ?? '') ?>"
-                            placeholder="/assets/images/locations/bahrain.jpg"
-                            required
-                        >
-                        <div class="gg-help">Provide the main location display image path or URL.</div>
+                        <label class="form-label gg-label">Location Type</label>
+                        <select name="type_id" class="form-select gg-select" required>
+                            <option value="">Select type</option>
+                            <?php foreach ($types as $type): ?>
+                                <option
+                                    value="<?= htmlspecialchars($type['type_id']) ?>"
+                                    <?= (string)($type['type_id']) === (string)($_POST['type_id'] ?? '') ? 'selected' : '' ?>
+                                >
+                                    <?= htmlspecialchars($type['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="gg-help">Choose the location category/type.</div>
                     </div>
 
                     <div class="col-12">
@@ -352,10 +385,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <textarea
                             name="description"
                             class="form-control gg-textarea"
-                            placeholder="Write a short description about this destination..."
+                            placeholder="Write a short description about this location..."
                             required
                         ><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
-                        <div class="gg-help">Add a destination summary for visitors.</div>
+                        <div class="gg-help">Add a concise summary for visitors.</div>
                     </div>
                 </div>
 

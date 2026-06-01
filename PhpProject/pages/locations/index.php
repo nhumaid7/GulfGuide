@@ -8,49 +8,58 @@ if ($isAdminLocationList) {
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_location'])) {
         $locationId = filter_input(INPUT_POST, 'location_id', FILTER_VALIDATE_INT);
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_location'])) {
+        $locationId = filter_input(INPUT_POST, 'location_id', FILTER_VALIDATE_INT);
 
         if ($locationId) {
             try {
                 $pdo->beginTransaction();
 
-                $attractionIdsStmt = $pdo->prepare("
-                    SELECT attraction_id
-                    FROM dbProj_attraction
-                    WHERE country_id = ?
-                ");
-                $attractionIdsStmt->execute([$locationId]);
-                $attractionIds = $attractionIdsStmt->fetchAll(PDO::FETCH_COLUMN);
-
-                if (!empty($attractionIds)) {
-                    $placeholders = implode(',', array_fill(0, count($attractionIds), '?'));
-
-                    $pdo->prepare("
-                        DELETE FROM dbProj_attraction_media
-                        WHERE attraction_id IN ($placeholders)
-                    ")->execute($attractionIds);
-
-                    $deleteAttractionsParams = $attractionIds;
-                    $deleteAttractionsParams[] = $locationId;
-
-                    $pdo->prepare("
-                        DELETE FROM dbProj_attraction
-                        WHERE attraction_id IN ($placeholders)
-                          AND country_id = ?
-                    ")->execute($deleteAttractionsParams);
-                }
-
                 $pdo->prepare("
-                    DELETE FROM dbProj_post
-                    WHERE country_id = ?
+                    DELETE FROM dbProj_attraction_media
+                    WHERE attraction_id = ?
                 ")->execute([$locationId]);
 
-                $countryDelete = $pdo->prepare("
-                    DELETE FROM dbProj_country
-                    WHERE country_id = ?
+                $deleteStmt = $pdo->prepare("
+                    DELETE FROM dbProj_attraction
+                    WHERE attraction_id = ?
                 ");
-                $countryDelete->execute([$locationId]);
+                $deleteStmt->execute([$locationId]);
 
-                if ($countryDelete->rowCount() < 1) {
+                if ($deleteStmt->rowCount() < 1) {
+                    throw new RuntimeException('Location not found or already deleted.');
+                }
+
+                $pdo->commit();
+
+                $_SESSION['status'] = 'Location deleted successfully.';
+                $_SESSION['status_code'] = 'success';
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+
+                $_SESSION['status'] = 'Delete failed: ' . $e->getMessage();
+                $_SESSION['status_code'] = 'error';
+            }
+        } else {
+            $_SESSION['status'] = 'Invalid location selected.';
+        if ($locationId) {
+            try {
+                $pdo->beginTransaction();
+
+                $pdo->prepare("
+                    DELETE FROM dbProj_attraction_media
+                    WHERE attraction_id = ?
+                ")->execute([$locationId]);
+
+                $deleteStmt = $pdo->prepare("
+                    DELETE FROM dbProj_attraction
+                    WHERE attraction_id = ?
+                ");
+                $deleteStmt->execute([$locationId]);
+
+                if ($deleteStmt->rowCount() < 1) {
                     throw new RuntimeException('Location not found or already deleted.');
                 }
 
@@ -80,19 +89,23 @@ if ($isAdminLocationList) {
 
     $sql = "
         SELECT
-            c.country_id,
-            c.name,
-            c.description,
-            c.flag_image,
-            c.display_image,
-            c.official_tourism_website,
-            COUNT(DISTINCT a.attraction_id) AS attractions_count,
+            a.attraction_id,
+            a.name,
+            a.description,
+            a.cover_image,
+            a.country_id,
+            a.type_id,
+            a.created_at,
+            c.name AS country_name,
+            t.name AS type_name,
             COUNT(DISTINCT p.post_id) AS posts_count
-        FROM dbProj_country c
-        LEFT JOIN dbProj_attraction a
-            ON c.country_id = a.country_id
+        FROM dbProj_attraction a
+        LEFT JOIN dbProj_country c
+            ON a.country_id = c.country_id
+        LEFT JOIN dbProj_attraction_type t
+            ON a.type_id = t.type_id
         LEFT JOIN dbProj_post p
-            ON c.country_id = p.country_id
+            ON a.country_id = p.country_id
     ";
 
     $params = [];
@@ -100,26 +113,34 @@ if ($isAdminLocationList) {
     if ($adminSearch !== '') {
         $sql .= "
             WHERE
-                CAST(c.country_id AS CHAR) LIKE :id_search
-                OR c.name LIKE :name_search
-                OR c.description LIKE :description_search
-                OR c.official_tourism_website LIKE :website_search
+                CAST(a.attraction_id AS CHAR) LIKE :id_search
+                OR a.name LIKE :name_search
+                OR a.description LIKE :description_search
+                OR c.name LIKE :country_search
+                OR t.name LIKE :type_search
         ";
-        $params[':id_search'] = '%' . $adminSearch . '%';
-        $params[':name_search'] = '%' . $adminSearch . '%';
-        $params[':description_search'] = '%' . $adminSearch . '%';
-        $params[':website_search'] = '%' . $adminSearch . '%';
+
+        $params = [
+            ':id_search' => '%' . $adminSearch . '%',
+            ':name_search' => '%' . $adminSearch . '%',
+            ':description_search' => '%' . $adminSearch . '%',
+            ':country_search' => '%' . $adminSearch . '%',
+            ':type_search' => '%' . $adminSearch . '%',
+        ];
     }
 
     $sql .= "
         GROUP BY
-            c.country_id,
+            a.attraction_id,
+            a.name,
+            a.description,
+            a.cover_image,
+            a.country_id,
+            a.type_id,
+            a.created_at,
             c.name,
-            c.description,
-            c.flag_image,
-            c.display_image,
-            c.official_tourism_website
-        ORDER BY c.country_id DESC
+            t.name
+        ORDER BY a.attraction_id DESC
     ";
 
     $stmt = $pdo->prepare($sql);
@@ -132,6 +153,11 @@ if ($isAdminLocationList) {
             background: #f4f7fb;
             min-height: calc(100vh - 70px);
             padding: 38px 48px 70px;
+        }
+
+        .gg-admin-location-page,
+        .gg-admin-location-page * {
+            box-sizing: border-box;
         }
 
         .gg-location-hero {
@@ -361,6 +387,7 @@ if ($isAdminLocationList) {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            display: block;
         }
 
         .gg-location-name {
@@ -375,17 +402,7 @@ if ($isAdminLocationList) {
             color: #667085;
             margin: 0;
             line-height: 1.5;
-        }
-
-        .gg-site-link {
-            color: #2446bb;
-            text-decoration: none;
-            font-weight: 700;
             word-break: break-word;
-        }
-
-        .gg-site-link:hover {
-            text-decoration: underline;
         }
 
         .gg-count-pill {
@@ -548,113 +565,103 @@ if ($isAdminLocationList) {
             <div class="table-responsive">
                 <table class="table gg-table align-middle">
                     <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Location</th>
-                        <th>Tourism Site</th>
-                        <th>Attractions</th>
-                        <th>Posts</th>
-                        <th>Actions</th>
-                    </tr>
+                        <tr>
+                            <th>ID</th>
+                            <th>Location</th>
+                            <th>Country</th>
+                            <th>Type</th>
+                            <th>Posts</th>
+                            <th>Actions</th>
+                        </tr>
                     </thead>
 
                     <tbody>
-                    <?php if (!$locations): ?>
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
-                                <?= $adminSearch ? 'No locations matched your search.' : 'No locations found.' ?>
-                            </td>
-                        </tr>
-                    <?php endif; ?>
+                        <?php if (!$locations): ?>
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <?= $adminSearch ? 'No locations matched your search.' : 'No locations found.' ?>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
 
-                    <?php foreach ($locations as $location): ?>
-                        <tr>
-                            <td>
-                                <div class="gg-location-id">
-                                    <?= htmlspecialchars($location['country_id']) ?>
-                                </div>
-                            </td>
-
-                            <td>
-                                <div class="gg-location-cell">
-                                    <div class="gg-location-image">
-                                        <?php if (!empty($location['display_image'])): ?>
-                                            <img
-                                                src="<?= htmlspecialchars($location['display_image']) ?>"
-                                                alt="<?= htmlspecialchars($location['name']) ?>"
-                                            >
-                                        <?php else: ?>
-                                            <?= htmlspecialchars(mb_strtoupper(mb_substr($location['name'] ?? 'L', 0, 1))) ?>
-                                        <?php endif; ?>
+                        <?php foreach ($locations as $location): ?>
+                            <tr>
+                                <td>
+                                    <div class="gg-location-id">
+                                        <?= htmlspecialchars((string) $location['attraction_id']) ?>
                                     </div>
+                                </td>
 
-                                    <div>
-                                        <div class="gg-location-name">
-                                            <?= htmlspecialchars($location['name']) ?>
+                                <td>
+                                    <div class="gg-location-cell">
+                                        <div class="gg-location-image">
+                                            <?php if (!empty($location['cover_image'])): ?>
+                                                <img
+                                                    src="<?= htmlspecialchars($location['cover_image']) ?>"
+                                                    alt="<?= htmlspecialchars($location['name']) ?>"
+                                                >
+                                            <?php else: ?>
+                                                <?= htmlspecialchars(mb_strtoupper(mb_substr($location['name'] ?? 'L', 0, 1))) ?>
+                                            <?php endif; ?>
                                         </div>
 
-                                        <p class="gg-location-desc">
-                                            <?= htmlspecialchars(mb_strimwidth($location['description'] ?? '', 0, 95, '...')) ?>
-                                        </p>
+                                        <div>
+                                            <div class="gg-location-name">
+                                                <?= htmlspecialchars($location['name']) ?>
+                                            </div>
+
+                                            <p class="gg-location-desc">
+                                                <?= htmlspecialchars(mb_strimwidth($location['description'] ?? '', 0, 95, '...')) ?>
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                            </td>
+                                </td>
 
-                            <td>
-                                <?php if (!empty($location['official_tourism_website'])): ?>
-                                    <a
-                                        href="<?= htmlspecialchars($location['official_tourism_website']) ?>"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        class="gg-site-link"
-                                    >
-                                        <?= htmlspecialchars($location['official_tourism_website']) ?>
-                                    </a>
-                                <?php else: ?>
-                                    <span class="text-muted">No website</span>
-                                <?php endif; ?>
-                            </td>
+                                <td>
+                                    <span class="gg-count-pill">
+                                        <?= htmlspecialchars($location['country_name'] ?? 'No country') ?>
+                                    </span>
+                                </td>
 
-                            <td>
-                                <span class="gg-count-pill">
-                                    <?= htmlspecialchars($location['attractions_count']) ?>
-                                </span>
-                            </td>
+                                <td>
+                                    <span class="gg-post-pill">
+                                        <?= htmlspecialchars($location['type_name'] ?? 'No type') ?>
+                                    </span>
+                                </td>
 
-                            <td>
-                                <span class="gg-post-pill">
-                                    <?= htmlspecialchars($location['posts_count']) ?>
-                                </span>
-                            </td>
+                                <td>
+                                    <span class="gg-post-pill">
+                                        <?= htmlspecialchars((string) $location['posts_count']) ?>
+                                    </span>
+                                </td>
 
-                            <td>
-                                <div class="gg-actions">
-                                    <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars($location['country_id']) ?>" class="gg-edit-btn">
-                                        <i class="ph ph-pencil-simple"></i>
-                                        Edit
-                                    </a>
+                                <td>
+                                    <div class="gg-actions">
+                                        <a href="<?= APP_BASE ?>/admin/edit-location?id=<?= htmlspecialchars((string) $location['attraction_id']) ?>" class="gg-edit-btn">
+                                            <i class="ph ph-pencil-simple"></i>
+                                            Edit
+                                        </a>
 
-                                    <form
-                                        method="POST"
-                                        action="<?= APP_BASE ?>/admin/location-list"
-                                        onsubmit="return confirm('Are you sure you want to delete this location? This will also delete its attractions, media, and posts.');"
-                                    >
-                                        <input
-                                            type="hidden"
-                                            name="location_id"
-                                            value="<?= htmlspecialchars($location['country_id']) ?>"
+                                        <form
+                                            method="POST"
+                                            action="<?= APP_BASE ?>/admin/location-list"
+                                            onsubmit="return confirm('Are you sure you want to delete this location? This will also delete its attraction media.');"
                                         >
+                                            <input
+                                                type="hidden"
+                                                name="location_id"
+                                                value="<?= htmlspecialchars((string) $location['attraction_id']) ?>"
+                                            >
 
-                                        <button type="submit" name="delete_location" class="gg-delete-btn">
-                                            <i class="ph ph-trash"></i>
-                                            Delete
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-
+                                            <button type="submit" name="delete_location" class="gg-delete-btn">
+                                                <i class="ph ph-trash"></i>
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
@@ -664,12 +671,7 @@ if ($isAdminLocationList) {
     return;
 }
 
-/*
-|--------------------------------------------------------------------------
-| PUBLIC ATTRACTIONS PAGE
-|--------------------------------------------------------------------------
-*/
-
+// ── Public: /locations/all ────────────────────────────────────────────────
 $search = trim($_GET['search'] ?? '');
 
 $perPage     = 9;
@@ -678,64 +680,47 @@ $offset      = ($currentPage - 1) * $perPage;
 
 if ($search !== '') {
     $countStmt = $pdo->prepare("
-        SELECT COUNT(*)
-        FROM dbProj_attraction a
-        WHERE a.name LIKE :name_search OR a.description LIKE :description_search
+        SELECT COUNT(*) FROM dbProj_attraction a WHERE a.name LIKE :s OR a.description LIKE :s2
     ");
-    $countStmt->execute([
-        ':name_search' => '%' . $search . '%',
-        ':description_search' => '%' . $search . '%'
-    ]);
+    $countStmt->execute([':s' => '%'.$search.'%', ':s2' => '%'.$search.'%']);
 } else {
     $countStmt = $pdo->query("SELECT COUNT(*) FROM dbProj_attraction");
 }
-
-$totalRows  = (int) $countStmt->fetchColumn();
-$totalPages = (int) ceil($totalRows / $perPage);
+$totalRows  = (int)$countStmt->fetchColumn();
+$totalPages = (int)ceil($totalRows / $perPage);
 
 if ($search !== '') {
     $stmt = $pdo->prepare("
-        SELECT
-            a.*,
-            c.name AS country_name,
-            t.name AS type_name
-        FROM dbProj_attraction a
-        LEFT JOIN dbProj_country c
-            ON a.country_id = c.country_id
-        LEFT JOIN dbProj_attraction_type t
-            ON a.type_id = t.type_id
-        WHERE
-            a.name LIKE :name_search
-            OR a.description LIKE :description_search
-        ORDER BY a.created_at DESC
-        LIMIT :limit OFFSET :offset
+        SELECT a.*,
+               c.name AS country_name,
+               t.name AS type_name
+        FROM   dbProj_attraction a
+        LEFT JOIN dbProj_country        c ON a.country_id = c.country_id
+        LEFT JOIN dbProj_attraction_type t ON a.type_id   = t.type_id
+        WHERE  a.name LIKE :s OR a.description LIKE :s2
+        ORDER  BY a.created_at DESC
+        LIMIT  :limit OFFSET :offset
     ");
-
-    $stmt->bindValue(':name_search', '%' . $search . '%', PDO::PARAM_STR);
-    $stmt->bindValue(':description_search', '%' . $search . '%', PDO::PARAM_STR);
-    $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
-    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->bindValue(':s',      '%'.$search.'%');
+    $stmt->bindValue(':s2',     '%'.$search.'%');
+    $stmt->bindValue(':limit',  $perPage, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset,  PDO::PARAM_INT);
     $stmt->execute();
 } else {
     $stmt = $pdo->prepare("
-        SELECT
-            a.*,
-            c.name AS country_name,
-            t.name AS type_name
-        FROM dbProj_attraction a
-        LEFT JOIN dbProj_country c
-            ON a.country_id = c.country_id
-        LEFT JOIN dbProj_attraction_type t
-            ON a.type_id = t.type_id
-        ORDER BY a.created_at DESC
-        LIMIT :limit OFFSET :offset
+        SELECT a.*,
+               c.name AS country_name,
+               t.name AS type_name
+        FROM   dbProj_attraction a
+        LEFT JOIN dbProj_country        c ON a.country_id = c.country_id
+        LEFT JOIN dbProj_attraction_type t ON a.type_id   = t.type_id
+        ORDER  BY a.created_at DESC
+        LIMIT  :limit OFFSET :offset
     ");
-
-    $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
-    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->bindValue(':limit',  $perPage, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset,  PDO::PARAM_INT);
     $stmt->execute();
 }
-
 $attractions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $baseUrl = rtrim(str_replace('/index.php', '', APP_BASE), '/');
@@ -749,142 +734,101 @@ $baseUrl = rtrim(str_replace('/index.php', '', APP_BASE), '/');
 <div class="locations-page">
 
     <?php if (!empty($_SESSION['status'])): ?>
-        <div class="alert alert-<?= ($_SESSION['status_code'] ?? '') === 'success' ? 'success' : 'danger' ?> alert-dismissible fade show">
-            <?= htmlspecialchars($_SESSION['status']) ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-        <?php unset($_SESSION['status'], $_SESSION['status_code']); ?>
+    <div class="alert alert-<?= ($_SESSION['status_code'] ?? '') === 'success' ? 'success' : 'danger' ?> alert-dismissible fade show">
+        <?= htmlspecialchars($_SESSION['status']) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <?php unset($_SESSION['status'], $_SESSION['status_code']); ?>
     <?php endif; ?>
 
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
         <div>
             <h4 class="mb-0 fw-bold">
                 All Attractions
-                <span class="location-count-badge"><?= htmlspecialchars($totalRows) ?></span>
+                <span class="location-count-badge"><?= $totalRows ?></span>
             </h4>
-
             <p class="text-muted mb-0" style="font-size:var(--font-size-p-s);">
                 <?= $search ? 'Search results for "' . htmlspecialchars($search) . '"' : 'Browse all available attractions' ?>
             </p>
         </div>
-
         <form method="GET" action="<?= APP_BASE ?>/locations/all" class="d-flex gap-2">
-            <input
-                type="text"
-                name="search"
-                class="form-control form-control-sm"
-                placeholder="Search attractions…"
-                value="<?= htmlspecialchars($search) ?>"
-                style="width:220px"
-            >
-
+            <input type="text" name="search" class="form-control form-control-sm"
+                   placeholder="Search attractions…" value="<?= htmlspecialchars($search) ?>"
+                   style="width:220px">
             <button type="submit" class="btn btn-sm btn-primary">
-                <i class="ph ph-magnifying-glass me-1"></i>
-                Search
+                <i class="ph ph-magnifying-glass me-1"></i>Search
             </button>
-
             <?php if ($search): ?>
-                <a href="<?= APP_BASE ?>/locations/all" class="btn btn-sm btn-outline-secondary">
-                    Clear
-                </a>
+            <a href="<?= APP_BASE ?>/locations/all" class="btn btn-sm btn-outline-secondary">Clear</a>
             <?php endif; ?>
         </form>
     </div>
 
     <?php if (empty($attractions)): ?>
-        <div class="text-center py-5 text-muted">
-            <i class="ph ph-map-pin-slash" style="font-size:3rem;opacity:.35;"></i>
-            <p class="mt-2 fw-semibold">No attractions found.</p>
-        </div>
+    <div class="text-center py-5 text-muted">
+        <i class="ph ph-map-pin-slash" style="font-size:3rem;opacity:.35;"></i>
+        <p class="mt-2 fw-semibold">No attractions found.</p>
+    </div>
+
     <?php else: ?>
-        <div class="row g-4" id="attractionsGrid">
-            <?php foreach ($attractions as $a): ?>
-                <div class="col-sm-6 col-lg-4">
-                    <div class="attraction-card">
-
-                        <div class="attraction-card__img">
-                            <?php if (!empty($a['cover_image'])): ?>
-                                <img
-                                    src="<?= htmlspecialchars($a['cover_image']) ?>"
-                                    alt="<?= htmlspecialchars($a['name']) ?>"
-                                >
-                            <?php else: ?>
-                                <div class="attraction-card__img--placeholder">
-                                    <i class="ph ph-image"></i>
-                                </div>
-                            <?php endif; ?>
-
-                            <?php if (!empty($a['type_name'])): ?>
-                                <span class="attraction-card__type">
-                                    <?= htmlspecialchars($a['type_name']) ?>
-                                </span>
-                            <?php endif; ?>
+    <div class="row g-4" id="attractionsGrid">
+        <?php foreach ($attractions as $a): ?>
+        <div class="col-sm-6 col-lg-4">
+            <div class="attraction-card">
+                <div class="attraction-card__img">
+                    <?php if (!empty($a['cover_image'])): ?>
+                        <img src="<?= htmlspecialchars($a['cover_image']) ?>"
+                             alt="<?= htmlspecialchars($a['name']) ?>">
+                    <?php else: ?>
+                        <div class="attraction-card__img--placeholder">
+                            <i class="ph ph-image"></i>
                         </div>
-
-                        <div class="attraction-card__body">
-                            <div class="attraction-card__country">
-                                <i class="ph ph-map-pin"></i>
-                                <?= htmlspecialchars($a['country_name'] ?? '—') ?>
-                            </div>
-
-                            <h5 class="attraction-card__name">
-                                <?= htmlspecialchars($a['name']) ?>
-                            </h5>
-
-                            <p class="attraction-card__desc">
-                                <?= htmlspecialchars(mb_strimwidth($a['description'] ?? '', 0, 100, '…')) ?>
-                            </p>
-
-                            <div class="attraction-card__footer">
-                                <a
-                                    href="<?= APP_BASE ?>/locations/<?= htmlspecialchars($a['attraction_id']) ?>"
-                                    class="btn btn-sm btn-primary attraction-card__btn"
-                                >
-                                    View More
-                                    <i class="ph ph-arrow-right ms-1"></i>
-                                </a>
-                            </div>
-                        </div>
-
+                    <?php endif; ?>
+                    <?php if (!empty($a['type_name'])): ?>
+                    <span class="attraction-card__type"><?= htmlspecialchars($a['type_name']) ?></span>
+                    <?php endif; ?>
+                </div>
+                <div class="attraction-card__body">
+                    <div class="attraction-card__country">
+                        <i class="ph ph-map-pin"></i>
+                        <?= htmlspecialchars($a['country_name'] ?? '—') ?>
+                    </div>
+                    <h5 class="attraction-card__name"><?= htmlspecialchars($a['name']) ?></h5>
+                    <p class="attraction-card__desc">
+                        <?= htmlspecialchars(mb_strimwidth($a['description'] ?? '', 0, 100, '…')) ?>
+                    </p>
+                    <div class="attraction-card__footer">
+                        <a href="<?= APP_BASE ?>/locations/<?= $a['attraction_id'] ?>"
+                           class="btn btn-sm btn-primary attraction-card__btn">
+                            View More <i class="ph ph-arrow-right ms-1"></i>
+                        </a>
                     </div>
                 </div>
-            <?php endforeach; ?>
-        </div>
+            </div>
+        </section>
+    </div>
 
-        <?php if ($totalPages > 1): ?>
-            <nav class="mt-4 d-flex justify-content-center" aria-label="Pagination">
-                <ul class="pagination">
-                    <li class="page-item <?= $currentPage <= 1 ? 'disabled' : '' ?>">
-                        <a
-                            class="page-link"
-                            href="?page=<?= $currentPage - 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?>"
-                        >
-                            <i class="ph ph-caret-left"></i>
-                        </a>
-                    </li>
-
-                    <?php for ($p = 1; $p <= $totalPages; $p++): ?>
-                        <li class="page-item <?= $p === $currentPage ? 'active' : '' ?>">
-                            <a
-                                class="page-link"
-                                href="?page=<?= $p ?><?= $search ? '&search=' . urlencode($search) : '' ?>"
-                            >
-                                <?= $p ?>
-                            </a>
-                        </li>
-                    <?php endfor; ?>
-
-                    <li class="page-item <?= $currentPage >= $totalPages ? 'disabled' : '' ?>">
-                        <a
-                            class="page-link"
-                            href="?page=<?= $currentPage + 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?>"
-                        >
-                            <i class="ph ph-caret-right"></i>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        <?php endif; ?>
+    <?php if ($totalPages > 1): ?>
+    <nav class="mt-4 d-flex justify-content-center">
+        <ul class="pagination">
+            <li class="page-item <?= $currentPage <= 1 ? 'disabled' : '' ?>">
+                <a class="page-link" href="?page=<?= $currentPage - 1 ?><?= $search ? '&search='.urlencode($search) : '' ?>">
+                    <i class="ph ph-caret-left"></i>
+                </a>
+            </li>
+            <?php for ($p = 1; $p <= $totalPages; $p++): ?>
+            <li class="page-item <?= $p === $currentPage ? 'active' : '' ?>">
+                <a class="page-link" href="?page=<?= $p ?><?= $search ? '&search='.urlencode($search) : '' ?>"><?= $p ?></a>
+            </li>
+            <?php endfor; ?>
+            <li class="page-item <?= $currentPage >= $totalPages ? 'disabled' : '' ?>">
+                <a class="page-link" href="?page=<?= $currentPage + 1 ?><?= $search ? '&search='.urlencode($search) : '' ?>">
+                    <i class="ph ph-caret-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <?php endif; ?>
     <?php endif; ?>
 
 </div>

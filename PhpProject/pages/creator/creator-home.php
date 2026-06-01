@@ -83,14 +83,7 @@ if (typeof Swal === 'undefined') {
 }
 </script>
 
-<!-- ── Hero (full width, outside the container) ────────────────────────────── -->
-<div class="creator-hero">
-    <div class="creator-hero__overlay"></div>
-    <div class="creator-hero__content">
-        <h1 class="creator-hero__title">Share your Travel Experience</h1>
-        <p class="creator-hero__sub">Let your stories inspire other travellers</p>
-    </div>
-</div>
+<?php require_once __DIR__ . '/../../partials/user/navbar.php'; ?>
 
 <div class="creator-page">
 
