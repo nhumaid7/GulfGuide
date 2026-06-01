@@ -1,40 +1,30 @@
 <?php
-// ─── Bootstrap ───────────────────────────────────────────────────────────────
-// session_start() MUST come before anything touches $_SESSION
 session_start();
 
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-// Load config & classes (paths match your actual folder structure)
+
 require_once __DIR__ . '/config/dbConn.php';
 require_once __DIR__ . '/config/constants.php';
 require_once __DIR__ . '/config/helpers.php';
 require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/classes/user.php';
 
-// ─── Routing helpers ─────────────────────────────────────────────────────────
-/**
- * Build APP_BASE once: every href = APP_BASE . '/some/path'
- * e.g.  /~u202304056/PhpProject/index.php/login
- */
-$script = $_SERVER['SCRIPT_NAME'];   // /~u202304056/PhpProject/index.php
-$base   = dirname($script);          // /~u202304056/PhpProject
 
-//define('APP_BASE', $script);
+$script = $_SERVER['SCRIPT_NAME']; 
+$base   = dirname($script);     
 
-// Strip the base dir and "/index.php" from the request path → clean $uri
+
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $uri = str_replace($base,       '', $uri);
 $uri = str_replace('/index.php', '', $uri);
 $uri = ($uri === '' || $uri === null) ? '/' : $uri;
 
-// Normalize role: DB may store 'user', app uses 'visitor'
 if (isset($_SESSION['role']) && $_SESSION['role'] === 'user') {
     $_SESSION['role'] = 'visitor';
 }
 
-// ─── Route table ─────────────────────────────────────────────────────────────
 $routes = [
     '/'                        => __DIR__ . '/pages/view-index.php',
 
@@ -62,7 +52,6 @@ $routes = [
     '/admin/analytics'         => __DIR__ . '/pages/admin/analytics.php',
 ];
 
-// ─── Router ──────────────────────────────────────────────────────────────────
 function abort(int $code = 404): void
 {
     http_response_code($code);
@@ -77,12 +66,10 @@ function abort(int $code = 404): void
 
 function resolve(string $uri, array $routes): array
 {
-    // 1. Exact match
     if (array_key_exists($uri, $routes)) {
         return ['page' => $routes[$uri], 'params' => []];
     }
 
-    // 2. Dynamic patterns
     $patterns = [
         '#^/country/(\d+)$#'      => __DIR__ . '/pages/countries/show.php',
         '#^/posts/(\d+)$#'        => __DIR__ . '/pages/posts/show.php',
@@ -96,7 +83,7 @@ function resolve(string $uri, array $routes): array
         }
     }
 
-    // 3. Nothing matched
+    // if nothing matched > display 404 error message
     abort(404);
 }
 
@@ -104,15 +91,13 @@ $route  = resolve($uri, $routes);
 $page   = $route['page'];
 $params = $route['params'];
 
-// Guard: make sure the resolved file actually exists
 if (!file_exists($page)) {
     abort(404);
 }
 
-// ─── Layout helpers ──────────────────────────────────────────────────────────
-// How many levels deep is this URI? Used for relative asset paths.
+
 $depth       = count(array_filter(explode('/', trim($uri, '/'))));
-$base_prefix = str_repeat('../', $depth);   // e.g. '../../' for /admin/foo
+$base_prefix = str_repeat('../', $depth);  
 
 $isAdminPage = str_starts_with($uri, '/admin/');
 if ($isAdminPage) {
