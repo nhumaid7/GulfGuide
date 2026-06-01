@@ -251,7 +251,7 @@ if (typeof Swal === 'undefined') {
                     <!-- Content -->
                     <div class="mb-3">
                         <label for="content" class="form-label fw-semibold">Your review</label>
-                        <textarea id="content" name="content" rows="5"
+                        <textarea id="richtest-editor" name="content" rows="5"
                                   class="form-control <?= !empty($errors['content']) ? 'is-invalid' : '' ?>"
                                   placeholder="A detailed review of your Travel Journey…"><?= htmlspecialchars($displayContent) ?></textarea>
                         <div class="invalid-feedback">
