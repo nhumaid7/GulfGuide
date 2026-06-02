@@ -733,8 +733,8 @@ $baseUrl = rtrim(str_replace('/index.php', '', APP_BASE), '/');
             <div class="attraction-card">
                 <div class="attraction-card__img">
                     <?php if (!empty($a['cover_image'])): ?>
-                    <img src="<?= htmlspecialchars($a['cover_image']) ?>"
-                         alt="<?= htmlspecialchars($a['name']) ?>">
+                   <img loading="lazy" src="<?= rtrim($baseUrl, '/') . '/' . ltrim($a['cover_image'], '/') ?>"
+     alt="<?= htmlspecialchars($a['name']) ?>">
                     <?php else: ?>
                     <div class="attraction-card__img--placeholder">
                         <i class="ph ph-image"></i>

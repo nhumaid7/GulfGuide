@@ -89,9 +89,11 @@ $baseUrl = rtrim(str_replace('/index.php', '', APP_BASE), '/');
                     <?php foreach ($mediaFiles as $m): ?>
                     <?php if ($m['media_type'] === 'image'): ?>
                         <div class="show-gallery__item">
-                            <img src="<?= htmlspecialchars($m['file_path']) ?>"
+                            <!--  <img src="" 
                                  alt="Gallery image"
-                                 onclick="openLightbox(this.src)">
+                                 onclick="openLightbox(this.src)"> -->
+                                 <img src="<?= rtrim($baseUrl, '/') . '/' . ltrim($m['file_path'], '/') ?>"
+     alt="<?= htmlspecialchars($m['name']) ?>">
                         </div>
                     <?php elseif ($m['media_type'] === 'video'): ?>
                         <div class="show-gallery__item show-gallery__item--video">
@@ -167,8 +169,9 @@ $baseUrl = rtrim(str_replace('/index.php', '', APP_BASE), '/');
                     <div class="attraction-card">
                         <div class="attraction-card__img" style="height:140px;">
                             <?php if (!empty($r['cover_image'])): ?>
-                                <img src="<?= htmlspecialchars($r['cover_image']) ?>"
-                                     alt="<?= htmlspecialchars($r['name']) ?>">
+                                <img src="<?= rtrim($baseUrl, '/') . '/' . ltrim($ق['cover_image'], '/') ?>"
+     alt="<?= htmlspecialchars($a['name']) ?>">
+                               
                             <?php else: ?>
                                 <div class="attraction-card__img--placeholder"><i class="ph ph-image"></i></div>
                             <?php endif; ?>
