@@ -58,13 +58,11 @@ if ($countryId !== '') {
 $countries = [];
 
 try {
-    // FIX 1: Replaced MySQLi binding/fetching loop with clean PDO query strategy
     $countryStmt = $pdo->query("SELECT country_id, name FROM dbProj_country ORDER BY name ASC");
     if ($countryStmt) {
         $countries = $countryStmt->fetchAll(PDO::FETCH_ASSOC);
     }
 } catch (Throwable $e) {
-    // Silently continue or handle application log
 }
 
 if ($selectedReport === 'selet_user_report' && $filterUserId !== '') {
@@ -76,13 +74,11 @@ if ($selectedReport === 'selet_user_report' && $filterUserId !== '') {
 
 $filterUsersList = [];
 try {
-    // FIX 2: Replaced MySQLi store_result and bind_result with PDO fetchAll
     $userListStmt = $pdo->query("SELECT user_id, username, role FROM dbProj_user WHERE role = 'creator' ORDER BY username ASC");
     if ($userListStmt) {
         $filterUsersList = $userListStmt->fetchAll(PDO::FETCH_ASSOC);
     }
 } catch (Throwable $e) {
-    // Silently continue or handle application log
 }
 
 $report1Data = [];
@@ -142,7 +138,6 @@ if ($selectedReport === 'popular_posts' && empty($validationErrors)) {
 
         $stmt = $pdo->prepare($sql);
         
-        // FIX 3: Executed array straight into parameters mapping, eliminating $bindTypes
         if ($stmt->execute($bindParams)) {
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -232,7 +227,6 @@ if ($selectedReport === 'user_report' && empty($validationErrors)) {
 
         $stmt = $pdo->prepare($sql);
 
-        // FIX 4: Converted the user metrics report execution loop to native PDO fetchAll
         if ($stmt->execute($bindParams)) {
             $uRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -288,7 +282,6 @@ if ($selectedReport === 'selet_user_report' && !empty($filterUserId) && empty($v
         $metaStmt = $pdo->prepare($uMetaSql);
         if ($metaStmt) {
             $userIdInt = (int) $filterUserId;
-            // FIX 5: Standardized targeted user lookup query parameters execution
             if ($metaStmt->execute([$userIdInt])) {
                 $suData = $metaStmt->fetch(PDO::FETCH_ASSOC);
                 if ($suData) {
@@ -335,7 +328,6 @@ if ($selectedReport === 'selet_user_report' && !empty($filterUserId) && empty($v
 
             $pStmt = $pdo->prepare($pSql);
             if ($pStmt) {
-                // FIX 6: Standardized single creator logs metrics lookup queries
                 if ($pStmt->execute($pBindParams)) {
                     $pRows = $pStmt->fetchAll(PDO::FETCH_ASSOC);
                     $timelineRaw = [];
@@ -363,7 +355,6 @@ if ($selectedReport === 'selet_user_report' && !empty($filterUserId) && empty($v
             }
         }
     } catch (Throwable $e) {
-        // Silently continue or handle application log
     }
 }
 $path_parts = explode('/', trim($uri, '/'));

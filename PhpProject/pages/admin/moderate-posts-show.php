@@ -200,14 +200,14 @@ $comments = $commentsStmt->fetchAll(PDO::FETCH_ASSOC);
 
                     <?php if (!empty($postRow['thumbnail'])): ?>
                         <div class="mb-3 img-controler">
-                            <img src="<?= $baseUrl . '/' . htmlspecialchars($postRow['thumbnail']) ?>"
+                            <img src="<?= APP_BASE . '/' . htmlspecialchars($postRow['thumbnail']) ?>"
                                  class="img-fluid rounded"
                                  alt="Post Thumbnail">
                         </div>
                     <?php endif; ?>
 
                     <div class="post-content-text">
-                        <?= nl2br(htmlspecialchars($postRow['content'])) ?>
+                        <?= nl2br(htmlspecialchars_decode($postRow['content'])) ?>
                     </div>
 
                 </div>
